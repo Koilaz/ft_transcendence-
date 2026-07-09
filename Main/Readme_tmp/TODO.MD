@@ -5,16 +5,20 @@
 
 ## Indispensable ##
 
-- Systeme de votation pour les joueur
-- IA qui vote
+- Systeme de votation pour les joueurs (win conditions)
+	- IA qui vote
+- Frontend (humain)
+	page acceuil
 
 ## Optionel ##
 
 - Mode inviter (pas d'authentification, pas de scoreboard)
-- Mode spectateur
-- Ajouter un petit Lore et presentation des regles a la connection
+- Mode spectateur 
+- Ajouter un petit Lore d'introduction fun
+- presentation des regles a la connection
 - Docker Ollama avec un agent qui tourne en local
 - passer tout le code en Typescript (plus propre, lisible ?)
+- Scoreboard
 
 ## idee ##
 
@@ -27,3 +31,5 @@
 ## suggestion amelioration ##
 
 ## problemes ? / solution ? ##
+
+## AI Suggestion ##

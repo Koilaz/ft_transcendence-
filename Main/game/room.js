@@ -1,5 +1,6 @@
 import { Player } from './player.js';
 import { Round } from './round.js';
+import { createBotSendFn } from './bot.js';
 
 export const CARACTERS = ['Colonel Moutarde', 'Major Wasabi', 'Caporal Mayo', 'Lieutenant Samourai', 'General Ketchup', 'Marechal Cocktail'];
 
@@ -13,6 +14,7 @@ export function findOrCreateRoom() {
 	}
 	const newRoom = new Room(nextRoomId++);
 	rooms.set(newRoom.id, newRoom);
+	newRoom.addBot();
 	return newRoom;
 }
 
@@ -27,8 +29,8 @@ class Room
 		this.rounds = [];
 		this.currentRound = null;
 		this.roundNumber = 0;
-		this.maxPlayers = 3;
-		this.minPlayers = 2;
+		this.maxPlayers = 5;
+		this.minPlayers = 3;
 		this.isRunning = false;
 		this.timer = 10;
 		this.countdown = null;
@@ -50,6 +52,13 @@ class Room
 		return player;
 	}
 
+	addBot(agentName = 'mistral')
+	{
+		const botId = `bot-${this.id}`;
+		const sendFn = createBotSendFn(this, botId, agentName);
+		this.addPlayer(botId, sendFn, { isAI: true, agentName });
+	}
+
 	removePlayer(playerId)
 	{
 		this.players.delete(playerId);
@@ -66,8 +75,17 @@ class Room
 
 	addMessage(sender, text)
 	{
-		this.history.push({ sender, text });
-		this.broadcast({ type: 'chat', sender, text });
+		if (!this.currentRound || this.currentRound.status !== 'chatting')
+			return;
+
+		if (!this.currentRound.canSpeak(sender))
+			return;
+
+		const character = this.currentRound.caracterOf(sender);
+		this.history.push({ sender: character, text });
+		this.broadcast({ type: 'chat', sender: character, text });
+
+		this.currentRound.onPlayerMessage(sender)
 	}
 
 	broadcast(message)
@@ -106,11 +124,18 @@ class Room
 
 	startNewRound()
 	{
+		if (this.timerId)
+		{
+			clearInterval(this.timerId);
+			this.timerId = null;
+			this.countdown = null;
+		}
 		this.roundNumber++;
 		this.setStatus('Playing');
 		const round = new Round([...this.players.values()], (msg) => this.broadcast(msg));
 		this.currentRound = round;
 		this.rounds.push(round);
+		round.start();
 		return round;
 	}
 

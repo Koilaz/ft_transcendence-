@@ -6,7 +6,6 @@ export class Player
 		this.sendFn = sendFn;
 		this.status = 'waiting';
 		this.currentCaractere;
-		this.isAI = isAI;
 		this.isViewer = false;
 		this.agentName = agentName;
 	}

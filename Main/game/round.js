@@ -10,8 +10,8 @@ export class Round {
 		this.turnOrder = [];          // playerId dans l'ordre de jeu, apres shuffle
 		this.playerById = new Map(players.map((player) => [player.id, player])); //acces a l'objet player via son ID
 
-		this.turnPerRound = 5; //nombre de manches
-		this.turnDuration = 7; //second par tour
+		this.turnPerRound = 10; //nombre de tours
+		this.turnDuration = 10; //second par tour
 
 		this.status = 'chatting'
 		this.turnCycle = 0;
@@ -116,7 +116,7 @@ export class Round {
 		}
 	}
 
-		broadcastTurn()
+	broadcastTurn()
 	{
 		this.broadcast(
 		{
@@ -124,6 +124,7 @@ export class Round {
 			character: this.caracterOf(this.currentPlayer.id),  // un nom, jamais d'id
 			countdown: this.countdown,
 			turnCycle: this.turnCycle,
+						turnOrder: this.publicTurnOrder(),
 		});
 	}
 
