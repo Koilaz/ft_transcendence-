@@ -1,0 +1,455 @@
+//Entierement genere par IA pour tester le serveur (Remplacer par le front end en react..)
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>AImpostor — test</title>
+    <style>
+        :root {
+            --bg: #0f1117;
+            --panel: #171a23;
+            --panel-2: #1e222d;
+            --border: #2a2f3d;
+            --text: #e7e9ee;
+            --muted: #8a90a2;
+            --accent: #6c8bff;
+            --green: #3ecf8e;
+            --orange: #f5a623;
+            --red: #ef5350;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: radial-gradient(circle at top, #1a1e2a 0%, var(--bg) 60%);
+            color: var(--text);
+            max-width: 760px;
+            margin: 2rem auto;
+            padding: 0 1rem 2rem;
+        }
+
+        h1 {
+            font-size: 1.4rem;
+            margin: 0 0 .25rem;
+        }
+
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.25rem;
+            flex-wrap: wrap;
+            gap: .5rem;
+        }
+
+        .conn {
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+            font-size: .85rem;
+            color: var(--muted);
+            background: var(--panel);
+            border: 1px solid var(--border);
+            padding: .35rem .7rem;
+            border-radius: 999px;
+        }
+
+        .dot {
+            width: .55rem;
+            height: .55rem;
+            border-radius: 50%;
+            background: var(--muted);
+            transition: background .2s ease, box-shadow .2s ease;
+        }
+
+        .conn.open .dot { background: var(--green); box-shadow: 0 0 8px var(--green); }
+        .conn.closed .dot { background: var(--red); box-shadow: 0 0 8px var(--red); }
+        .conn.connecting .dot { background: var(--orange); box-shadow: 0 0 8px var(--orange); animation: pulse 1s infinite; }
+
+        /* ---- Room status card ---- */
+        #room-card {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 1rem 1.25rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .room-meta {
+            display: flex;
+            flex-direction: column;
+            gap: .5rem;
+        }
+
+        .room-id {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .players {
+            display: flex;
+            align-items: center;
+            gap: .4rem;
+        }
+
+        .seat {
+            width: 1.3rem;
+            height: 1.3rem;
+            border-radius: 50%;
+            border: 2px solid var(--muted);
+            background: var(--panel-2);
+            transition: background .25s ease, border-color .25s ease;
+        }
+
+        .seat.filled {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .players-count {
+            font-size: .85rem;
+            color: var(--muted);
+            margin-left: .35rem;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: .4rem;
+            padding: .3rem .7rem;
+            border-radius: 999px;
+            font-size: .8rem;
+            font-weight: 600;
+            width: fit-content;
+        }
+
+        .badge.status-waiting { background: rgba(138, 144, 162, .15); color: var(--muted); }
+        .badge.status-last-call { background: rgba(245, 166, 35, .15); color: var(--orange); }
+        .badge.status-playing { background: rgba(62, 207, 142, .15); color: var(--green); }
+
+        /* ---- Countdown (simple text) ---- */
+        #countdown-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: .1rem;
+            flex-shrink: 0;
+        }
+
+        #countdown-wrap[hidden] { display: none; }
+
+        #countdown-value {
+            font-size: 2.2rem;
+            font-weight: 700;
+            line-height: 1;
+            color: var(--accent);
+        }
+
+        #countdown-label {
+            font-size: .7rem;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: .04em;
+        }
+
+        #countdown-wrap.urgent #countdown-value { color: var(--red); animation: pulse .8s infinite; }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: .45; }
+        }
+
+        /* ---- Chat ---- */
+        #feed {
+            border: 1px solid var(--border);
+            background: var(--panel);
+            border-radius: 14px;
+            height: 340px;
+            overflow-y: auto;
+            padding: .75rem;
+            margin-bottom: .75rem;
+            display: flex;
+            flex-direction: column;
+            gap: .5rem;
+        }
+
+        .msg {
+            display: flex;
+            gap: .6rem;
+            align-items: flex-start;
+        }
+
+        .avatar {
+            width: 2rem;
+            height: 2rem;
+            border-radius: 50%;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: .7rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .msg-body {
+            background: var(--panel-2);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: .4rem .65rem;
+            max-width: 80%;
+        }
+
+        .msg-head {
+            display: flex;
+            align-items: baseline;
+            gap: .5rem;
+            margin-bottom: .1rem;
+        }
+
+        .msg-sender {
+            font-size: .75rem;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .msg-time {
+            font-size: .68rem;
+            color: var(--muted);
+        }
+
+        .msg-text {
+            font-size: .9rem;
+            line-height: 1.35;
+            word-break: break-word;
+        }
+
+        .msg.system {
+            justify-content: center;
+        }
+
+        .msg.system .msg-body {
+            background: transparent;
+            border: none;
+            color: var(--muted);
+            font-size: .78rem;
+            font-style: italic;
+            padding: 0;
+        }
+
+        #composer {
+            display: flex;
+            gap: .5rem;
+        }
+
+        #input {
+            flex: 1;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            color: var(--text);
+            border-radius: 10px;
+            padding: .6rem .8rem;
+            font-size: .9rem;
+        }
+
+        #input:focus { outline: none; border-color: var(--accent); }
+        #input:disabled { opacity: .5; }
+
+        #send {
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            padding: 0 1.1rem;
+            font-size: .9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity .15s ease;
+        }
+
+        #send:disabled { opacity: .4; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>AImpostor — chat de test</h1>
+        <div id="conn" class="conn connecting">
+            <span class="dot"></span>
+            <span id="conn-text">connexion…</span>
+        </div>
+    </header>
+
+    <section id="room-card">
+        <div class="room-meta">
+            <span class="room-id">Salle #<span id="room-number">—</span></span>
+            <span id="status-badge" class="badge status-waiting">en attente…</span>
+            <div class="players">
+                <span class="seat" data-seat="0"></span>
+                <span class="seat" data-seat="1"></span>
+                <span class="seat" data-seat="2"></span>
+                <span id="players-count" class="players-count">0 / 3 joueurs</span>
+            </div>
+        </div>
+        <div id="countdown-wrap" hidden>
+            <div id="countdown-value">–</div>
+            <div id="countdown-label">secondes</div>
+        </div>
+    </section>
+
+    <div id="feed"></div>
+
+    <div id="composer">
+        <input id="input" placeholder="ton message…" autocomplete="off" disabled>
+        <button id="send" disabled>envoyer</button>
+    </div>
+
+    <script>
+        // URL adaptative : ws:// en local, wss:// derrière un proxy HTTPS
+        const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const socket = new WebSocket(`${proto}//${location.host}`);
+
+        const feed = document.getElementById('feed');
+        const input = document.getElementById('input');
+        const sendBtn = document.getElementById('send');
+        const conn = document.getElementById('conn');
+        const connText = document.getElementById('conn-text');
+        const roomNumberEl = document.getElementById('room-number');
+        const playersCountEl = document.getElementById('players-count');
+        const seats = document.querySelectorAll('.seat');
+        const statusBadge = document.getElementById('status-badge');
+        const countdownWrap = document.getElementById('countdown-wrap');
+        const countdownValue = document.getElementById('countdown-value');
+
+        function setConnection(state) {
+            conn.className = `conn ${state}`;
+            connText.textContent = {
+                connecting: 'connexion…',
+                open: 'connecté',
+                closed: 'déconnecté',
+            }[state] || state;
+            const enabled = state === 'open';
+            input.disabled = !enabled;
+            sendBtn.disabled = !enabled || !input.value.trim();
+        }
+
+        function addSystemLine(text) {
+            const div = document.createElement('div');
+            div.className = 'msg system';
+            div.innerHTML = `<div class="msg-body">${text}</div>`;
+            feed.appendChild(div);
+            feed.scrollTop = feed.scrollHeight;
+        }
+
+        function colorFor(sender) {
+            let hash = 0;
+            for (let i = 0; i < sender.length; i++)
+                hash = sender.charCodeAt(i) + ((hash << 5) - hash);
+            return `hsl(${hash % 360}, 65%, 55%)`;
+        }
+
+        function initialsFor(sender) {
+            const parts = sender.split(/[\s-]+/).filter(Boolean);
+            if (parts.length >= 2)
+                return (parts[0][0] + parts[1][0]).toUpperCase();
+            return sender.slice(0, 2).toUpperCase();
+        }
+
+        function addLine(sender, text) {
+            const div = document.createElement('div');
+            div.className = 'msg';
+
+            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            const avatar = document.createElement('div');
+            avatar.className = 'avatar';
+            avatar.style.background = colorFor(sender);
+            avatar.textContent = initialsFor(sender);
+
+            const body = document.createElement('div');
+            body.className = 'msg-body';
+            body.innerHTML = `
+                <div class="msg-head">
+                    <span class="msg-sender"></span>
+                    <span class="msg-time">${time}</span>
+                </div>
+                <div class="msg-text"></div>
+            `;
+            body.querySelector('.msg-sender').textContent = sender;
+            body.querySelector('.msg-text').textContent = text;
+
+            div.appendChild(avatar);
+            div.appendChild(body);
+            feed.appendChild(div);
+            feed.scrollTop = feed.scrollHeight;
+        }
+
+        // Statuts connus renvoyés par le serveur -> présentation. Tout statut
+        // inconnu retombe sur un badge neutre affichant le texte brut.
+        const STATUS_STYLES = [
+            { test: (s) => /playing/i.test(s), label: 'Partie en cours', className: 'status-playing' },
+            { test: (s) => /last call/i.test(s), label: 'Dernier appel !', className: 'status-last-call' },
+            { test: (s) => /waiting/i.test(s), label: 'En attente de joueurs', className: 'status-waiting' },
+        ];
+
+        function updateStatusBadge(rawStatus) {
+            const match = STATUS_STYLES.find((s) => s.test(rawStatus));
+            statusBadge.textContent = match ? match.label : rawStatus;
+            statusBadge.className = `badge ${match ? match.className : 'status-waiting'}`;
+        }
+
+        function updateCountdown(countdown) {
+            if (countdown === null || countdown === undefined) {
+                countdownWrap.hidden = true;
+                return;
+            }
+            countdownWrap.hidden = false;
+            countdownValue.textContent = countdown;
+            countdownWrap.classList.toggle('urgent', countdown <= 5);
+        }
+
+        function updateState(msg) {
+            roomNumberEl.textContent = msg.room_number;
+            playersCountEl.textContent = `${msg.players} / 3 joueurs`;
+            seats.forEach((seat, i) => seat.classList.toggle('filled', i < msg.players));
+            updateStatusBadge(msg.status ?? '');
+            updateCountdown(msg.countdown);
+        }
+
+        socket.onopen = () => { setConnection('open'); addSystemLine('connecté ✅'); };
+        socket.onclose = () => { setConnection('closed'); addSystemLine('déconnecté ❌'); };
+        socket.onerror = () => setConnection('closed');
+
+        socket.onmessage = (event) => {
+            const msg = JSON.parse(event.data);
+            if (msg.type === 'chat')
+                addLine(msg.sender, msg.text);
+            else if (msg.type === 'state')
+                updateState(msg);
+        };
+
+        function envoyer() {
+            const text = input.value.trim();
+            if (!text) return;
+            socket.send(JSON.stringify({ type: 'chat', text }));
+            input.value = '';
+            input.focus();
+            sendBtn.disabled = true;
+        }
+
+        sendBtn.addEventListener('click', envoyer);
+        input.addEventListener('keydown', (e) => { if (e.key === 'Enter') envoyer(); });
+        input.addEventListener('input', () => {
+            sendBtn.disabled = input.disabled || !input.value.trim();
+        });
+    </script>
+</body>
+</html>
