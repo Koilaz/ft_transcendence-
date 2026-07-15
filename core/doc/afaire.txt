@@ -1,0 +1,47 @@
+fonctionnelle a present : 
+
+
+
+
+
+React
+    ↓
+fetch()
+    ↓
+Nginx
+    ↓
+NestJS
+    ↓
+UsersController
+    ↓
+UsersService
+    ↓
+Prisma
+    ↓
+PostgreSQL
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,11 @@
+# Secrets
+secrets/
+
+# Environment variables
+.env
+
+# Logs
+*.log
+
+# OS files
+.DS_Store

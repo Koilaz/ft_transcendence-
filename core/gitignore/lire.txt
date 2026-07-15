@@ -1,0 +1,7 @@
+Le .gitignore est dans un dossier juste pour avoir tout facilement pour tout le monde.
+
+on a pas vraiment besoin de secu comme c'est un projet scolaire avec zero trafic
+
+
+
+On remettra le .gitignore a la racine avant de push et on fera une verif avec de lock le projet final

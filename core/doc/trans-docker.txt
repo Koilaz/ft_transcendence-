@@ -1,0 +1,74 @@
+1. frontend
+   -> React
+
+2. backend
+   -> NestJS
+   -> API REST
+   -> Socket.IO
+   -> auth
+   -> admin
+   -> jeu
+   -> chat
+
+3. postgres
+   -> base de données
+
+4. nginx
+   -> HTTPS
+   -> reverse proxy
+
+
+
+
+
+
+
+
+
+Voir pour changer Socket.IO par ws (websocket) leo (fait)
+
+
+
+
+
+
+
+
+
+les volumes ne sont pas bind mais : 
+
+nginx:
+  volumes:
+    - ./secrets:/run/secrets:ro
+
+backend:
+  volumes:
+    - ./secrets:/run/secrets:ro
+
+frontend:
+  aucun volume en prod
+
+postgres:
+  volumes:
+    - postgres_data:/var/lib/postgresql/data
+
+
+
+
+
+
+
+
+
+
+
+Ports choisi :
+
+Frontend (Vite) : 5173
+Backend (NestJS): 3000
+PostgreSQL      : 5432
+Nginx           : 443
+
+
+
+

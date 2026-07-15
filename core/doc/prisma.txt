@@ -1,0 +1,79 @@
+installer un ORM
+-> Prisma
+
+Pourquoi Prisma ?
+
+c'est moderne ;
+très utilisé aujourd'hui
+fonctionne parfaitement avec TypeScript
+très agréable avec NestJS
+il génère les types automatiquement
+il est beaucoup plus simple à apprendre que TypeORM
+
+C'est un choix très courant pour les projets NestJS
+
+
+
+Pourquoi ne pas écrire du SQL dans React ?
+
+car React ne doit jamais connaître PostgreSQL !
+
+
+Le chemin restera toujours :
+
+React
+   │
+   ▼
+getUsers()
+   │
+   ▼
+NestJS
+   │
+   ▼
+Prisma
+   │
+   ▼
+PostgreSQL
+
+
+
+
+
+React ne saura même pas si derrière il y a PostgreSQL, MySQL ou autre chose.
+
+Il demandera simplement :
+
+« Donne-moi les utilisateurs. »
+
+Et le backend s'occupera du reste.
+
+
+
+
+
+
+
+
+
+Avant on avait : :
+React
+    │
+    ▼
+NestJS
+    │
+    ▼
+PostgreSQL
+
+
+
+Avec prisma on a :
+React
+    │
+    ▼
+NestJS
+    │
+    ▼
+Prisma
+    │
+    ▼
+PostgreSQL

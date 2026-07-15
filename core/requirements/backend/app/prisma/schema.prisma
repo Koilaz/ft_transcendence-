@@ -1,0 +1,72 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+
+
+
+
+
+
+// Modèle Prisma : User
+// Table PostgreSQL : users
+// @@map permet de faire le lien entre les deux.
+
+// Code TypeScript
+// ───────────────
+// prisma.user.findMany()
+// 
+//         │
+// 
+//         ▼
+// 
+// PostgreSQL
+// ──────────
+// SELECT * FROM users;
+
+
+enum FriendshipStatus {
+  PENDING
+  ACCEPTED
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+
+  username     String   @unique
+  email        String   @unique
+  passwordHash String
+
+  avatarUrl    String?
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  sentFriendships     Friendship[] @relation("FriendshipRequester")
+  receivedFriendships Friendship[] @relation("FriendshipReceiver")
+
+  @@map("users")
+}
+
+model Friendship {
+  id          Int              @id @default(autoincrement())
+
+  requesterId Int
+  receiverId  Int
+  status      FriendshipStatus @default(PENDING)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  requester User @relation("FriendshipRequester", fields: [requesterId], references: [id], onDelete: Cascade)
+  receiver  User @relation("FriendshipReceiver", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@unique([requesterId, receiverId])
+  @@map("friendships")
+}
