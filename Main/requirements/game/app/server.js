@@ -14,15 +14,14 @@ wss.on('connection', (socket) =>
 {
 	//  inscription
 	const room = findOrCreateRoom();
-	const playerId = `joueur-${nextPlayerId++}`;//#tmp utiliser vrai ID 
+	const playerId = `joueur-${nextPlayerId++}`;//#tmp utiliser vrai ID
 
 	const sendFn = function(msg)
 	{
 		if (socket.readyState === socket.OPEN)
 			socket.send(JSON.stringify(msg));
 	};
-	room.addPlayer(playerId, sendFn);
-	// on accroche les infos sur la socket pour les retrouver dans les autres handlers
+	room.addPlayer(playerId, sendFn); // on accroche les infos sur la socket pour les retrouver dans les autres handlers
 	socket.playerId = playerId;
 	socket.room = room;
 	console.log(`${playerId} connecté → ${room.id}`);

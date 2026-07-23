@@ -58,6 +58,17 @@ services:
       - transcendence
     restart: unless-stopped
 
+  ollama:
+    container_name: ollama
+    image: ollama/ollama
+    volumes:
+      - ${OLLAMA_DATA_DIR}:/root/.ollama
+    ports:
+      - "11434:11434"
+    networks:
+      - transcendence
+    restart: unless-stopped
+
   frontend:
     container_name: frontend
     image: frontend:local

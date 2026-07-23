@@ -752,6 +752,9 @@ Entierement genere par IA pour tester le backend  a refaire depuis le Debut #TOD
 				case 'roundState':
 					handleRoundState(msg);
 					break;
+				case 'silence':
+					appendSystemLine(`${msg.character} est resté muet ce tour...`);
+					break;
 			}
 		}
 

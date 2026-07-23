@@ -3,10 +3,11 @@ import { gameConfig } from './config.js';
 
 // Une manche : personnage + ordre de jeu tirés au sort, jamais réutilisés d'une manche à l'autre.
 export class Round {
-	constructor(players, broadcastFn)
+	constructor(players, broadcastFn, addSystemMessageFn)
 	{
 		this.players = players;
 		this.broadcast = broadcastFn; // injectee par la Room : Round ignore tout du transport
+		this.addSystemMessage = addSystemMessageFn; // idem, pour ecrire dans l'historique
 		this.assignments = new Map(); // playerId -> personnage (secret interne)
 		this.turnOrder = [];          // playerId dans l'ordre de jeu, apres shuffle
 		this.playerById = new Map(players.map((player) => [player.id, player])); //acces a l'objet player via son ID
@@ -37,13 +38,9 @@ export class Round {
 	{
 		const playerId = this.turnOrder[this.turnIndex];
 		this.currentPlayer = this.playerById.get(playerId);
-		this.countdown = this.turnDuration;
-
-		// ping privé : humain -> surligner l'input, IA -> déclencher l'agent
+		this.countdown = this.turnDuration
 		this.currentPlayer.send({ type: 'yourTurn', countdown: this.countdown });
-
 		this.broadcastTurn();
-
 		this.turnTimerId = setInterval(() =>
 		{
 			this.countdown--;
@@ -57,13 +54,16 @@ export class Round {
 	onPlayerMessage(playerId)
 	{
 		if (this.turnOrder[this.turnIndex] !== playerId)
-			return;                            // une machine à états ne fait confiance à personne
+			return;// une machine à états ne fait confiance à personne
 		this.endTurn();
 	}
 
 	// événement B : son chrono a expiré
 	onTurnTimeout()
 	{
+		const character = this.caracterOf(this.currentPlayer.id);
+		this.broadcast({ type: 'silence', character });
+		this.addSystemMessage(`${character} est resté muet ce tour...`);
 		this.endTurn();
 	}
 
@@ -125,14 +125,15 @@ export class Round {
 			character: this.caracterOf(this.currentPlayer.id),  // un nom, jamais d'id
 			countdown: this.countdown,
 			turnCycle: this.turnCycle,
-						turnOrder: this.publicTurnOrder(),
+			turnOrder: this.publicTurnOrder(),
 		});
 	}
 
 	assignCaracters()
 	{
 		const pool = shuffle(CARACTERS).slice(0, this.players.length); //#TODO analyse cette ligne
-		this.players.forEach((player, i) => {
+		this.players.forEach((player, i) =>
+		{
 			this.assignments.set(player.id, pool[i]);
 		});
 	}
@@ -152,7 +153,6 @@ export class Round {
 		return this.turnOrder.map((id) => this.caracterOf(id));
 	}
 }
-
 
 
 	/*setStatus(status)

@@ -3,6 +3,8 @@ import { Round } from './round.js';
 import { createBotSendFn } from './bot.js';
 import { gameConfig } from './config.js';
 
+//#TODO geree les deconnection proprement
+
 export const CARACTERS = ['Colonel Moutarde', 'Major Wasabi', 'Caporal Mayo', 'Lieutenant Samourai', 'General Ketchup', 'Marechal Cocktail'];
 
 const rooms = new Map(); //id -> room
@@ -15,10 +17,11 @@ export function findOrCreateRoom() {
 	}
 	const newRoom = new Room(nextRoomId++);
 	rooms.set(newRoom.id, newRoom);
-	newRoom.addBot();
+
+	for (let i = 0; i < gameConfig.botPerRoom; i++)
+		newRoom.addBot();
 	return newRoom;
 }
-
 
 class Room
 {
@@ -37,11 +40,13 @@ class Room
 		this.countdown = null;
 		this.timerId = null;
 		this.status = "waiting";//(waiting, chating, voting, shuffeling, endGame)
+		this.numberOfPlayer = 0;
 	}
 
 	addPlayer(playerId, sendFn, opts = {})
 	{
 		const player = new Player(playerId, sendFn, opts);
+		this.numberOfPlayer++;
 		this.players.set(playerId, player);
 		if(this.players.size >= this.minPlayers && !this.timerId && this.status === 'waiting')
 			this.launchStartTimer(this.startingTimer);
@@ -55,7 +60,7 @@ class Room
 
 	addBot(agentName = 'mistral')
 	{
-		const botId = `bot-${this.id}`;
+		const botId = `bot-${this.id}-${this.players.size}`;
 		const sendFn = createBotSendFn(this, botId, agentName);
 		this.addPlayer(botId, sendFn, { isAI: true, agentName });
 	}
@@ -63,6 +68,7 @@ class Room
 	removePlayer(playerId)
 	{
 		this.players.delete(playerId);
+		this.numberOfPlayer--;
 		if(this.timerId && this.players.size < this.minPlayers)
 		{
 			clearInterval(this.timerId);
@@ -72,6 +78,11 @@ class Room
 			return;
 		}
 		this.broadcastState();
+	}
+
+	addSystemMessage(text)
+	{
+		this.history.push({ sender: 'Système', text });
 	}
 
 	addMessage(sender, text)
@@ -132,8 +143,8 @@ class Room
 			this.countdown = null;
 		}
 		this.roundNumber++;
-		this.setStatus('Playing');
-		const round = new Round([...this.players.values()], (msg) => this.broadcast(msg));
+		this.setStatus('playing');
+		const round = new Round([...this.players.values()], (msg) => this.broadcast(msg), (text) => this.addSystemMessage(text));
 		this.currentRound = round;
 		this.rounds.push(round);
 		round.start();
@@ -160,7 +171,6 @@ class Room
 	}
 }
 
-
 /*Fisher-Yates Shuffle algo*/
 export function shuffle(array)
 {
@@ -171,7 +181,6 @@ export function shuffle(array)
 	}
 	return arr;
 }
-
 
 export { Room };
 
