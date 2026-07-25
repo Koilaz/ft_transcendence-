@@ -16,7 +16,6 @@
 # "transcendence"
 # ==========================================================
 
-
 services:
   postgres:
     container_name: postgres
@@ -108,22 +107,15 @@ services:
       - ./secrets:/run/secrets:ro
       - uploads_data:/app/uploads:ro
 
-
     networks:
       - transcendence
-
     restart: unless-stopped
-
-
-
 
 
 networks:
   transcendence:
     name: transcendence
     driver: bridge
-
-
 
 volumes:
   postgres_data:

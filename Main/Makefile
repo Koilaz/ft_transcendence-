@@ -6,8 +6,7 @@ export
 all: up
 
 # Construire les images puis lancer les containers.
-up: ollama-pull
-	$(COMPOSE) up --build
+up:	$(COMPOSE) up --build
 
 # Arrêter et supprimer les containers.
 down:
