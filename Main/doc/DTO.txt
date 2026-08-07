@@ -26,6 +26,5 @@ Le contrôleur deviendrait rapidement rempli de vérifications.
 
 
 
-
 NestJS préfère dire : "Décris-moi ce qu'est une inscription valide."
 C'est exactement le rôle d'un DTO.
