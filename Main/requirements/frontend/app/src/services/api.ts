@@ -55,14 +55,14 @@ export async function getHealth(): Promise<HealthResponse> {
 
 
 
-
 export type PublicUser = {
   id: number;
   username: string;
   avatarUrl: string | null;
+  isOnline: boolean;
+  lastSeenAt: string | null;
   createdAt: string;
 };
-
 
 export async function getUsers(): Promise<PublicUser[]> {
   const response = await fetch('/api/users');
@@ -74,12 +74,6 @@ export async function getUsers(): Promise<PublicUser[]> {
   return response.json();
 }
 
-
-
-
-
-
-
 export const DEFAULT_AVATAR_URL = '/default-avatar.svg';
 
 export type User = {
@@ -87,6 +81,8 @@ export type User = {
   username: string;
   email: string;
   avatarUrl: string | null;
+  isOnline?: boolean;
+  lastSeenAt?: string | null;
   createdAt?: string;
   updatedAt?: string;
 };

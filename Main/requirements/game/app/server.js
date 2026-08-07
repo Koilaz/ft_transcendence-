@@ -3,11 +3,13 @@ import express from 'express';
 import http from 'node:http';
 import { WebSocketServer } from 'ws';
 import { Room, findOrCreateRoom } from './game/room.js';
+import { checkAllAgents } from './agents/index.js';
+import { warmupOllama } from './agents/ollama_local.js';
 
 const app = express();
 app.use(express.static('public'));//#tmp
 const server = http.createServer(app);
-const wss = new WebSocketServer({ server });
+const wss = new WebSocketServer({ server, path: '/ws/game' });
 let nextPlayerId = 1;   // compteur global provisoire pour nommer les joueurs
 
 wss.on('connection', (socket) =>
@@ -52,7 +54,13 @@ wss.on('connection', (socket) =>
 		socket.room.removePlayer(socket.playerId);
 	});
 });
+//etat des agents avant d'accepter des connexions : rapide, aucun token consomme
+await checkAllAgents();
+
 server.listen(3000, () => console.log('serveur sur :3000'));
+
+//prechargement du modele local : lent, on ne bloque pas le demarrage
+warmupOllama().catch((err) => console.error('[ollama] prechargement echoue :', err.message));
 
 /*
 wss.on('connection', (socket) =>

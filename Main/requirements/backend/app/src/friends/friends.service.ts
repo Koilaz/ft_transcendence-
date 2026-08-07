@@ -15,8 +15,10 @@ export class FriendsService {
     id: true,
     username: true,
     avatarUrl: true,
+    isOnline: true,
+    lastSeenAt: true,
     createdAt: true,
-  };
+  } as const;
 
   async sendFriendRequest(currentUserId: number, targetUserId: number) {
     if (currentUserId === targetUserId) {

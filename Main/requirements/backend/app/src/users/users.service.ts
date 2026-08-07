@@ -12,15 +12,33 @@ type CreateUserData = {
 export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
 
+  private readonly publicUserSelect = {
+    id: true,
+    username: true,
+    avatarUrl: true,
+    isOnline: true,
+    lastSeenAt: true,
+    createdAt: true,
+  } as const;
+
+  private readonly privateUserSelect = {
+    id: true,
+    username: true,
+    email: true,
+    avatarUrl: true,
+    isOnline: true,
+    lastSeenAt: true,
+    createdAt: true,
+    updatedAt: true,
+  } as const;
+
   // Liste publique des utilisateurs.
   // On ne renvoie ni les emails ni les mots de passe.
   findAll() {
     return this.prisma.user.findMany({
-      select: {
-        id: true,
-        username: true,
-        avatarUrl: true,
-        createdAt: true,
+      select: this.publicUserSelect,
+      orderBy: {
+        username: 'asc',
       },
     });
   }
@@ -29,14 +47,7 @@ export class UsersService {
   findPublicById(id: number) {
     return this.prisma.user.findUnique({
       where: { id },
-      select: {
-        id: true,
-        username: true,
-        email: true,
-        avatarUrl: true,
-        createdAt: true,
-        updatedAt: true,
-      },
+      select: this.privateUserSelect,
     });
   }
 
@@ -59,14 +70,7 @@ export class UsersService {
   create(data: CreateUserData) {
     return this.prisma.user.create({
       data,
-      select: {
-        id: true,
-        username: true,
-        email: true,
-        avatarUrl: true,
-        createdAt: true,
-        updatedAt: true,
-      },
+      select: this.privateUserSelect,
     });
   }
 
@@ -75,14 +79,7 @@ export class UsersService {
     return this.prisma.user.update({
       where: { id },
       data: { username },
-      select: {
-        id: true,
-        username: true,
-        email: true,
-        avatarUrl: true,
-        createdAt: true,
-        updatedAt: true,
-      },
+      select: this.privateUserSelect,
     });
   }
 
@@ -90,14 +87,7 @@ export class UsersService {
     return this.prisma.user.update({
       where: { id },
       data: { avatarUrl },
-      select: {
-        id: true,
-        username: true,
-        email: true,
-        avatarUrl: true,
-        createdAt: true,
-        updatedAt: true,
-      },
+      select: this.privateUserSelect,
     });
   }
 }

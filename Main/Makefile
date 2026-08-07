@@ -6,7 +6,8 @@ export
 all: up
 
 # Construire les images puis lancer les containers.
-up:	$(COMPOSE) up --build
+up:
+	$(COMPOSE) up --build
 
 # Arrêter et supprimer les containers.
 down:
@@ -58,12 +59,10 @@ ollama-clean:
 	fi
 
 # Nettoyage complet de Docker.
-fclean:
+fclean: clean
 	docker system prune -af
 
-ffclean:
-	fclean
-	ollama-clean
+ffclean: fclean ollama-clean
 
 # Reconstruction complète du projet.
 re: fclean up

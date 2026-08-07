@@ -59,11 +59,14 @@ services:
 
   ollama:
     container_name: ollama
-    image: ollama/ollama
+    image: ollama/ollama:latest
+    environment:
+      - OLLAMA_NUM_PARALLEL=1
+      - OLLAMA_MAX_LOADED_MODELS=1
+      - OLLAMA_KEEP_ALIVE=30m
+      - OLLAMA_FLASH_ATTENTION=1
     volumes:
       - ${OLLAMA_DATA_DIR}:/root/.ollama
-    ports:
-      - "11434:11434"
     networks:
       - transcendence
     restart: unless-stopped

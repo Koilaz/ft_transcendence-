@@ -22,6 +22,51 @@ import {
   type SentFriendRequestItem,
   type User,
 } from '../services/api';
+import { connectPresenceSocket } from '../services/presenceSocket';
+
+function updateUserPresence(
+  user: PublicUser,
+  userId: number,
+  isOnline: boolean,
+  lastSeenAt: string | null,
+): PublicUser {
+  if (user.id !== userId) {
+    return user;
+  }
+
+  return {
+    ...user,
+    isOnline,
+    lastSeenAt,
+  };
+}
+
+function formatLastSeen(lastSeenAt: string | null): string {
+  if (!lastSeenAt) {
+    return 'Offline';
+  }
+
+  const date = new Date(lastSeenAt);
+
+  if (Number.isNaN(date.getTime())) {
+    return 'Offline';
+  }
+
+  return `Offline · last seen ${date.toLocaleString('fr-FR', {
+    day: '2-digit',
+    month: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  })}`;
+}
+
+function getPresenceText(user: PublicUser): string {
+  if (user.isOnline) {
+    return 'Online';
+  }
+
+  return formatLastSeen(user.lastSeenAt);
+}
 
 export function Friends() {
   const navigate = useNavigate();
@@ -92,6 +137,71 @@ export function Friends() {
 
     return () => window.clearTimeout(timer);
   }, [loadFriendsPage]);
+
+  useEffect(() => {
+    const accessToken = localStorage.getItem('accessToken');
+
+    if (!accessToken) {
+      return;
+    }
+
+    const socket = connectPresenceSocket(accessToken, (message) => {
+      if (message.type !== 'presence:update') {
+        return;
+      }
+
+      setUsers((currentUsers) =>
+        currentUsers.map((user) =>
+          updateUserPresence(
+            user,
+            message.userId,
+            message.isOnline,
+            message.lastSeenAt,
+          ),
+        ),
+      );
+
+      setFriends((currentFriends) =>
+        currentFriends.map((friendship) => ({
+          ...friendship,
+          friend: updateUserPresence(
+            friendship.friend,
+            message.userId,
+            message.isOnline,
+            message.lastSeenAt,
+          ),
+        })),
+      );
+
+      setRequests((currentRequests) =>
+        currentRequests.map((request) => ({
+          ...request,
+          requester: updateUserPresence(
+            request.requester,
+            message.userId,
+            message.isOnline,
+            message.lastSeenAt,
+          ),
+        })),
+      );
+
+      setSentRequests((currentSentRequests) =>
+        currentSentRequests.map((request) => ({
+          ...request,
+          receiver: updateUserPresence(
+            request.receiver,
+            message.userId,
+            message.isOnline,
+            message.lastSeenAt,
+          ),
+        })),
+      );
+    });
+
+    return () => {
+      socket.close(1000, 'Leaving friends page');
+    };
+  }, []);
 
   const friendIds = useMemo(() => {
     return new Set(
@@ -335,8 +445,22 @@ export function Friends() {
                         {friendship.friend.username}
                       </p>
 
-                      <p className="text-xs text-slate-500">
-                        Friend
+                      <p
+                        className={`flex items-center gap-2 text-xs ${
+                          friendship.friend.isOnline
+                            ? 'text-emerald-300'
+                            : 'text-slate-500'
+                        }`}
+                      >
+                        <span
+                          className={`h-2 w-2 rounded-full ${
+                            friendship.friend.isOnline
+                              ? 'bg-emerald-400'
+                              : 'bg-slate-600'
+                          }`}
+                        />
+
+                        {getPresenceText(friendship.friend)}
                       </p>
                     </div>
                   </div>

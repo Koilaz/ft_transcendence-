@@ -17,9 +17,7 @@ export function findOrCreateRoom() {
 	}
 	const newRoom = new Room(nextRoomId++);
 	rooms.set(newRoom.id, newRoom);
-
-	for (let i = 0; i < gameConfig.botPerRoom; i++)
-		newRoom.addBot();
+	newRoom.addBots();
 	return newRoom;
 }
 
@@ -58,11 +56,27 @@ class Room
 		return player;
 	}
 
-	addBot(agentName = 'mistral')
+	addBot(agentName = 'mistral_medium')
 	{
 		const botId = `bot-${this.id}-${this.players.size}`;
 		const sendFn = createBotSendFn(this, botId, agentName);
 		this.addPlayer(botId, sendFn, { isAI: true, agentName });
+	}
+
+	//Peuple la room a partir de gameConfig.bots. On s'arrete si la room est
+	//pleine : sinon une liste trop longue remplirait la room de bots, findOrCreateRoom
+	//la verrait pleine et en creerait une autre a chaque joueur qui arrive.
+	addBots(agentNames = gameConfig.bots)
+	{
+		for (const agentName of agentNames)
+		{
+			if (this.isFull())
+			{
+				console.warn(`[room ${this.id}] room pleine : bot ${agentName} ignore`);
+				break;
+			}
+			this.addBot(agentName);
+		}
 	}
 
 	removePlayer(playerId)

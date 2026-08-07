@@ -5,6 +5,7 @@ import Login from '../pages/Login';
 import Register from '../pages/Register';
 import Profile from '../pages/Profile';
 import { Friends } from '../pages/Friends';
+import Game from '../pages/Game';
 
 export default function AppRouter() {
   return (
@@ -19,6 +20,8 @@ export default function AppRouter() {
         <Route path="/profile" element={<Profile />} />
 
         <Route path="/friends" element={<Friends />} />
+
+        <Route path="/game" element={<Game />} />
       </Routes>
     </BrowserRouter>
   );

@@ -31,7 +31,7 @@ ne mets aucun accent sur les lettres car tu as un clavier US`;
 
 const SYSTEM_PROMPT =
 `tu es un joueur humain normal,
-réponds par UN SEUL message court, 1 à 15 mots.
+réponds par UN SEUL message court de 10 mots maximum, jamais plus.
 évite les majuscules, ponctuation minimale, pas de markdown, pas de guillemets, pas de préfixe de nom.`;
 
 export function buildSystemPrompt()

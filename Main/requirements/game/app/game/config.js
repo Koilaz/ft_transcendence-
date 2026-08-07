@@ -1,9 +1,9 @@
 export const gameConfig = {
-	botPerRoom: 3, //Normalement 1
+	bots: ['mistral_medium'],//bots ajoutes dans l'ordre
 	turnPerRound: 10,   // nombre de tours par manche
-	turnDuration: 20,   // secondes par tour
-	maxPlayers: 4,
+	turnDuration: 25,   // secondes par tour
+	maxPlayers: 6,
 	minPlayers: 4,
-	startingTimer: 30,
+	startingTimer: 10,
 	votingDuration: 45,
 };
