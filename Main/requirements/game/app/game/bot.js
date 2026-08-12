@@ -32,7 +32,7 @@ export function createBotSendFn(room, botId, agentName)
 			return;
 		if (isDead)
 			return;// disjoncteur ouvert : plus aucun appel a l'agent
-		const maxDelayMs = Math.max(BOT_MIN_DELAY, msg.countdown * 1000) + 1500; //+1500 pour que parfois le bot ne reponde pas du tout si il depasse le delais.
+		const maxDelayMs = Math.max(BOT_MIN_DELAY, msg.countdown * 1000); //1000 pour que parfois le bot ne reponde pas du tout si il depasse le delais.
 		const targetDelayMs = randomInt(BOT_MIN_DELAY, maxDelayMs);
 		try
 		{
@@ -44,9 +44,24 @@ export function createBotSendFn(room, botId, agentName)
 				return;// l'API a échoué : le bot restera muet ce tour si le disjoncteur ne s'active pas
 			}
 			consecutiveFailures = 0;
-			const remaining = targetDelayMs - (Date.now() - start);
+			const genMs = Date.now() - start;
+			const remaining = targetDelayMs - genMs;
 			if (remaining > 0)
 				await sleep(remaining);
+
+			//#TMP a supprimer : pourquoi un bot reste muet alors que l'agent a
+			//bien repondu. room.addMessage jette le message sans rien dire si le
+			//tour est deja passe (canSpeak faux), et ce cas ne compte pas comme
+			//un echec : le bot parait muet sans qu'aucune ligne ne l'explique.
+			const round = room.currentRound;
+			const aLaParole = round?.status === 'chatting' && round.canSpeak(botId);
+			console.log(`[#TMP bot] ${botId} (${agentName})`
+				+ ` gen=${genMs}ms attente=${Math.max(0, remaining)}ms total=${Date.now() - start}ms`
+				+ ` budget=${msg.countdown}s`
+				+ ` | round=${round?.status ?? 'aucun'}`
+				+ ` | ${aLaParole ? 'ENVOI' : 'JETE (le tour est deja passe)'}`
+				+ ` | "${reply}"`);
+
 			room.addMessage(botId, reply);
 		}
 		catch (err)
@@ -82,7 +97,9 @@ function add_context(room, botId)
 	shared.push(`Nous sommes au round ${round_number}.`);
 
 	const perBot = [];
-	perBot.push(`le nom de ton personnage lors de cette manche est ${character}. c'est uniquement le nom par lequel les autres joueurs t'apelle
+	perBot.push(`le nom de ton personnage lors de cette manche est ${character}.
+		 c'est uniquement le nom par lequel les autres joueurs t'apelle,
+		 reponds en particulier au message qui semble s'adresser a ce personage
 		 ca ne definis pas qui tu es vraiment, ni ta personalite`);
 	perBot.push(`Nous sommes le ${date}, il est ${time}.`);
 

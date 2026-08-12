@@ -161,6 +161,18 @@ class Room
 		const round = new Round([...this.players.values()], (msg) => this.broadcast(msg), (text) => this.addSystemMessage(text));
 		this.currentRound = round;
 		this.rounds.push(round);
+
+		//#TMP a supprimer : qui se cache derriere quel personnage a ce round.
+		//Les personnages sont tires au sort dans le constructeur de Round, donc
+		//c'est lisible des maintenant, avant le premier tour.
+		console.log(`----- [room ${this.id}] round ${this.roundNumber} : attributions -----`);
+		for (const playerId of round.turnOrder)
+		{
+			const player = this.players.get(playerId);
+			console.log(`  ${round.caracterOf(playerId).padEnd(22)} = ${playerId} (${player.agentName ?? 'humain'})`);
+		}
+		console.log('--------------------------------------------------');
+
 		round.start();
 		return round;
 	}

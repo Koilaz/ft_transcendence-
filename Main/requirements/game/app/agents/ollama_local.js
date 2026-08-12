@@ -1,5 +1,5 @@
 import { gameConfig } from '../game/config.js';
-import { buildSystemPrompt } from './prompt.js';
+import { buildSystemPrompt } from './prompt_easy.js';
 
 const OLLAMA_URL = process.env.OLLAMA_URL ?? 'http://ollama:11434';
 const OLLAMA_MODEL = process.env.OLLAMA_MODEL ?? 'mistral:7b';
@@ -18,10 +18,6 @@ const OLLAMA_OPTIONS =
 	//environ 2 tokens par mot, donc 40 laisse le modele finir sa phrase au lieu
 	//d'etre coupe net au milieu.
 	num_predict: 40,
-	//4096 et pas 2048 : a 10 tours par manche le transcript depasse 2048 vers le
-	//8e tour, et llama-server tourne avec --context-shift --keep 4. Au
-	//depassement il jetterait tout sauf les 4 premiers tokens : le prompt
-	//systeme partirait avec, et le prefixe en cache avec lui.
 	num_ctx: 4096,
 	stop: ['\n'],
 };
@@ -80,12 +76,12 @@ export const mistral_7B_local =
 		let instruction;
 		if (!history || history.length === 0)
 		{
-			instruction = `La conversation n'a pas encore commence. Envoie le premier message pour lancer la discussion, sans le nom du personnage, en 10 mots maximum, sans accent ni majuscule`;
+			instruction = `La conversation n'a pas encore commence. Envoie le premier message pour lancer la discussion, sans le nom du personnage, en 1 a 7 mots maximum, sans accent ni majuscule`;
 		}
 		else
 		{
 			transcript = history.map((m) => `${m.sender}: ${m.text}`).join('\n');
-			instruction = `Donne uniquement la prochaine reponse de cette conversation, sans le nom du personnage, en 10 mots maximum, sans accent ni majuscule`;
+			instruction = `Donne uniquement la prochaine reponse de cette conversation, sans le nom du personnage, en 3 a 8 mots, sans accent ni majuscule`;
 		}
 
 		const userMessage = [shared, transcript, perBot, instruction]
@@ -97,6 +93,14 @@ export const mistral_7B_local =
 			{ role: 'system', content: SYSTEM_PROMPT },
 			{ role: 'user', content: userMessage },
 		];
+
+		//#TMP a supprimer : prompt complet envoye a ollama
+		console.log('----- [ollama] system -----');
+		console.log(SYSTEM_PROMPT);
+		console.log('----- [ollama] user -----');
+		console.log(userMessage);
+		console.log('-------------------------');
+
 		return ask(messages);
 	},
 };

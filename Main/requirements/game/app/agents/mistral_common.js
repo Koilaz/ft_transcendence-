@@ -138,19 +138,23 @@ async function checkMistralModel(model)
 }
 
 //Les agents disponibles : seuls le nom et le modele changent.
-export const mistralAgent = createMistralAgent(
+//Le nom de l'export est identique au champ name, qui sert de cle dans le
+//registre d'agents et dans gameConfig.bots : un seul nom a retenir, et une
+//faute de frappe devient une erreur d'import au lieu d'un agent introuvable
+//au milieu d'une partie.
+export const mistral_medium = createMistralAgent(
 {
 	name: 'mistral_medium',
 	model: 'mistral-medium-3.5',
 });
 
-export const mistralBigAgent = createMistralAgent(
+export const mistral_big = createMistralAgent(
 {
 	name: 'mistral_big',
 	model: 'mistral-large-latest',
 });
 
-export const mistralSmallAgent = createMistralAgent(
+export const mistral_small = createMistralAgent(
 {
 	name: 'mistral_small',
 	model: 'mistral-small-latest',
