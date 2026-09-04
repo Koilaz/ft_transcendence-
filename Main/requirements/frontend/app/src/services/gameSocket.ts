@@ -22,6 +22,7 @@ export type GameTurnMessage = {
   turnOrder: string[];
   turnCycle: number;
   countdown: number;
+  totalTurns: number;
 };
 
 export type GameChatMessage = {
@@ -40,6 +41,37 @@ export type GameSilenceMessage = {
   character: string;
 };
 
+export type GameVoteRegisteredMessage = {
+  type: 'voteRegistered';
+};
+
+export type RoundResult = {
+  playerId: string;
+  character: string;
+  target: string | null;
+  score: number;
+  isCorrect: boolean;
+  isAI: boolean;
+};
+
+export type GameRoundEndMessage = {
+  type: 'roundEnd';
+  aiCharacter: string;
+  results: RoundResult[];
+};
+
+export type FinalRank = {
+  playerId: string;
+  score: number;
+  isAI?: boolean;
+};
+
+export type GameGameEndMessage = {
+  type: 'gameEnd';
+  ranking: FinalRank[];
+  winnerId: string;
+};
+
 export type GameMessage =
   | GameStateMessage
   | GameAssignmentMessage
@@ -47,11 +79,24 @@ export type GameMessage =
   | GameTurnMessage
   | GameChatMessage
   | GameRoundStateMessage
+  | GameVoteRegisteredMessage // ajout
+  | GameRoundEndMessage
+  | GameGameEndMessage
   | GameSilenceMessage;
 
 export type GameMessageHandler = (
   message: GameMessage,
 ) => void;
+
+export type GameVoteOutgoingMessage = {
+  type: 'vote';
+  targetCharacter: string;
+};
+
+export function sendVoteMessage(socket: WebSocket, targetCharacter: string): void {
+  const message: GameVoteOutgoingMessage = { type: 'vote', targetCharacter };
+  socket.send(JSON.stringify(message));
+}
 
 function getGameWebSocketUrl(): string {
   const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
@@ -75,7 +120,10 @@ export function connectGameSocket(
         message.type !== 'turn' &&
         message.type !== 'chat' &&
         message.type !== 'roundState' &&
-        message.type !== 'silence'
+        message.type !== 'silence' &&
+        message.type !== 'voteRegistered' && 
+        message.type !== 'roundEnd' &&
+        message.type !== 'gameEnd'
       ) {
         return;
       }

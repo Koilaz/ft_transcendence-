@@ -40,12 +40,23 @@ wss.on('connection', (socket) =>
 			console.error('message non-JSON ignoré:', error.message);
 			return;
 		}
-		if (msg.type !== 'chat')
+		if (msg.type === 'chat')
 		{
-			console.log('not a chat message') //temporaire #tmp
-			return
+			socket.room.addMessage(socket.playerId, msg.text);
 		}
-		socket.room.addMessage(socket.playerId, msg.text)
+		/* Ajoute systeme de vote */
+		else if (msg.type === 'vote')
+		{
+			if (msg.targetCharacter)
+			{
+				socket.room.submitVote(socket.playerId, msg.targetCharacter);
+				console.log(`[vote] ${socket.playerId} a voté pour ${msg.targetCharacter}`);
+			}
+		}
+		else
+		{
+			console.log(`[ws] type de message non géré : ${msg.type}`);
+		}
 	});
 
 	//3. départ
