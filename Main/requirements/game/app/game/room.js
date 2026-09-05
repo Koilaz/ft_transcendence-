@@ -10,11 +10,13 @@ let nextRoomId = 1;
 
 //Cree une room peuplee de ses bots et l'enregistre. Elle recoit ensuite son
 //effectif humain definitif en une fois, depuis queue.js
-export function createRoom()
+//agentNames permet a la file de n'injecter que les bots reellement
+//exploitables. Omis, on retombe sur gameConfig.bots.
+export function createRoom(agentNames)
 {
 	const room = new Room(nextRoomId++);
 	rooms.set(room.id, room);
-	room.addBots();
+	room.addBots(agentNames);
 	return room;
 }
 
