@@ -1,7 +1,7 @@
 //Tout ce que les agents Mistral partagent : endpoint, cle, prompt, appel, logs.
 //Les fichiers mistral_*.js ne declarent plus que leur nom et leur modele.
 
-import { buildSystemPrompt } from './prompt.js';
+import { buildSystemPrompt, buildUserPrompt } from './prompt.js';
 
 const MISTRAL_API_URL = 'https://api.mistral.ai/v1';
 const apiKey = process.env.MISTRAL_API_KEY;
@@ -35,20 +35,9 @@ function buildMessages(history, { shared = '', perBot = '' })
 {
 	const additionalContext = [shared, perBot].filter(Boolean).join('\n');
 
-	let userMessage;
-	if (!history || history.length === 0)
-	{
-		userMessage = `La conversation n'a pas encore commence. Envoie le premier message pour lancer la discussion, sans le nom du personnage`;
-	}
-	else
-	{
-		const transcript = history.map((m) => `${m.sender}: ${m.text}`).join('\n');
-		userMessage = `${transcript}\n\nDonne uniquement la prochaine reponse de cette conversation, sans le nom du personnage`;
-	}
-
 	return [
 		{ role: 'system', content: `${SYSTEM_PROMPT}\n${additionalContext}` },
-		{ role: 'user', content: userMessage },
+		{ role: 'user', content: buildUserPrompt(history) },
 	];
 }
 

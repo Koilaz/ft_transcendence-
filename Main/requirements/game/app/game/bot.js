@@ -1,4 +1,6 @@
 import { generateReply } from '../agents/index.js';
+import { buildContextPrompt } from '../agents/prompt.js';
+import { postTreatment } from './typos.js';
 
 const BOT_MIN_DELAY = 2000; // delais minimal de reponse du bot
 const MAX_CONSECUTIVE_FAILURES = 3; // au-dela, l'agent est considere mort et on arrete de l'appeler
@@ -37,13 +39,14 @@ export function createBotSendFn(room, botId, agentName)
 		try
 		{
 			const start = Date.now();
-			const reply = await generateReply(room.history, agentName, add_context(room, botId));
-			if (!reply)
+			const rawReply = await generateReply(room.history, agentName, buildContextPrompt(room, botId));
+			if (!rawReply)
 			{
 				onFailure('reponse vide');
 				return;// l'API a échoué : le bot restera muet ce tour si le disjoncteur ne s'active pas
 			}
 			consecutiveFailures = 0;
+			const reply = postTreatment(rawReply);// fautes de frappe : le bot doit passer pour un humain
 			const genMs = Date.now() - start;
 			const remaining = targetDelayMs - genMs;
 			if (remaining > 0)
@@ -61,7 +64,7 @@ export function createBotSendFn(room, botId, agentName)
 				+ ` | round=${round?.status ?? 'aucun'}`
 				+ ` | ${aLaParole ? 'ENVOI' : 'JETE (le tour est deja passe)'}`
 				+ ` | "${reply}"`);
-
+			/**/
 			room.addMessage(botId, reply);
 		}
 		catch (err)
@@ -72,38 +75,6 @@ export function createBotSendFn(room, botId, agentName)
 				onFailure(err.message);
 		}
 	};
-}
-
-//Le contexte est coupe en deux pour le KV cache d'ollama (voir
-//agents/ollama_local.js) : `shared` est identique pour tous les bots de la
-//manche et se place avant le transcript, `perBot` change a chaque appel
-//(personnage, heure) et se place apres. Les agents distants, eux, recollent
-//simplement les deux.
-function add_context(room, botId)
-{
-	const character = room.currentRound.caracterOf(botId);
-	const round_number = room.roundNumber;
-	const playersNumber = room.numberOfPlayer;
-	const charactersInTheTurn = room.currentRound.publicTurnOrder();
-	const now = new Date();
-	const date = now.toLocaleDateString('fr-FR', { timeZone: 'Europe/Paris' });
-	const time = now.toLocaleTimeString('fr-FR', { timeZone: 'Europe/Paris' });
-
-	const shared = [];
-	shared.push(`il y'a ${playersNumber} joueur dans cette partie.`);
-	shared.push(`les personnages de cette manche sont : ${charactersInTheTurn.join(', ')}
-	c'est uniquement le nom par lequel les autres joueurs sont designe aleatoirement.
-	tu peux l'utiliser pour t'adresser a eux`);
-	shared.push(`Nous sommes au round ${round_number}.`);
-
-	const perBot = [];
-	perBot.push(`le nom de ton personnage lors de cette manche est ${character}.
-		 c'est uniquement le nom par lequel les autres joueurs t'apelle,
-		 reponds en particulier au message qui semble s'adresser a ce personage
-		 ca ne definis pas qui tu es vraiment, ni ta personalite`);
-	perBot.push(`Nous sommes le ${date}, il est ${time}.`);
-
-	return { shared: shared.join('\n'), perBot: perBot.join('\n') };
 }
 
 function sleep(ms)
