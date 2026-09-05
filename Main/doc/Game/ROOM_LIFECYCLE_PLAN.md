@@ -115,7 +115,7 @@ Un commit, une intention. Chaque étape est testable indépendamment.
 | 1 | `destroy()` + registre | O1 + O2 du TODO. Ordre strict : broadcast -> clearInterval (room puis round) -> retrait de la Map. Corrige B1 et B3. | **fait** (`eb55021`) |
 | 2 | Retrait propre du Round | O4 + piège 2. Approche retenue : **marquer plutôt que retirer**. `turnOrder`, `playerById` et `assignments` restent intacts ; un `Set leftPlayers` décide qui joue. Corrige B6, rend B4 et B5 sans objet. | **fait** |
 | 3 | Notification au front | `playerDisconnected` par **nom de personnage**, jamais par `playerId`. | à faire |
-| 4 | Quorum de continuation | `minPlayersToContinue` (A4). Sous le seuil : `destroy('not_enough_players')`. | à faire |
+| 4 | Quorum de continuation | `minPlayersToContinue` (A4), appliqué aux seuls statuts `playing` et `scoreboard`. Sous le seuil : `destroy('not_enough_players')`. Corrige B2. | **fait** |
 | 5 | Rooms orphelines | O5. Attention : `players.size === 0` n'arrive jamais, le bot ne se déconnecte pas. | à faire |
 | 6 | État « fermée » | O3. Une partie lancée n'accepte plus personne. | à faire |
 | 7 | File d'attente | Remplace `findOrCreateRoom` (A6). Permet le retour au lobby en fin de partie. | à faire |
@@ -132,7 +132,7 @@ Relevés à la lecture, en plus des pièges du TODO.
 | # | Où | Problème | Étape |
 |---|---|---|---|
 | B1 | `room.js` `endGame()` | Ne détruisait pas la room. Une partie terminée pouvait recevoir un nouveau joueur. | **fait** |
-| B2 | `room.js` `removePlayer()` | Remet le statut à `waiting` pendant un scoreboard : `timerId` sert à deux usages. | 4 |
+| B2 | `room.js` `removePlayer()` | Remettait le statut à `waiting` pendant un scoreboard : le test portait sur `timerId`, qui sert à deux usages. Le statut est désormais testé aussi. | **fait** |
 | B3 | `room.js` `numberOfPlayer` | Champ maintenu à la main, décrémenté même pour un joueur absent. | **fait** |
 | B4 | `round.js` `endRound()` | `players.find(p => p.agentName)` déréférencé sans garde. **Sans objet** : `this.players` n'est jamais modifié, chaque room reçoit un bot à sa création, et un bot ne se déconnecte jamais. | — |
 | B5 | `round.js` `startTurn()` | `playerById.get()` déréférencé sans garde. **Sans objet** depuis l'étape 2 : `playerById` et `turnOrder` ne sont jamais modifiés, donc la recherche aboutit toujours. C'est l'avantage principal de « marquer plutôt que retirer ». | — |
@@ -153,7 +153,7 @@ alourdit la lecture et laisse croire que le cas peut survenir.
 ```js
 // game/config.js
 roomCloseDelayMs: 10000,    // ms : lecture du classement avant destruction  [fait]
-minPlayersToContinue: 3,    // quorum de continuation (A4)                   [etape 4]
+minPlayersToContinue: 3,    // quorum de continuation (A4)                   [fait]
 ```
 
 ---

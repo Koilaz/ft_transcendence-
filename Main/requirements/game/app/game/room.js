@@ -106,14 +106,26 @@ class Room
 		if (this.currentRound)
 			this.currentRound.removePlayer(playerId);
 
-		if(this.timerId && this.players.size < this.minPlayers)
+		//B2 : ce test portait sur timerId seul, or timerId sert a la fois au
+		//compte a rebours de demarrage et a celui du scoreboard. Un depart
+		//pendant un scoreboard renvoyait donc la room en attente au beau milieu
+		//d'une partie. On teste desormais aussi le statut.
+		if (this.status === 'waiting' && this.timerId && this.players.size < this.minPlayers)
 		{
 			clearInterval(this.timerId);
 			this.timerId = null;
 			this.countdown = null;
-			this.setStatus('waiting');
-			return;
 		}
+
+		//A4 : minPlayers est un seuil de DEMARRAGE, minPlayersToContinue un
+		//seuil de CONTINUATION. Le quorum ne vaut que pour une partie en cours :
+		//avant le lancement la room attend simplement d'autres joueurs, et une
+		//fois endGame atteint sa fermeture est deja programmee avec le bon
+		//motif (game_finished), qu'il ne faut pas devancer.
+		if ((this.status === 'playing' || this.status === 'scoreboard')
+			&& this.players.size < gameConfig.minPlayersToContinue)
+			return this.destroy('not_enough_players');
+
 		this.broadcastState();
 	}
 
