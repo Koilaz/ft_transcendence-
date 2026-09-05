@@ -113,7 +113,7 @@ Un commit, une intention. Chaque étape est testable indépendamment.
 | # | Étape | Contenu | État |
 |---|---|---|---|
 | 1 | `destroy()` + registre | O1 + O2 du TODO. Ordre strict : broadcast -> clearInterval (room puis round) -> retrait de la Map. Corrige B1 et B3. | **fait** (`eb55021`) |
-| 2 | Retrait propre du Round | O4 + piège 2 : un joueur qui part doit disparaître de `turnOrder`, `playerById`, `assignments`, `humanPlayers`, `expectedVotes`, `currentPlayer`. Corrige B4, B5, B6. | à faire |
+| 2 | Retrait propre du Round | O4 + piège 2. Approche retenue : **marquer plutôt que retirer**. `turnOrder`, `playerById` et `assignments` restent intacts ; un `Set leftPlayers` décide qui joue. Corrige B6, rend B4 et B5 sans objet. | **fait** |
 | 3 | Notification au front | `playerDisconnected` par **nom de personnage**, jamais par `playerId`. | à faire |
 | 4 | Quorum de continuation | `minPlayersToContinue` (A4). Sous le seuil : `destroy('not_enough_players')`. | à faire |
 | 5 | Rooms orphelines | O5. Attention : `players.size === 0` n'arrive jamais, le bot ne se déconnecte pas. | à faire |
@@ -134,14 +134,17 @@ Relevés à la lecture, en plus des pièges du TODO.
 | B1 | `room.js` `endGame()` | Ne détruisait pas la room. Une partie terminée pouvait recevoir un nouveau joueur. | **fait** |
 | B2 | `room.js` `removePlayer()` | Remet le statut à `waiting` pendant un scoreboard : `timerId` sert à deux usages. | 4 |
 | B3 | `room.js` `numberOfPlayer` | Champ maintenu à la main, décrémenté même pour un joueur absent. | **fait** |
-| B4 | `round.js` `endRound()` | `players.find(p => p.agentName)` déréférencé sans garde -> crash du process. | 2 |
-| B5 | `round.js` `startTurn()` | `playerById.get()` déréférencé sans garde. Inoffensif aujourd'hui, devient un crash dès qu'on retire un joueur du Round. | 2 |
-| B6 | `round.js` constructeur | `humanPlayers` et `expectedVotes` figés à la construction. | 2 |
+| B4 | `round.js` `endRound()` | `players.find(p => p.agentName)` déréférencé sans garde. **Sans objet** : `this.players` n'est jamais modifié, chaque room reçoit un bot à sa création, et un bot ne se déconnecte jamais. | — |
+| B5 | `round.js` `startTurn()` | `playerById.get()` déréférencé sans garde. **Sans objet** depuis l'étape 2 : `playerById` et `turnOrder` ne sont jamais modifiés, donc la recherche aboutit toujours. C'est l'avantage principal de « marquer plutôt que retirer ». | — |
+| B6 | `round.js` constructeur | `humanPlayers` et `expectedVotes` figés à la construction : un joueur parti restait compté dans les scores. | **fait** |
 | B7 | `main.tsx` `<StrictMode>` | Double-monte les effets en dev : la socket est ouverte, fermée, rouverte. Produit de fausses déconnexions en développement. | — |
 | B8 | `room.js` `endGame()`, `round.js` `endRound()` | Diffusent les `playerId` à tous les joueurs, contre la règle n°1 du TODO. Cosmétique aujourd'hui (`joueur-3`), mais interdit toute idée de rendre `player.id` secret. | 8 |
 | B9 | `player.js` | `this.isAI = false` ignore le paramètre reçu ; rien ne lit ce champ, tout le code teste `agentName`. Champ mort et faux. | — |
 
-**B5 est celui qui fera perdre du temps à l'étape 2 si on ne l'a pas en tête.**
+**Principe retenu : on ne code pas de garde contre un état impossible.** B4 et
+B5 le sont devenus grâce au choix de conception de l'étape 2, pas grâce à des
+`if` défensifs. Une garde sur un cas inatteignable est du code mort : elle
+alourdit la lecture et laisse croire que le cas peut survenir.
 
 ---
 

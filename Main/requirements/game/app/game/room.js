@@ -99,6 +99,13 @@ class Room
 	removePlayer(playerId)
 	{
 		this.players.delete(playerId);
+
+		//O4 : le Round garde ses propres copies des joueurs (piege 2 du TODO).
+		//Sans cet appel, le tour du joueur parti arriverait quand meme et le
+		//serveur enverrait `yourTurn` dans le vide.
+		if (this.currentRound)
+			this.currentRound.removePlayer(playerId);
+
 		if(this.timerId && this.players.size < this.minPlayers)
 		{
 			clearInterval(this.timerId);
