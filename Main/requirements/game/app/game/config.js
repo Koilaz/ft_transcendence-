@@ -7,6 +7,7 @@ export const gameConfig = {
 	startingTimer: 10,
 	maxRounds: 2, // nombre de manche
 	scoreboardDuration: 10,
+	roomCloseDelayMs: 10000, // ms : lecture du classement avant destruction
 };
 /*
 available bots (cles du registre dans agents/index.js) :
