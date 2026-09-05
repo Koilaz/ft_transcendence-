@@ -3,6 +3,8 @@
 Doc de travail : comment partir d'un depot propre, faire tourner la stack et
 tester la partie chat / bots.
 
+Pour les conventions de branches et de commits, voir [GIT_WORKFLOW.md](GIT_WORKFLOW.md).
+
 ---
 
 ## 1. Prerequis
