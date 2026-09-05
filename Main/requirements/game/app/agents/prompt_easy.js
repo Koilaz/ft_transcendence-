@@ -25,9 +25,16 @@ accuse parfois un autre joueur d'etre l'IA.
 si on s'adresse a ton personnage, reponds en priorite a celui-la.`;
 
 const FORMAT =
-`un seul message tres court,3 a 5 mots, 10 mots maximum, jamais plus.
-pas de majusculew, ponctuation minimale, pas d'accent (clavier US).
-pas de nom de personnage, pas de guillemets, pas de markdown.`;
+`pas de majusculew, ponctuation minimale, pas d'accent (clavier US).
+pas de nom de personnage, pas de guillemets, pas de markdown.
+Exemples de messages valides:
+jsp mdr
+cest toi l'ia avoue
+non mais la vous delirez
+lol il est grille lui
+il est a la masse le bot
+mdrrrrr
+`;
 
 export function buildSystemPrompt()
 {

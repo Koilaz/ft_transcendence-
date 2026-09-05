@@ -34,6 +34,15 @@ const SYSTEM_PROMPT =
 réponds par UN SEUL message court de 10 mots maximum, jamais plus.
 évite les majuscules, ponctuation minimale, pas de markdown, pas de guillemets, pas de préfixe de nom.`;
 
+//Consignes du message user. Elles ne dependent que de l'etat de la
+//conversation, mais elles restent ici pour que tout le texte envoye au modele
+//se modifie au meme endroit.
+const OPENING =
+`La conversation n'a pas encore commence. Envoie le premier message pour lancer la discussion, sans le nom du personnage`;
+
+const NEXT_REPLY =
+`Donne uniquement la prochaine reponse de cette conversation, sans le nom du personnage`;
+
 export function buildSystemPrompt()
 {
 	return (
@@ -52,4 +61,47 @@ ${TACTICS}
 Consignes de réponse:
 ${SYSTEM_PROMPT}`
 	);
+}
+
+//Le transcript precede la consigne : le modele lit d'abord la conversation,
+//puis ce qu'on attend de lui.
+export function buildUserPrompt(history)
+{
+	if (!history || history.length === 0)
+		return OPENING;
+
+	const transcript = history.map((m) => `${m.sender}: ${m.text}`).join('\n');
+	return `${transcript}\n\n${NEXT_REPLY}`;
+}
+
+//Contexte de la partie, coupe en deux pour le KV cache d'ollama (voir
+//agents/ollama_local.js) : `shared` est identique pour tous les bots de la
+//manche et se place avant le transcript, `perBot` change a chaque appel
+//(personnage, heure) et se place apres. Les agents distants, eux, recollent
+//simplement les deux.
+export function buildContextPrompt(room, botId)
+{
+	const character = room.currentRound.caracterOf(botId);
+	const round_number = room.roundNumber;
+	const playersNumber = room.numberOfPlayer;
+	const charactersInTheTurn = room.currentRound.publicTurnOrder();
+	const now = new Date();
+	const date = now.toLocaleDateString('fr-FR', { timeZone: 'Europe/Paris' });
+	const time = now.toLocaleTimeString('fr-FR', { timeZone: 'Europe/Paris' });
+
+	const shared = [];
+	shared.push(`il y'a ${playersNumber} joueur dans cette partie.`);
+	shared.push(`les personnages de cette manche sont : ${charactersInTheTurn.join(', ')}
+	c'est uniquement le nom par lequel les autres joueurs sont designe aleatoirement.
+	tu peux l'utiliser pour t'adresser a eux`);
+	shared.push(`Nous sommes au round ${round_number}.`);
+
+	const perBot = [];
+	perBot.push(`le nom de ton personnage lors de cette manche est ${character}.
+		 c'est uniquement le nom par lequel les autres joueurs t'apelle,
+		 reponds en particulier au message qui semble s'adresser a ce personage
+		 ca ne definis pas qui tu es vraiment, ni ta personalite`);
+	perBot.push(`Nous sommes le ${date}, il est ${time}.`);
+
+	return { shared: shared.join('\n'), perBot: perBot.join('\n') };
 }
