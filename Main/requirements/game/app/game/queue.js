@@ -4,12 +4,6 @@ import { createRoom } from './room.js';
 //File d'attente unique. Les joueurs y patientent jusqu'a ce qu'un groupe
 //complet puisse etre forme, puis la room nait avec son effectif definitif.
 //
-//Pourquoi une file plutot que l'ancien remplissage sequentiel : findOrCreateRoom
-//remplissait les rooms dans l'ordre d'arrivee, donc quatre amis qui lancaient
-//une partie ensemble atterrissaient dans la meme. L'architecture garantissait
-//le scenario que le jeu doit eviter. C'est ici, dans le choix du groupe, que se
-//brancheront les regles anti-affinite.
-//
 //Le lobby ne diffuse qu'un compteur : aucune information sur les autres
 //joueurs, aucune communication possible avant le debut de la partie.
 const waiting = new Map(); // playerId -> { sendFn, onRoomJoined, displayName }
@@ -18,7 +12,7 @@ let countdown = null;
 
 //Calcule a l'appel et non au chargement du module : gameConfig est ajuste
 //souvent, et les tests le modifient.
-//Les bots comptent dans minPlayers et maxPlayers (piege 1 du doc de passation),
+//Les bots comptent dans minPlayers et maxPlayers
 //il faut donc les soustraire pour obtenir le nombre d'humains attendus.
 function humansNeeded()
 {
