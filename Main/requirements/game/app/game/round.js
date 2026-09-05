@@ -259,4 +259,15 @@ export class Round {
 	{
 		return this.turnOrder.map((id) => this.caracterOf(id));
 	}
+
+	//Arret net de la manche, appele par Room.destroy. On coupe le chrono et
+	//rien d'autre : il n'y a pas de fin de manche a jouer quand la room ferme.
+	stop()
+	{
+		if (this.turnTimerId)
+		{
+			clearInterval(this.turnTimerId);
+			this.turnTimerId = null;
+		}
+	}
 }

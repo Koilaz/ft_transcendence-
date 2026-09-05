@@ -21,6 +21,23 @@ export function findOrCreateRoom() {
 	return newRoom;
 }
 
+//O2 : la Map rooms est privee au module. Seule porte d'entree pour le code
+//exterieur (server.js, tests) qui doit pouvoir fermer une room.
+export function deleteRoom(roomId, reason = 'game_finished')
+{
+	const room = rooms.get(roomId);
+	if (!room)
+		return false;
+	room.destroy(reason);
+	return true;
+}
+
+//Nombre de rooms vivantes. Sert a verifier qu'aucune ne fuit apres une partie.
+export function roomCount()
+{
+	return rooms.size;
+}
+
 class Room
 {
 	constructor(id)
@@ -38,13 +55,13 @@ class Room
 		this.countdown = null;
 		this.timerId = null;
 		this.status = "waiting";//(waiting, chating, voting, shuffeling, endGame)
-		this.numberOfPlayer = 0;
+		this.destroyed = false;
+		this.closeTimeoutId = null;
 	}
 
 	addPlayer(playerId, sendFn, opts = {})
 	{
 		const player = new Player(playerId, sendFn, opts);
-		this.numberOfPlayer++;
 		this.players.set(playerId, player);
 		if(this.players.size >= this.minPlayers && !this.timerId && this.status === 'waiting')
 			this.launchStartTimer(this.startingTimer);
@@ -82,7 +99,6 @@ class Room
 	removePlayer(playerId)
 	{
 		this.players.delete(playerId);
-		this.numberOfPlayer--;
 		if(this.timerId && this.players.size < this.minPlayers)
 		{
 			clearInterval(this.timerId);
@@ -136,6 +152,16 @@ class Room
 			room_number: this.id,
 			countdown: this.countdown
 		});
+	}
+
+	//B3 : ce champ etait maintenu a la main en parallele de players.size et
+	//pouvait diverger (removePlayer decrementait meme pour un joueur absent).
+	//bot.js l'injecte dans le prompt du LLM ("il y a N joueurs dans cette
+	//partie") : une valeur fausse degrade la credibilite du bot. Un getter
+	//supprime la possibilite meme de la divergence.
+	get numberOfPlayer()
+	{
+		return this.players.size;
 	}
 
 	isFull()
@@ -219,6 +245,12 @@ class Room
             ranking: finalRanking,
             winnerId: finalRanking[0].playerId
         });
+
+		//B1 : sans ceci la room et ses timers restent en memoire indefiniment,
+		//et findOrCreateRoom peut y placer un nouveau joueur des qu'une place se
+		//libere. On laisse le temps de lire le classement, puis on ferme.
+		this.closeTimeoutId = setTimeout(() => this.destroy('game_finished'),
+										 gameConfig.roomCloseDelayMs);
     }
 
 	launchStartTimer(timer)
@@ -246,6 +278,46 @@ class Room
 		{
 			this.currentRound.onPlayerVote(playerId, targetCharacter);
 		}
+	}
+
+	//O1 : fermeture definitive de la room.
+	//L'ordre des quatre etapes n'est pas negociable :
+	//  1. diffuser tant que les joueurs sont encore joignables
+	//  2. couper le timer de la room
+	//  3. couper le chrono du tour en cours
+	//  4. sortir du registre
+	//Diffuser apres le retrait reviendrait a emettre dans le vide ; sortir du
+	//registre sans couper les timers laisserait un setInterval diffuser sur une
+	//room que plus personne ne reference.
+	destroy(reason = 'game_finished')
+	{
+		if (this.destroyed)
+			return;
+		this.destroyed = true;
+
+		//1. le code est une chaine machine : le front choisit le texte
+		this.broadcast({ type: 'roomClosed', code: reason });
+
+		//2. timer de la room (compte a rebours de demarrage ou de scoreboard)
+		if (this.timerId)
+		{
+			clearInterval(this.timerId);
+			this.timerId = null;
+			this.countdown = null;
+		}
+		if (this.closeTimeoutId)
+		{
+			clearTimeout(this.closeTimeoutId);
+			this.closeTimeoutId = null;
+		}
+
+		//3. chrono du tour en cours
+		if (this.currentRound)
+			this.currentRound.stop();
+
+		//4. plus rien ne peut retrouver la room
+		rooms.delete(this.id);
+		console.log(`[room ${this.id}] detruite (${reason})`);
 	}
 }
 
