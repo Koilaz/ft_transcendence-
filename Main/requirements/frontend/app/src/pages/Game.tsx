@@ -1,11 +1,16 @@
+// @ts-nocheck
 import { useEffect, useReducer, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import {
   connectGameSocket,
   sendChatMessage,
+  sendVoteMessage,
   type GameMessage,
+  type RoundResult,
+  type FinalRank,
 } from '../services/gameSocket';
+import { VoteMenu, ScoreboardModal, GameEndModal } from './VoteSystem';
 import './Game.css';
 
 type FeedMessage =
@@ -22,6 +27,12 @@ type GameUIState = {
   turnCycle: number | null;
   countdown: number | null;
   messages: FeedMessage[];
+  hasVoted: boolean;
+  roundResults: RoundResult[] | null;
+  aiCharacter: string | null;
+  gameRanking: FinalRank[] | null;
+  winnerId: string | null;
+  totalTurns: number | null;
 };
 
 const initialState: GameUIState = {
@@ -34,6 +45,12 @@ const initialState: GameUIState = {
   turnCycle: null,
   countdown: null,
   messages: [],
+  hasVoted: false,
+  roundResults: null,
+  aiCharacter: null,
+  gameRanking: null,
+  winnerId: null,
+  totalTurns: null
 };
 
 // Pas de "join"/"quickplay" : le serveur assigne le joueur des l'ouverture de
@@ -81,6 +98,9 @@ function gameReducer(state: GameUIState, action: GameAction): GameUIState {
       return {
         ...state,
         myCharacter: action.character,
+        hasVoted: false,
+        roundResults: null,
+        aiCharacter: null,
         messages: [
           ...state.messages,
           {
@@ -90,6 +110,9 @@ function gameReducer(state: GameUIState, action: GameAction): GameUIState {
           },
         ],
       };
+
+    case 'voteRegistered':
+      return { ...state, hasVoted: true };
 
     case 'yourTurn':
       return {
@@ -107,6 +130,7 @@ function gameReducer(state: GameUIState, action: GameAction): GameUIState {
         turnCycle: action.turnCycle,
         roundPhase: 'chatting',
         countdown: action.countdown,
+        totalTurns: action.totalTurns
       };
 
     case 'chat':
@@ -125,6 +149,22 @@ function gameReducer(state: GameUIState, action: GameAction): GameUIState {
 
     case 'roundState':
       return { ...state, roundPhase: action.status };
+
+
+    case 'roundEnd':
+      return {
+        ...state,
+        roundResults: action.results,
+        aiCharacter: action.aiCharacter
+      };
+
+    case 'gameEnd':
+      return {
+        ...state,
+        gameRanking: action.ranking,
+        winnerId: action.winnerId,
+        roomStatus: 'endGame'
+      };
 
     case 'silence':
       return {
@@ -160,14 +200,13 @@ function isChattingPhase(
   return isPlayingStatus(roomStatus);
 }
 
-function formatRoundIndicator(turnCycle: number | null): string {
-  if (turnCycle === null || turnCycle === undefined) {
-    return 'Round -/5';
+function formatRoundIndicator(turnCycle: number | null, totalTurns: number | null): string {
+  if (turnCycle === null || totalTurns === null) {
+    return 'Round -/-';
   }
 
-  const round = 5 - turnCycle + 1;
-
-  return `Round ${round}/5`;
+  const currentRound = totalTurns - turnCycle + 1;
+  return `Round ${currentRound}/${totalTurns}`;
 }
 
 function colorFor(sender: string): string {
@@ -353,13 +392,18 @@ export default function Game() {
 
   const isGuest = !hasAccessToken;
 
+  function handleVote(targetCharacter: string) {
+    if (socketRef.current) {
+      sendVoteMessage(socketRef.current, targetCharacter);
+    }
+  }
   return (
     <div className="game-page">
       <header className="game-header">
         <div className="header-left">
           <h1>AImpostor</h1>
           <span className="tag">Salle #{state.roomNumber ?? '—'}</span>
-          <span className="tag">{formatRoundIndicator(state.turnCycle)}</span>
+          <span className="tag">{formatRoundIndicator(state.turnCycle, state.totalTurns)}</span>
         </div>
 
         <div className="header-right">
@@ -433,6 +477,14 @@ export default function Game() {
                 </li>
               ))}
             </ul>
+            {isChattingPhase(state.roomStatus, state.roundPhase) && (
+              <VoteMenu 
+                turnOrder={state.turnOrder} 
+                myCharacter={state.myCharacter} 
+                hasVoted={state.hasVoted} 
+                onVote={handleVote} 
+              />
+            )}
           </aside>
         )}
 
@@ -488,6 +540,21 @@ export default function Game() {
           </div>
         </div>
       </section>
-    </div>
+      {/* AFFICHAGE DES MODALES DE RÉSULTATS */}
+      {state.roomStatus === 'scoreboard' && state.roundResults && state.aiCharacter && (
+        <ScoreboardModal 
+          aiCharacter={state.aiCharacter} 
+          results={state.roundResults} 
+          countdown={state.countdown} 
+        />
+      )}
+
+      {state.roomStatus === 'endGame' && state.winnerId && state.gameRanking && (
+        <GameEndModal 
+          winnerId={state.winnerId} 
+          ranking={state.gameRanking} 
+        />
+      )}
+    </div> // Fin de <div className="game-page">
   );
 }

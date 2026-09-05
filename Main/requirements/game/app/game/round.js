@@ -3,7 +3,7 @@ import { gameConfig } from './config.js';
 
 // Une manche : personnage + ordre de jeu tirés au sort, jamais réutilisés d'une manche à l'autre.
 export class Round {
-	constructor(players, broadcastFn, addSystemMessageFn)
+	constructor(players, broadcastFn, addSystemMessageFn, onRoundEndedFn)
 	{
 		this.players = players;
 		this.broadcast = broadcastFn; // injectee par la Room : Round ignore tout du transport
@@ -22,6 +22,14 @@ export class Round {
 		this.turnTimerId = null;
 		this.currentPlayer = null;
 
+		/* Ajout pour le systeme de vote en temps reel pendant les Round */
+		this.onRoundEnded = onRoundEndedFn;
+		this.roundStartTime = null; 
+        this.votes = new Map(); // Stockera : playerId -> { targetCharacter, isCorrect, timeElapsed, score }
+        this.humanPlayers = this.players.filter(p => !p.agentName);
+        this.expectedVotes = this.humanPlayers.length;
+
+	
 		this.assignCaracters();
 		this.assignTurnOrder();
 	}
@@ -31,6 +39,7 @@ export class Round {
 		this.notifyAssignments();
 		this.turnCycle = this.turnPerRound;
 		this.turnIndex = 0;
+		this.roundStartTime = Date.now();
 		this.startTurn();
 	}
 
@@ -85,18 +94,115 @@ export class Round {
 			this.turnIndex = 0;
 			this.turnCycle--;
 			if (this.turnCycle <= 0)
-				return this.startVotingPhase();
+				return this.endRound(); // Ajout systeme de vote
 		}
 		this.startTurn();
 	}
 
-	startVotingPhase()
-	{
-		this.status = 'voting';
-		this.currentPlayer = null;
-		this.broadcast({ type: 'roundState', status: this.status });
-		console.log('phase de vote !');        // #TODO phase de vote
-	}
+    onPlayerVote(playerId, targetCharacter)
+    {
+        // 1. Sécurités de base
+        if (this.status !== 'chatting') return;
+        if (this.votes.has(playerId)) return; // Le joueur a déjà voté
+
+        const player = this.playerById.get(playerId);
+        if (!player || player.agentName) return; // L'IA ne vote pas
+
+        // 2. Retrouver l'ID de la cible désignée
+        let targetId = null;
+        for (const [id, char] of this.assignments.entries()) {
+            if (char === targetCharacter) {
+                targetId = id;
+                break;
+            }
+        }
+        if (!targetId) return;
+
+        // 3. Vérifier si c'était la bonne personne (l'IA)
+        const targetPlayer = this.playerById.get(targetId);
+        const isCorrect = !!targetPlayer.agentName; // True si c'est l'IA
+
+        // 4. Calcul du score
+        const timeElapsed = Date.now() - this.roundStartTime;
+        const score = isCorrect ? timeElapsed : 9999999; 
+
+        // 5. Sauvegarde du vote
+        this.votes.set(playerId, { targetCharacter, isCorrect, timeElapsed, score });
+
+        // 6. Feedback silencieux au joueur
+        player.send({ type: 'voteRegistered' }); 
+    }
+
+	endRound()
+    {
+        this.status = 'resolution';
+        if (this.turnTimerId)
+        {
+            clearInterval(this.turnTimerId);
+            this.turnTimerId = null;
+        }
+
+        const results = [];
+		let aiRoundScore = 0;
+		const maxTimeMs = this.turnPerRound * this.players.length * this.turnDuration * 1000;
+
+        // Génération des scores pour chaque humain
+        for (const human of this.humanPlayers) {
+            const vote = this.votes.get(human.id);
+            const characterName = this.caracterOf(human.id);
+			let humanScore = 0;
+
+            if (vote && vote.isCorrect)
+			{
+				const speedRatio = Math.max(0, 1 - (vote.timeElapsed / maxTimeMs));
+                humanScore = 1000 + Math.floor(speedRatio * 1000);
+            }
+			else
+			{
+				humanScore = 0;
+                aiRoundScore += 500;
+            }
+			results.push({
+                playerId: human.id,
+                character: characterName,
+                target: vote ? vote.targetCharacter : null,
+                score: humanScore, 
+                isCorrect: vote ? vote.isCorrect : false,
+                isAI: false
+            });
+        }
+
+        // Retrouver l'IA pour l'afficher
+        const aiPlayer = this.players.find(p => p.agentName);
+        const aiCharacter = this.caracterOf(aiPlayer.id);
+
+        results.push({
+            playerId: aiPlayer.id,
+            character: aiCharacter,
+            target: "A dupé les humains", // Texte stylisé pour le tableau
+            score: aiRoundScore,
+            isCorrect: true, // Pour l'afficher en vert
+            isAI: true
+        });
+
+        results.sort((a, b) => a.score - b.score);
+
+        // Diffuser les résultats à tous les joueurs
+        this.broadcast({ 
+            type: 'roundEnd', 
+            aiCharacter: aiCharacter,
+            results: results 
+        });
+		if (this.onRoundEnded)
+		{
+            this.onRoundEnded(results);
+        }
+
+        // console.log(`[room] Fin du round. Gagnant : ${results[0].character}`);
+        
+        // (Optionnel) ajouter ici un appel à la Room si on
+        // veux enchaîner sur un autre round automatiquement.
+    }
 
 	canSpeak(playerId)
 	{
@@ -126,6 +232,7 @@ export class Round {
 			countdown: this.countdown,
 			turnCycle: this.turnCycle,
 			turnOrder: this.publicTurnOrder(),
+			totalTurns: this.turnPerRound,
 		});
 	}
 
@@ -153,22 +260,3 @@ export class Round {
 		return this.turnOrder.map((id) => this.caracterOf(id));
 	}
 }
-
-
-	/*setStatus(status)
-	{
-		this.status = status;
-		this.broadcastState();
-	}
-
-	broadcastState()
-	{
-		this.broadcast // TODO use room broadcast
-		({
-			type: 'roundState',
-			status: this.status,
-			currentTurn: this.currentTurn,
-			currentCharacter: this.caracterOf(this.currentPlayer.id),
-			countdown: this.countdown
-		});
-	}*/

@@ -158,7 +158,10 @@ class Room
 		}
 		this.roundNumber++;
 		this.setStatus('playing');
-		const round = new Round([...this.players.values()], (msg) => this.broadcast(msg), (text) => this.addSystemMessage(text));
+		const round = new Round([...this.players.values()],
+								(msg) => this.broadcast(msg),
+								(text) => this.addSystemMessage(text),
+								(results) => this.handleRoundEnd(results));
 		this.currentRound = round;
 		this.rounds.push(round);
 
@@ -176,6 +179,47 @@ class Room
 		round.start();
 		return round;
 	}
+	/* Ajout systeme de vote */
+
+	handleRoundEnd(results) 
+    {
+        // 1. Ajouter les points des résultats aux scores globaux des joueurs
+        for (const res of results) {
+            const player = this.players.get(res.playerId);
+            if (player) {
+                player.score += res.score;
+            }
+        }
+
+      
+        const maxRounds = gameConfig.maxRounds;
+        
+        if (this.roundNumber >= maxRounds) {
+            this.endGame();
+        } else {
+			
+            this.setStatus('scoreboard');
+        
+            this.launchStartTimer(gameConfig.scoreboardDuration);
+        }
+    }
+
+    endGame() 
+    {
+        this.setStatus('endGame');
+        
+		const finalRanking = [...this.players.values()].map(p => ({
+            playerId: p.id,
+            score: p.score,
+            isAI: !!p.agentName
+        })).sort((a, b) => b.score - a.score);
+
+        this.broadcast({
+            type: 'gameEnd',
+            ranking: finalRanking,
+            winnerId: finalRanking[0].playerId
+        });
+    }
 
 	launchStartTimer(timer)
 	{
@@ -195,7 +239,16 @@ class Room
 			}
 		}, 1000);
 	}
+	/* Ajoute systeme de vote */
+	submitVote(playerId, targetCharacter)
+	{
+		if (this.currentRound && this.currentRound.status === 'chatting')
+		{
+			this.currentRound.onPlayerVote(playerId, targetCharacter);
+		}
+	}
 }
+
 
 /*Fisher-Yates Shuffle algo*/
 export function shuffle(array)
@@ -209,8 +262,3 @@ export function shuffle(array)
 }
 
 export { Room };
-
-/*
-Player : identité réelle et persistante (id, connexion, IA ou non).
-Round : créée à chaque nouvelle manche via Room.startNewRound(). Elle tire au sort assignments (playerId → personnage)
-Room : garde les Player (identité) dans une Map stable, et un historique de rounds.*/

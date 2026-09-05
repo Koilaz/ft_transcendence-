@@ -7,8 +7,9 @@ export class Player
 		this.status = 'waiting';
 		this.currentCaractere;
 		this.isViewer = false;
-		this.IsAI = false;
+		this.isAI = false;
 		this.agentName = agentName;
+		this.score = 0;
 	}
 
 	send(message) {
