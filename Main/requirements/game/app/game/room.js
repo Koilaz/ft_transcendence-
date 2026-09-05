@@ -12,7 +12,7 @@ let nextRoomId = 1;
 
 export function findOrCreateRoom() {
 	for (const room of rooms.values()) {
-		if (!room.isFull())
+		if (room.isOpen())
 			return room;
 	}
 	const newRoom = new Room(nextRoomId++);
@@ -204,6 +204,15 @@ class Room
 	isFull()
 	{
 		return this.players.size >= this.maxPlayers;
+	}
+
+	//O3 : une room n'accueille de nouveaux joueurs que tant qu'elle attend.
+	//isFull() ne suffisait pas : une partie lancee dont un joueur vient de
+	//partir n'est plus pleine, et findOrCreateRoom y aurait parachute un
+	//arrivant en pleine manche, sans personnage ni historique.
+	isOpen()
+	{
+		return this.status === 'waiting' && !this.isFull();
 	}
 
 	canStart()

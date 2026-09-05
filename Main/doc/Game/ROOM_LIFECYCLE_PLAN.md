@@ -117,7 +117,7 @@ Un commit, une intention. Chaque étape est testable indépendamment.
 | 3 | Notification au front | `playerDisconnected` par **nom de personnage**, jamais par `playerId`. | à faire |
 | 4 | Quorum de continuation | `minPlayersToContinue` (A4), appliqué aux seuls statuts `playing` et `scoreboard`. Sous le seuil : `destroy('not_enough_players')`. Corrige B2. | **fait** |
 | 5 | Rooms orphelines | O5, via un getter `humanCount` : `players.size === 0` n'arrive jamais, le bot n'ayant pas de socket n'est jamais retiré. Testé avant les autres motifs, il couvre le cas qui échappait à tout : une room en attente désertée. | **fait** |
-| 6 | État « fermée » | O3. Une partie lancée n'accepte plus personne. | à faire |
+| 6 | État « fermée » | O3, via `isOpen()` : une room n'accueille que tant qu'elle est en `waiting` et non pleine. `isFull()` seul laissait entrer un arrivant dans une partie lancée dont un joueur venait de partir. | **fait** |
 | 7 | File d'attente | Remplace `findOrCreateRoom` (A6). Permet le retour au lobby en fin de partie. | à faire |
 | 8 | Documentation | Protocole WebSocket dans `BACKEND.MD` et `FRONTEND.MD`. | à faire |
 
