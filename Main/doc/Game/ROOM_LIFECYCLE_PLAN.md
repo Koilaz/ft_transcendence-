@@ -117,8 +117,8 @@ Un commit, une intention. Chaque étape est testable indépendamment.
 | 3 | Notification au front | `playerDisconnected` par **nom de personnage**, jamais par `playerId`. | à faire |
 | 4 | Quorum de continuation | `minPlayersToContinue` (A4), appliqué aux seuls statuts `playing` et `scoreboard`. Sous le seuil : `destroy('not_enough_players')`. Corrige B2. | **fait** |
 | 5 | Rooms orphelines | O5, via un getter `humanCount` : `players.size === 0` n'arrive jamais, le bot n'ayant pas de socket n'est jamais retiré. Testé avant les autres motifs, il couvre le cas qui échappait à tout : une room en attente désertée. | **fait** |
-| 6 | État « fermée » | O3, via `isOpen()` : une room n'accueille que tant qu'elle est en `waiting` et non pleine. `isFull()` seul laissait entrer un arrivant dans une partie lancée dont un joueur venait de partir. | **fait** |
-| 7 | File d'attente | Remplace `findOrCreateRoom` (A6). Permet le retour au lobby en fin de partie. | à faire |
+| 6 | État « fermée » | O3, via `isOpen()`. **Rendu caduc par l'étape 7** : une room naissant avec son effectif définitif n'accueille jamais personne, `isOpen()` a donc été supprimé. L'étape a servi dans l'intervalle. | remplacée |
+| 7 | File d'attente | `game/queue.js` remplace `findOrCreateRoom` (A6). La room naît avec son effectif définitif : `isOpen()`, `canStart()`, le compte à rebours de démarrage et les déclencheurs de `addPlayer` disparaissent de `Room`. Retour au lobby en fin de partie via `roomClosed`. | **fait** |
 | 8 | Documentation | Protocole WebSocket dans `BACKEND.MD` et `FRONTEND.MD`. | à faire |
 
 L'étape 2 est la plus délicate du lot : c'est elle qui contient les pièges.
@@ -167,7 +167,7 @@ chaîne machine : le front choisit le texte et la langue.
 |---|---|---|
 | `{ type:'roomClosed', code }` | La room ferme. Codes émis à ce jour : `game_finished`, `not_enough_players`, `empty_room`. Prévu : `agent_failure`. | 1 (émis, pas encore traité par le front) |
 | `{ type:'playerDisconnected', character }` | Un joueur a quitté la partie | 3 |
-| `{ type:'queue', waiting }` | Lobby : uniquement un compteur | 7 |
+| `{ type:'state', status:'waiting', players, room_number:null, countdown }` | Lobby : uniquement un compteur. **Le message `state` existant est réutilisé** plutôt qu'un type `queue` dédié, pour que le front continue de fonctionner sans modification (`room_number: null` s'affiche déjà « Salle #— »). Un type dédié pourra venir avec l'étape 8. | 7 |
 
 **Le front ignore encore `roomClosed`** : la liste blanche de
 `gameSocket.ts` filtre les types inconnus, donc le message part du serveur

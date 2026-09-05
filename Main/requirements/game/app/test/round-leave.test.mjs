@@ -1,6 +1,6 @@
 // Etape 2 : retrait d'un joueur de la manche en cours (O4, piege 2).
 import { Round } from '../game/round.js';
-import { findOrCreateRoom, roomCount } from '../game/room.js';
+import { createRoom, roomCount } from '../game/room.js';
 import { check, report } from './check.mjs';
 
 // ------------------------------------------------------------- Round isole
@@ -40,7 +40,7 @@ check('h2 garde son personnage (historique coherent)', typeof round.caracterOf('
 round.stop();   // sinon le chrono de tour empeche le process de sortir
 
 // -------------------------------------------------------- cablage cote Room
-const room = findOrCreateRoom();
+const room = createRoom();
 let notified = null;
 // Le faux Round doit exposer stop() : Room.destroy l'appelle.
 room.currentRound = { removePlayer: (id) => { notified = id; }, stop: () => {} };

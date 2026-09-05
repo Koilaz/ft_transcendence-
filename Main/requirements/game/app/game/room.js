@@ -3,22 +3,20 @@ import { Round } from './round.js';
 import { createBotSendFn } from './bot.js';
 import { gameConfig } from './config.js';
 
-//#TODO geree les deconnection proprement
-
 export const CARACTERS = ['Colonel Moutarde', 'Major Wasabi', 'Caporal Mayo', 'Lieutenant Samourai', 'General Ketchup', 'Marechal Cocktail'];
 
 const rooms = new Map(); //id -> room
 let nextRoomId = 1;
 
-export function findOrCreateRoom() {
-	for (const room of rooms.values()) {
-		if (room.isOpen())
-			return room;
-	}
-	const newRoom = new Room(nextRoomId++);
-	rooms.set(newRoom.id, newRoom);
-	newRoom.addBots();
-	return newRoom;
+//Cree une room peuplee de ses bots et l'enregistre. Elle recoit ensuite son
+//effectif humain definitif en une fois, depuis queue.js : il n'y a plus de
+//remplissage progressif, donc plus de room qui attend des joueurs.
+export function createRoom()
+{
+	const room = new Room(nextRoomId++);
+	rooms.set(room.id, room);
+	room.addBots();
+	return room;
 }
 
 //O2 : la Map rooms est privee au module. Seule porte d'entree pour le code
@@ -49,9 +47,6 @@ class Room
 		this.currentRound = null;
 		this.roundNumber = 0;
 		this.maxPlayers = gameConfig.maxPlayers;
-		this.minPlayers = gameConfig.minPlayers;
-		this.isRunning = false;
-		this.startingTimer = gameConfig.startingTimer;
 		this.countdown = null;
 		this.timerId = null;
 		this.status = "waiting";//(waiting, chating, voting, shuffeling, endGame)
@@ -61,14 +56,10 @@ class Room
 
 	addPlayer(playerId, sendFn, opts = {})
 	{
+		//L'effectif est fixe par queue.js avant le lancement : ajouter un joueur
+		//ne declenche plus ni compte a rebours ni demarrage de manche.
 		const player = new Player(playerId, sendFn, opts);
 		this.players.set(playerId, player);
-		if(this.players.size >= this.minPlayers && !this.timerId && this.status === 'waiting')
-			this.launchStartTimer(this.startingTimer);
-		if(this.isFull())
-		{
-			this.startNewRound();
-		}
 		this.broadcastState();
 		return player;
 	}
@@ -81,8 +72,7 @@ class Room
 	}
 
 	//Peuple la room a partir de gameConfig.bots. On s'arrete si la room est
-	//pleine : sinon une liste trop longue remplirait la room de bots, findOrCreateRoom
-	//la verrait pleine et en creerait une autre a chaque joueur qui arrive.
+	//pleine : sinon une liste trop longue ne laisserait aucune place aux humains.
 	addBots(agentNames = gameConfig.bots)
 	{
 		for (const agentName of agentNames)
@@ -106,30 +96,18 @@ class Room
 		if (this.currentRound)
 			this.currentRound.removePlayer(playerId);
 
-		//O5 : plus aucun humain, la room ne sert plus a rien. Ce test passe
-		//avant les autres : les motifs de fermeture ci-dessous s'adressent aux
-		//joueurs restants, et il n'y en a plus. Il couvre aussi le cas qui
-		//echappait a tout le reste, celui d'une room en attente desertee, que
-		//le quorum de continuation ne regarde pas.
+		//O5 : plus aucun humain, la room ne sert plus a rien. Ce test passe avant
+		//les autres : les motifs de fermeture ci-dessous s'adressent aux joueurs
+		//restants, et il n'y en a plus. Il rattrape aussi le cas ou le quorum de
+		//continuation ne s'applique pas (statut endGame, seuil a 1).
 		if (this.humanCount === 0)
 			return this.destroy('empty_room');
 
-		//B2 : ce test portait sur timerId seul, or timerId sert a la fois au
-		//compte a rebours de demarrage et a celui du scoreboard. Un depart
-		//pendant un scoreboard renvoyait donc la room en attente au beau milieu
-		//d'une partie. On teste desormais aussi le statut.
-		if (this.status === 'waiting' && this.timerId && this.players.size < this.minPlayers)
-		{
-			clearInterval(this.timerId);
-			this.timerId = null;
-			this.countdown = null;
-		}
-
 		//A4 : minPlayers est un seuil de DEMARRAGE, minPlayersToContinue un
 		//seuil de CONTINUATION. Le quorum ne vaut que pour une partie en cours :
-		//avant le lancement la room attend simplement d'autres joueurs, et une
-		//fois endGame atteint sa fermeture est deja programmee avec le bon
-		//motif (game_finished), qu'il ne faut pas devancer.
+		//une fois endGame atteint, la fermeture est deja programmee avec le bon
+		//motif (game_finished), qu'il ne faut pas devancer sous peine de couper
+		//la lecture du classement pour les autres.
 		if ((this.status === 'playing' || this.status === 'scoreboard')
 			&& this.players.size < gameConfig.minPlayersToContinue)
 			return this.destroy('not_enough_players');
@@ -206,20 +184,6 @@ class Room
 		return this.players.size >= this.maxPlayers;
 	}
 
-	//O3 : une room n'accueille de nouveaux joueurs que tant qu'elle attend.
-	//isFull() ne suffisait pas : une partie lancee dont un joueur vient de
-	//partir n'est plus pleine, et findOrCreateRoom y aurait parachute un
-	//arrivant en pleine manche, sans personnage ni historique.
-	isOpen()
-	{
-		return this.status === 'waiting' && !this.isFull();
-	}
-
-	canStart()
-	{
-		return this.players.size >= this.minPlayers;
-	}
-
 	startNewRound()
 	{
 		if (this.timerId)
@@ -292,9 +256,9 @@ class Room
             winnerId: finalRanking[0].playerId
         });
 
-		//B1 : sans ceci la room et ses timers restent en memoire indefiniment,
-		//et findOrCreateRoom peut y placer un nouveau joueur des qu'une place se
-		//libere. On laisse le temps de lire le classement, puis on ferme.
+		//B1 : sans ceci la room et ses timers resteraient en memoire indefiniment.
+		//On laisse le temps de lire le classement, puis on ferme ; les joueurs
+		//sont alors renvoyes vers la file d'attente par server.js.
 		this.closeTimeoutId = setTimeout(() => this.destroy('game_finished'),
 										 gameConfig.roomCloseDelayMs);
     }
