@@ -1,0 +1,35 @@
+# ---- Dependances ----
+node_modules/
+
+# ---- Variables d'environnement ----
+# Ne JAMAIS committer de .env : ils contiennent des identifiants.
+.env
+.env.*
+# Exception : le modele d'exemple, sans vraie valeur, doit etre versionne.
+!.env.example
+
+# ---- Secrets (docker secrets) ----
+# Le dossier secrets/ contient les vraies valeurs => jamais versionne.
+# Le modele vide se trouve dans secrets_example/ qui, lui, est versionne.
+secrets/
+
+# ---- Donnees de runtime des conteneurs ----
+ollama_data/
+postgres_data/
+*.sqlite
+*.db
+
+# ---- Cles et certificats ----
+id_rsa
+id_ed25519
+*.pem
+*.key
+*.p12
+
+# ---- Divers ----
+backup/
+.claude*
+.DS_Store
+*.log
+dist/
+build/
