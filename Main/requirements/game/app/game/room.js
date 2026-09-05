@@ -161,6 +161,11 @@ class Room
 
 	startNewRound()
 	{
+		//Les personnages sont retires au sort a chaque manche : un meme nom ne
+		//designe plus la meme personne. Le bot est le seul lecteur de history,
+		//et la conserver lui ferait attribuer des propos au mauvais joueur.
+		this.history = [];
+
 		if (this.timerId)
 		{
 			clearInterval(this.timerId);

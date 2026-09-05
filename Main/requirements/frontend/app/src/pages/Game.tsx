@@ -131,8 +131,11 @@ function gameReducer(state: GameUIState, action: GameAction): GameUIState {
         // Les joueurs reellement partis, eux, ne figurent plus du tout dans le
         // turnOrder de la manche suivante : il n'y a rien a reporter.
         leftCharacters: [],
+        // Meme raison : les messages de la manche precedente portent des noms
+        // qui designent desormais quelqu'un d'autre. Les garder lisibles
+        // permettrait de reporter de fausses deductions d'une manche a l'autre,
+        // ce que le rebrassage des personnages existe pour empecher.
         messages: [
-          ...state.messages,
           {
             id: nextMessageId(),
             kind: 'system',
