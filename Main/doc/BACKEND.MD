@@ -251,8 +251,15 @@ server.listen(3000, ...);
 warmupOllama().catch(...);              // sans await : ne bloque pas le demarrage
 ```
 
-A chaque connexion WebSocket : `findOrCreateRoom()`, puis un `playerId` du type
-`joueur-N` issu d'un compteur global.
+A chaque connexion WebSocket : le joueur entre dans la **file d'attente**
+(`game/queue.js`), pas dans une room. Il recoit un `playerId` du type `joueur-N`
+issu d'un compteur global, et un pseudo optionnel lu dans `?name=` (borne a 20
+caracteres, caracteres de controle retires ; purement decoratif, il n'apparait
+qu'au classement final).
+
+La room n'est creee que lorsqu'un groupe complet peut etre forme, et elle nait
+avec son effectif definitif. Il n'y a plus de remplissage progressif : une room
+n'accueille jamais de nouvel arrivant.
 
 > **Aucune authentification.** N'importe quelle connexion a `/ws/game` devient
 > un joueur. Le service ignore tout des comptes du NestJS. C'est le principal
@@ -337,22 +344,37 @@ commettre. Details dans [Game/VOTING_TODO.md](Game/VOTING_TODO.md).
 
 | Type | Portee | Charge | Emis quand |
 |---|---|---|---|
-| `state` | broadcast | `{ status, players, room_number, countdown }` | tout changement de room, et chaque seconde du compte a rebours de depart |
+| `state` | broadcast | `{ status, players, room_number, countdown }` | changement de room. **En file d'attente, `room_number` vaut `null`** et `players` compte les joueurs en attente |
 | `assignment` | prive | `{ character }` | debut de manche |
-| `turn` | broadcast | `{ character, turnOrder[], turnCycle, countdown }` | chaque seconde du tour |
+| `turn` | broadcast | `{ character, turnOrder[], turnCycle, countdown, totalTurns }` | chaque seconde du tour |
 | `yourTurn` | prive | `{ countdown }` | debut du tour du joueur |
 | `chat` | broadcast | `{ sender, text }` | message accepte (`sender` = personnage) |
 | `silence` | broadcast | `{ character }` | le joueur n'a pas parle a temps |
 | `roundState` | broadcast | `{ status }` | entree en phase de vote |
+| `voteRegistered` | prive | `{}` | vote pris en compte |
+| `roundEnd` | broadcast | `{ aiCharacter, results[] }` | fin de manche |
+| `gameEnd` | broadcast | `{ ranking[], winnerId }` | fin de partie. `ranking[].name` est le pseudo, ou « L'AImpostor » pour l'agent |
+| `playerDisconnected` | broadcast | `{ character }` | un joueur a quitte la partie |
+| `roomClosed` | broadcast | `{ code }` | la room ferme definitivement |
+
+Codes de `roomClosed` : `game_finished`, `not_enough_players`, `empty_room`.
+`agent_failure` est prevu mais pas encore emis. Ce sont des chaines machine :
+le front choisit le texte et la langue.
 
 **Client → serveur**
 
 | Type | Charge | Traitement |
 |---|---|---|
-| `chat` | `{ text }` | **seul type accepte.** Tout le reste est logge et ignore |
+| `chat` | `{ text }` | accepte seulement en partie, si `currentRound.status === 'chatting'` et si c'est le tour de l'emetteur |
+| `vote` | `{ targetCharacter }` | accepte en phase `chatting` |
+| `replay` | `{}` | **seul message accepte hors partie** : remet le joueur dans la file d'attente |
 
-Il n'y a pas de message `join` : le serveur assigne la room a l'ouverture de la
-socket.
+Tout autre type est logge et ignore.
+
+Il n'y a pas de message `join` : le serveur met le joueur en file des
+l'ouverture de la socket. Le serveur ne remet **jamais** un joueur dans la file
+de lui-meme apres une fin de partie : c'est `replay`, donc une action explicite
+du joueur, qui declenche le retour au lobby.
 
 Un message n'est accepte que si `currentRound.status === 'chatting'` **et**
 `canSpeak(sender)`, c'est-a-dire que l'emetteur est bien le joueur du tour. Le

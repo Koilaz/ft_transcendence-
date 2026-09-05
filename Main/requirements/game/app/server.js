@@ -2,8 +2,8 @@
 import express from 'express';
 import http from 'node:http';
 import { WebSocketServer } from 'ws';
-import { Room, findOrCreateRoom } from './game/room.js';
-import { checkAllAgents } from './agents/index.js';
+import { enqueue, dequeue } from './game/queue.js';
+import { checkAllAgents, unavailableBots } from './agents/index.js';
 import { warmupOllama } from './agents/ollama_local.js';
 
 const app = express();
@@ -12,21 +12,57 @@ const server = http.createServer(app);
 const wss = new WebSocketServer({ server, path: '/ws/game' });
 let nextPlayerId = 1;   // compteur global provisoire pour nommer les joueurs
 
-wss.on('connection', (socket) =>
+//Pseudo choisi par le joueur, transmis en query param a l'ouverture de la
+//socket. C'est une entree non fiable : on borne la longueur et on retire les
+//caracteres de controle, qui pollueraient les logs et l'affichage.
+//Purement decoratif : il ne sert qu'au classement final, jamais a identifier
+//un joueur cote serveur.
+function readDisplayName(request)
 {
-	//  inscription
-	const room = findOrCreateRoom();
+	const raw = new URL(request.url, 'http://placeholder').searchParams.get('name');
+	if (!raw)
+		return null;
+	return raw.replace(/\p{C}/gu, '').trim().slice(0, 20) || null;
+}
+
+wss.on('connection', (socket, request) =>
+{
+	//  inscription : on entre dans la file d'attente, pas dans une room. La room
+	//  ne nait que lorsqu'un groupe complet peut etre forme (voir queue.js).
 	const playerId = `joueur-${nextPlayerId++}`;//#tmp utiliser vrai ID
+
+	const displayName = readDisplayName(request);
 
 	const sendFn = function(msg)
 	{
+		//La room ferme : le joueur quitte la partie mais garde sa socket. On ne
+		//le remet PAS dans la file tout seul, sinon il serait catapulte dans une
+		//nouvelle partie sans avoir eu le temps de lire le classement. C'est le
+		//bouton « Rejouer » du front qui enverra `replay`.
+		if (msg.type === 'roomClosed')
+			socket.room = null;
 		if (socket.readyState === socket.OPEN)
 			socket.send(JSON.stringify(msg));
 	};
-	room.addPlayer(playerId, sendFn); // on accroche les infos sur la socket pour les retrouver dans les autres handlers
+
+	const joinRoom = function(room)
+	{
+		socket.room = room;
+		console.log(`${playerId} → room ${room.id}`);
+	};
+
 	socket.playerId = playerId;
-	socket.room = room;
-	console.log(`${playerId} connecté → ${room.id}`);
+	socket.room = null;   // null tant qu'il patiente dans la file
+
+	//Avant la file, pas apres : le joueur doit savoir qu'il attend une partie
+	//sans imposteur pendant qu'il attend, pas une fois la partie finie. Le
+	//rapport date du demarrage, il ne coute rien a relire ici.
+	const brokenAgents = unavailableBots();
+	if (brokenAgents.length)
+		sendFn({ type: 'agentsDown', agents: brokenAgents });
+
+	enqueue(playerId, sendFn, joinRoom, displayName);
+	console.log(`${playerId} (${displayName ?? 'anonyme'}) connecté → file d'attente`);
 	//2. messages entrants
 	socket.on('message', (data) =>
 	{
@@ -40,6 +76,20 @@ wss.on('connection', (socket) =>
 			console.error('message non-JSON ignoré:', error.message);
 			return;
 		}
+		//Seul message accepte hors partie : il remet le joueur dans la file, a
+		//son initiative.
+		if (msg.type === 'replay')
+		{
+			if (!socket.room)
+				enqueue(playerId, sendFn, joinRoom, displayName);
+			return;
+		}
+
+		//Tant que le joueur patiente dans la file, il n'a rien a dire ni a voter :
+		//le lobby ne permet aucune communication entre joueurs.
+		if (!socket.room)
+			return;
+
 		if (msg.type === 'chat')
 		{
 			socket.room.addMessage(socket.playerId, msg.text);
@@ -62,7 +112,10 @@ wss.on('connection', (socket) =>
 	//3. départ
 	socket.on('close', () =>
 	{
-		socket.room.removePlayer(socket.playerId);
+		if (socket.room)
+			socket.room.removePlayer(socket.playerId);
+		else
+			dequeue(socket.playerId);
 	});
 });
 //etat des agents avant d'accepter des connexions : rapide, aucun token consomme

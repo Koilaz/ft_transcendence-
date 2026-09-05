@@ -1,5 +1,5 @@
 export const gameConfig = {
-	bots: ['mistral_medium'],//bots ajoutes dans l'ordre
+	bots: ['ministral_14b'],//bots ajoutes dans l'ordre
 	turnPerRound: 5,   // nombre de tours par manche
 	turnDuration: 10,   // secondes par tour
 	maxPlayers: 4,
@@ -15,5 +15,6 @@ available bots (cles du registre dans agents/index.js) :
 	mistral_medium
 	mistral_big
 	mistral_small
+	ministral_14b
 	mistral_7B_local
 */

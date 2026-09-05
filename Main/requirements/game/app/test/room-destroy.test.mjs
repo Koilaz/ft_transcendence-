@@ -1,21 +1,21 @@
 // Etape 1 : Room.destroy(), le registre et ses accesseurs.
-import { findOrCreateRoom, deleteRoom, roomCount } from '../game/room.js';
+import { createRoom, deleteRoom, roomCount } from '../game/room.js';
 import { gameConfig } from '../game/config.js';
 import { check, report } from './check.mjs';
 
-// Remplit jusqu'a minPlayers pour declencher le compte a rebours de demarrage,
-// sans atteindre maxPlayers (qui lancerait une manche, donc un appel au LLM).
-// L'effectif est deduit de gameConfig : ce reglage bouge souvent, le test ne
-// doit pas le supposer.
 const received = [];
-const room = findOrCreateRoom();
-while (room.players.size < gameConfig.minPlayers)
-	room.addPlayer(`h${room.players.size}`, (msg) => received.push(msg));
+const room = createRoom();
+room.addPlayer('h1', (msg) => received.push(msg));
+
+// Depuis l'etape 7, addPlayer ne lance plus aucun timer : l'effectif est fixe
+// par la file d'attente. On arme donc le compte a rebours a la main, comme le
+// fait handleRoundEnd pour le scoreboard, afin de verifier que destroy le coupe.
+room.launchStartTimer(gameConfig.scoreboardDuration);
 
 check('room enregistree dans le registre', roomCount() === 1);
-check('effectif au seuil de demarrage', room.players.size === gameConfig.minPlayers);
+check('la room contient ses bots et son humain', room.players.size === gameConfig.bots.length + 1);
 check('numberOfPlayer suit players.size', room.numberOfPlayer === room.players.size);
-check('timer de demarrage lance', room.timerId !== null);
+check('timer arme', room.timerId !== null);
 
 received.length = 0;
 room.destroy('not_enough_players');
@@ -32,7 +32,7 @@ room.destroy('game_finished');
 check('second destroy sans effet', received.length === 0);
 
 // O2 : le registre est prive au module, deleteRoom est sa seule porte d'entree
-const room2 = findOrCreateRoom();
+const room2 = createRoom();
 check('deleteRoom ferme une room existante', deleteRoom(room2.id) === true);
 check('deleteRoom sur id inconnu renvoie false', deleteRoom(99999) === false);
 check('registre vide', roomCount() === 0);

@@ -24,24 +24,13 @@ export class Round {
 
 		/* Ajout pour le systeme de vote en temps reel pendant les Round */
 		this.onRoundEnded = onRoundEndedFn;
-		this.roundStartTime = null; 
+		this.roundStartTime = null;
         this.votes = new Map(); // Stockera : playerId -> { targetCharacter, isCorrect, timeElapsed, score }
-
-		//O4 : joueurs partis en cours de manche. On les MARQUE au lieu de les
-		//retirer des structures. Retirer une entree de turnOrder decalerait tous
-		//les indices suivants : selon que le partant est avant ou apres
-		//turnIndex, on sauterait un tour ou on en rejouerait un.
 		this.leftPlayers = new Set();
-
-	
 		this.assignCaracters();
 		this.assignTurnOrder();
 	}
 
-	//B6 : ces deux valeurs etaient figees dans le constructeur. Un joueur parti
-	//en cours de manche y restait, ce qui faussait le calcul des scores de
-	//endRound. Des getters les recalculent a chaque lecture : la divergence
-	//devient impossible, et les appelants n'ont pas a changer.
 	get humanPlayers()
 	{
 		return this.players.filter((p) => !p.agentName && !this.leftPlayers.has(p.id));
@@ -162,13 +151,13 @@ export class Round {
 
         // 4. Calcul du score
         const timeElapsed = Date.now() - this.roundStartTime;
-        const score = isCorrect ? timeElapsed : 9999999; 
+        const score = isCorrect ? timeElapsed : 9999999;
 
         // 5. Sauvegarde du vote
         this.votes.set(playerId, { targetCharacter, isCorrect, timeElapsed, score });
 
         // 6. Feedback silencieux au joueur
-        player.send({ type: 'voteRegistered' }); 
+        player.send({ type: 'voteRegistered' });
     }
 
 	endRound()
@@ -204,7 +193,7 @@ export class Round {
                 playerId: human.id,
                 character: characterName,
                 target: vote ? vote.targetCharacter : null,
-                score: humanScore, 
+                score: humanScore,
                 isCorrect: vote ? vote.isCorrect : false,
                 isAI: false
             });
@@ -226,10 +215,10 @@ export class Round {
         results.sort((a, b) => a.score - b.score);
 
         // Diffuser les résultats à tous les joueurs
-        this.broadcast({ 
-            type: 'roundEnd', 
+        this.broadcast({
+            type: 'roundEnd',
             aiCharacter: aiCharacter,
-            results: results 
+            results: results
         });
 		if (this.onRoundEnded)
 		{
@@ -237,7 +226,7 @@ export class Round {
         }
 
         // console.log(`[room] Fin du round. Gagnant : ${results[0].character}`);
-        
+
         // (Optionnel) ajouter ici un appel à la Room si on
         // veux enchaîner sur un autre round automatiquement.
     }

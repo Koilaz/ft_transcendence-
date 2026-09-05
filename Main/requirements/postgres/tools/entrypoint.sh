@@ -152,28 +152,47 @@ if [ ! -f "$PGDATA/PG_VERSION" ]; then
     cp /tmp/pg_hba.conf "$PGDATA/pg_hba.conf"
     chown postgres:postgres "$PGDATA/pg_hba.conf"
 
-
-
-    echo "Starting PostgreSQL temporarily for setup..."
-
-    su - postgres -c "/usr/lib/postgresql/15/bin/pg_ctl -D $PGDATA -w start"
-
-
-
-    echo "Configuring database and user..."
-
-    su - postgres -c "psql -c \"CREATE USER $POSTGRES_USER WITH PASSWORD '$POSTGRES_PASSWORD';\""
-    su - postgres -c "psql -c \"CREATE DATABASE $POSTGRES_DB OWNER $POSTGRES_USER;\""
-    su - postgres -c "psql -c \"GRANT ALL PRIVILEGES ON DATABASE $POSTGRES_DB TO $POSTGRES_USER;\""
-
-
-
-    echo "Stopping temporary PostgreSQL..."
-
-    su - postgres -c "/usr/lib/postgresql/15/bin/pg_ctl -D $PGDATA -m fast -w stop"
-
-
 fi
+
+
+
+# Le setup tourne a chaque demarrage, pas seulement au premier init.
+#
+# Le role et la base vivent dans le volume, pas dans l'image : une fois crees,
+# ils survivent a tout sauf a un down -v. Si le contenu de
+# secrets/postgres_password.txt change apres coup (nouveau secret, clone d'une
+# autre machine), la base garde l'ancien mot de passe et le backend boucle
+# indefiniment sur "password authentication failed for user".
+#
+# D'ou : creations conditionnelles, puis un ALTER USER inconditionnel qui
+# realigne le role sur le secret courant.
+
+echo "Starting PostgreSQL temporarily for setup..."
+
+su - postgres -c "/usr/lib/postgresql/15/bin/pg_ctl -D $PGDATA -w start"
+
+
+
+echo "Configuring database and user..."
+
+# -tAc : sortie brute, sans en-tete ni alignement, pour que le test soit fiable.
+if ! su - postgres -c "psql -tAc \"SELECT 1 FROM pg_roles WHERE rolname = '$POSTGRES_USER';\"" | grep -q 1; then
+    su - postgres -c "psql -c \"CREATE USER $POSTGRES_USER;\""
+fi
+
+su - postgres -c "psql -c \"ALTER USER $POSTGRES_USER WITH PASSWORD '$POSTGRES_PASSWORD';\""
+
+if ! su - postgres -c "psql -tAc \"SELECT 1 FROM pg_database WHERE datname = '$POSTGRES_DB';\"" | grep -q 1; then
+    su - postgres -c "psql -c \"CREATE DATABASE $POSTGRES_DB OWNER $POSTGRES_USER;\""
+fi
+
+su - postgres -c "psql -c \"GRANT ALL PRIVILEGES ON DATABASE $POSTGRES_DB TO $POSTGRES_USER;\""
+
+
+
+echo "Stopping temporary PostgreSQL..."
+
+su - postgres -c "/usr/lib/postgresql/15/bin/pg_ctl -D $PGDATA -m fast -w stop"
 
 
 

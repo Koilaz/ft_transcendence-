@@ -159,7 +159,16 @@ personne. `sendChatMessage(socket, text)` envoie `{ type: 'chat', text }`, le
 la room a l'ouverture de la socket.
 
 Les types declares couvrent exactement le protocole serveur : `state`,
-`assignment`, `yourTurn`, `turn`, `chat`, `roundState`, `silence`. Voir
+`assignment`, `yourTurn`, `turn`, `chat`, `roundState`, `silence`,
+`voteRegistered`, `roundEnd`, `gameEnd`, `playerDisconnected`, `roomClosed`.
+Sortants : `chat`, `vote`, `replay`.
+
+> **Attention :** `connectGameSocket` filtre les types inconnus par liste
+> blanche. Un message ajoute cote serveur et oublie dans cette liste est jete
+> silencieusement, sans erreur ni log. C'est exactement ce qui est arrive a
+> `roomClosed`, qui figeait le client a chaque fermeture de room.
+
+L'URL porte `?name=` avec le pseudo local, quand il existe. Voir
 [BACKEND.MD § 3.6](BACKEND.MD).
 
 ---
