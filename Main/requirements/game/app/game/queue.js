@@ -1,5 +1,15 @@
 import { gameConfig } from './config.js';
 import { createRoom } from './room.js';
+import { unavailableBots } from '../agents/index.js';
+
+//Les bots de gameConfig.bots reellement exploitables : ni absents du registre,
+//ni recales par le healthCheck du demarrage. Recalcule a chaque appel, comme
+//le reste : la config bouge et le rapport de sante n'existe qu'apres le boot.
+function usableBots()
+{
+	const hs = new Set(unavailableBots().map((b) => b.name));
+	return gameConfig.bots.filter((name) => !hs.has(name));
+}
 
 //File d'attente unique. Les joueurs y patientent jusqu'a ce qu'un groupe
 //complet puisse etre forme, puis la room nait avec son effectif definitif.
@@ -16,7 +26,9 @@ let countdown = null;
 //il faut donc les soustraire pour obtenir le nombre d'humains attendus.
 function humansNeeded()
 {
-	const bots = gameConfig.bots.length;
+	//On compte les bots utilisables, pas ceux configures : si deux des trois
+	//sont hors service, il faut un humain de plus pour atteindre le seuil.
+	const bots = usableBots().length;
 	return {
 		min: Math.max(1, gameConfig.minPlayers - bots),
 		max: Math.max(1, gameConfig.maxPlayers - bots),
@@ -78,7 +90,7 @@ function launch()
 	for (const [playerId] of group)
 		waiting.delete(playerId);
 
-	const room = createRoom();
+	const room = createRoom(usableBots());
 	for (const [playerId, entry] of group)
 	{
 		room.addPlayer(playerId, entry.sendFn, { displayName: entry.displayName });
@@ -95,6 +107,16 @@ function launch()
 export function enqueue(playerId, sendFn, onRoomJoined, displayName = null)
 {
 	waiting.set(playerId, { sendFn, onRoomJoined, displayName });
+
+	//Tous les bots configures sont hors service : il n'y aurait personne a
+	//demasquer, la partie perdrait son mecanisme central. On garde les joueurs
+	//en file plutot que de lancer une partie vide de son sens ; le front les a
+	//deja prevenus par le message agentsDown recu a la connexion.
+	if (gameConfig.bots.length > 0 && usableBots().length === 0)
+	{
+		broadcastQueue();
+		return;
+	}
 
 	const { min, max } = humansNeeded();
 	if (waiting.size >= max)
