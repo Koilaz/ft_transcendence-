@@ -1,9 +1,24 @@
 export type GameStateMessage = {
   type: 'state';
-  room_number: number;
+  // null tant que le joueur patiente dans la file : aucune room n'existe encore
+  room_number: number | null;
   status: string;
   countdown: number | null;
   players: number;
+};
+
+// La room ferme definitivement. `code` est une chaine machine : c'est le front
+// qui choisit le texte et la langue.
+export type GameRoomClosedMessage = {
+  type: 'roomClosed';
+  code: 'game_finished' | 'not_enough_players' | 'empty_room' | string;
+};
+
+// Un joueur a quitte la partie. Toujours par nom de personnage, jamais par
+// identifiant : le protocole ne diffuse aucun playerId en cours de partie.
+export type GamePlayerDisconnectedMessage = {
+  type: 'playerDisconnected';
+  character: string;
 };
 
 export type GameAssignmentMessage = {
@@ -62,6 +77,9 @@ export type GameRoundEndMessage = {
 
 export type FinalRank = {
   playerId: string;
+  // Nom lisible : pseudo du joueur, ou « L'AImpostor » pour l'agent. La partie
+  // etant terminee, reveler qui est qui ne trahit plus rien.
+  name: string;
   score: number;
   isAI?: boolean;
 };
@@ -82,6 +100,8 @@ export type GameMessage =
   | GameVoteRegisteredMessage // ajout
   | GameRoundEndMessage
   | GameGameEndMessage
+  | GameRoomClosedMessage
+  | GamePlayerDisconnectedMessage
   | GameSilenceMessage;
 
 export type GameMessageHandler = (
@@ -100,8 +120,12 @@ export function sendVoteMessage(socket: WebSocket, targetCharacter: string): voi
 
 function getGameWebSocketUrl(): string {
   const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+  // Pseudo purement decoratif : il n'apparait qu'au classement final. Le
+  // serveur le tronque et le nettoie, on ne lui fait pas confiance non plus.
+  const name = localStorage.getItem('guestName');
+  const query = name ? `?name=${encodeURIComponent(name)}` : '';
 
-  return `${protocol}://${window.location.host}/ws/game`;
+  return `${protocol}://${window.location.host}/ws/game${query}`;
 }
 
 export function connectGameSocket(
@@ -123,7 +147,9 @@ export function connectGameSocket(
         message.type !== 'silence' &&
         message.type !== 'voteRegistered' && 
         message.type !== 'roundEnd' &&
-        message.type !== 'gameEnd'
+        message.type !== 'gameEnd' &&
+        message.type !== 'roomClosed' &&
+        message.type !== 'playerDisconnected'
       ) {
         return;
       }
@@ -148,4 +174,11 @@ export function sendChatMessage(socket: WebSocket, text: string): void {
   const message: GameChatOutgoingMessage = { type: 'chat', text };
 
   socket.send(JSON.stringify(message));
+}
+
+// Remet le joueur dans la file d'attente, a son initiative. Sans ce message il
+// reste sur l'ecran de resultats : le serveur ne relance jamais personne tout
+// seul, pour ne pas catapulter le joueur dans une partie qu'il n'a pas demandee.
+export function sendReplayMessage(socket: WebSocket): void {
+  socket.send(JSON.stringify({ type: 'replay' }));
 }

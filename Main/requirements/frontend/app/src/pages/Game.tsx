@@ -6,11 +6,13 @@ import {
   connectGameSocket,
   sendChatMessage,
   sendVoteMessage,
+  sendReplayMessage,
   type GameMessage,
   type RoundResult,
   type FinalRank,
 } from '../services/gameSocket';
-import { VoteMenu, ScoreboardModal, GameEndModal } from './VoteSystem';
+import { VoteMenu, ScoreboardModal, GameEndModal, RoomClosedModal } from './VoteSystem';
+import { Lobby } from './Lobby';
 import './Game.css';
 
 type FeedMessage =
@@ -33,6 +35,15 @@ type GameUIState = {
   gameRanking: FinalRank[] | null;
   winnerId: string | null;
   totalTurns: number | null;
+  // Nombre de joueurs annonce par le serveur : effectif de la file en lobby,
+  // effectif de la room une fois la partie lancee.
+  players: number;
+  // Personnages dont le joueur a quitte la partie. Ils restent affiches, mais
+  // grises : le serveur les conserve dans turnOrder, c'est au front de montrer
+  // qu'ils ne jouent plus.
+  leftCharacters: string[];
+  // Motif de fermeture de la room, null tant qu'elle est vivante.
+  closedCode: string | null;
 };
 
 const initialState: GameUIState = {
@@ -50,14 +61,20 @@ const initialState: GameUIState = {
   aiCharacter: null,
   gameRanking: null,
   winnerId: null,
-  totalTurns: null
+  totalTurns: null,
+  players: 0,
+  leftCharacters: [],
+  closedCode: null
 };
 
 // Pas de "join"/"quickplay" : le serveur assigne le joueur des l'ouverture de
 // la socket. On ajoute juste une action locale pour les lignes "connecté" /
 // "déconnecté" du fil, qui n'existent pas dans le protocole serveur.
 type LocalConnectionAction = { type: 'connection'; text: string };
-type GameAction = GameMessage | LocalConnectionAction;
+// Remise a zero locale quand le joueur redemande une partie : le serveur, lui,
+// ne renvoie jamais d'etat initial.
+type LocalResetAction = { type: 'reset' };
+type GameAction = GameMessage | LocalConnectionAction | LocalResetAction;
 
 let messageIdCounter = 0;
 
@@ -84,6 +101,7 @@ function gameReducer(state: GameUIState, action: GameAction): GameUIState {
         ...state,
         roomNumber: action.room_number,
         roomStatus: action.status,
+        players: action.players,
         ...(playing
           ? {}
           : {
@@ -165,6 +183,36 @@ function gameReducer(state: GameUIState, action: GameAction): GameUIState {
         winnerId: action.winnerId,
         roomStatus: 'endGame'
       };
+
+    case 'playerDisconnected':
+      return {
+        ...state,
+        leftCharacters: state.leftCharacters.includes(action.character)
+          ? state.leftCharacters
+          : [...state.leftCharacters, action.character],
+        messages: [
+          ...state.messages,
+          {
+            id: nextMessageId(),
+            kind: 'system',
+            text: `${action.character} a quitté la séance.`,
+          },
+        ],
+      };
+
+    // On ne touche PAS a roomStatus : le classement de fin de partie doit
+    // rester affiche jusqu'a ce que le joueur clique sur « Rejouer ».
+    case 'roomClosed':
+      return {
+        ...state,
+        closedCode: action.code,
+        roomNumber: null,
+        currentTurnCharacter: null,
+        countdown: null,
+      };
+
+    case 'reset':
+      return { ...initialState };
 
     case 'silence':
       return {
@@ -308,6 +356,7 @@ export default function Game() {
     Boolean(localStorage.getItem('accessToken')),
   );
   const [guestName] = useState(() => localStorage.getItem('guestName'));
+  const [hasConnected, setHasConnected] = useState(false);
 
   const socketRef = useRef<WebSocket | null>(null);
   const feedRef = useRef<HTMLDivElement | null>(null);
@@ -325,6 +374,10 @@ export default function Game() {
 
     socket.addEventListener('open', () => {
       setConnectionOpen(true);
+      // Memorise qu'une connexion a bien eu lieu : sans ce drapeau, l'ecran de
+      // perte de connexion s'afficherait une fraction de seconde au chargement,
+      // avant meme la premiere ouverture de socket.
+      setHasConnected(true);
       dispatch({ type: 'connection', text: 'connecté' });
     });
 
@@ -397,6 +450,35 @@ export default function Game() {
       sendVoteMessage(socketRef.current, targetCharacter);
     }
   }
+
+  // Le serveur ne remet personne dans la file tout seul : sans ce clic, le
+  // joueur reste sur l'ecran de resultats aussi longtemps qu'il le souhaite.
+  function handleReplay() {
+    if (socketRef.current) {
+      sendReplayMessage(socketRef.current);
+      dispatch({ type: 'reset' });
+    }
+  }
+
+  // Aucune reconnexion n'est prevue (arbitrage A2 du plan) : une socket perdue
+  // est definitive. Autant le dire clairement plutot que d'afficher un
+  // « Connexion au serveur… » qui laisserait croire a une tentative en cours.
+  if (hasConnected && !connectionOpen) {
+    return <ConnectionLost />;
+  }
+
+  // Le lobby remplace tout l'ecran de jeu : tant qu'aucune room n'existe, il
+  // n'y a ni personnages, ni tour, ni chat a afficher.
+  if (!state.closedCode && (state.roomStatus === null || state.roomStatus === 'waiting')) {
+    return (
+      <Lobby
+        waiting={state.players}
+        countdown={state.countdown}
+        connected={connectionOpen}
+      />
+    );
+  }
+
   return (
     <div className="game-page">
       <header className="game-header">
@@ -450,9 +532,12 @@ export default function Game() {
               {state.turnOrder.map((character) => (
                 <li
                   key={character}
-                  className={
-                    character === state.currentTurnCharacter ? 'active' : ''
-                  }
+                  className={[
+                    character === state.currentTurnCharacter ? 'active' : '',
+                    // Le partant reste visible : le retirer laisserait croire
+                    // qu'il n'a jamais joue, et fausserait la lecture du tour.
+                    state.leftCharacters.includes(character) ? 'opacity-40' : '',
+                  ].join(' ').trim()}
                 >
                   <div className="player-identity">
                     <div
@@ -462,12 +547,24 @@ export default function Game() {
                       {initialsFor(character)}
                     </div>
 
-                    <span>{character}</span>
+                    <span
+                      className={
+                        state.leftCharacters.includes(character)
+                          ? 'line-through'
+                          : ''
+                      }
+                    >
+                      {character}
+                    </span>
                   </div>
 
                   <div className="player-badges">
                     {character === state.currentTurnCharacter && (
                       <span className="turn-badge">● en train de jouer</span>
+                    )}
+
+                    {state.leftCharacters.includes(character) && (
+                      <span className="text-xs text-slate-500">parti</span>
                     )}
 
                     {character === state.myCharacter && (
@@ -482,6 +579,7 @@ export default function Game() {
                 turnOrder={state.turnOrder} 
                 myCharacter={state.myCharacter} 
                 hasVoted={state.hasVoted} 
+                leftCharacters={state.leftCharacters}
                 onVote={handleVote} 
               />
             )}
@@ -553,8 +651,46 @@ export default function Game() {
         <GameEndModal 
           winnerId={state.winnerId} 
           ranking={state.gameRanking} 
+          onReplay={handleReplay}
+          canReplay={state.closedCode !== null}
         />
       )}
+
+      {/* Fermeture qui n'est pas une fin de partie normale : quorum non
+          atteint, room desertee. Le classement n'existe pas dans ce cas. */}
+      {state.closedCode && state.closedCode !== 'game_finished' && (
+        <RoomClosedModal code={state.closedCode} onReplay={handleReplay} />
+      )}
     </div> // Fin de <div className="game-page">
+  );
+}
+
+// Ecran terminal : la partie est perdue pour ce joueur, il n'y a rien a
+// retenter depuis cette page. Recharger ouvre une nouvelle session.
+function ConnectionLost() {
+  return (
+    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-6">
+      <div className="w-full max-w-md rounded-xl border border-red-900/60 bg-slate-900 p-8 text-center">
+        <h2 className="text-2xl font-bold text-red-400 mb-3">Liaison rompue</h2>
+        <p className="text-slate-400 mb-6">
+          La connexion au serveur a été perdue. Ta place dans la séance en cours
+          est perdue : il faut rejoindre une nouvelle partie.
+        </p>
+
+        <button
+          onClick={() => window.location.reload()}
+          className="w-full rounded-lg bg-emerald-500 px-6 py-3 font-semibold text-slate-950 hover:bg-emerald-400 transition"
+        >
+          Rejoindre une nouvelle partie
+        </button>
+
+        <button
+          onClick={() => { window.location.href = '/'; }}
+          className="mt-2 w-full rounded-lg border border-slate-600 px-6 py-3 font-semibold text-slate-300 hover:bg-slate-800 transition"
+        >
+          Retour à l'accueil
+        </button>
+      </div>
+    </div>
   );
 }

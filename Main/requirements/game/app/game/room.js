@@ -88,6 +88,10 @@ class Room
 
 	removePlayer(playerId)
 	{
+		//Le personnage se lit avant tout nettoyage. assignments n'est jamais
+		//modifie, mais le partant doit sortir de players avant la diffusion :
+		//il n'a plus rien a recevoir.
+		const character = this.currentRound?.caracterOf(playerId) ?? null;
 		this.players.delete(playerId);
 
 		//O4 : le Round garde ses propres copies des joueurs (piege 2 du TODO).
@@ -95,6 +99,12 @@ class Room
 		//serveur enverrait `yourTurn` dans le vide.
 		if (this.currentRound)
 			this.currentRound.removePlayer(playerId);
+
+		//Etape 3 : on previent les autres, par nom de personnage et jamais par
+		//playerId. Le partant reste affiche cote front (turnOrder le conserve),
+		//simplement grise : sans ce message, les autres l'attendraient.
+		if (character)
+			this.broadcast({ type: 'playerDisconnected', character });
 
 		//O5 : plus aucun humain, la room ne sert plus a rien. Ce test passe avant
 		//les autres : les motifs de fermeture ci-dessous s'adressent aux joueurs
@@ -244,8 +254,12 @@ class Room
     {
         this.setStatus('endGame');
         
+		//B8 : on diffusait le playerId brut, que le front affichait tel quel
+		//(« joueur-3 »). On envoie desormais un nom lisible. La partie est
+		//terminee, reveler qui est qui ne trahit plus rien.
 		const finalRanking = [...this.players.values()].map(p => ({
             playerId: p.id,
+            name: p.agentName ? "L'AImpostor" : (p.displayName ?? p.id),
             score: p.score,
             isAI: !!p.agentName
         })).sort((a, b) => b.score - a.score);
@@ -253,7 +267,7 @@ class Room
         this.broadcast({
             type: 'gameEnd',
             ranking: finalRanking,
-            winnerId: finalRanking[0].playerId
+            winnerId: finalRanking[0].name
         });
 
 		//B1 : sans ceci la room et ses timers resteraient en memoire indefiniment.

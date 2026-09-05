@@ -12,7 +12,7 @@ import { createRoom } from './room.js';
 //
 //Le lobby ne diffuse qu'un compteur : aucune information sur les autres
 //joueurs, aucune communication possible avant le debut de la partie.
-const waiting = new Map(); // playerId -> { sendFn, onRoomJoined }
+const waiting = new Map(); // playerId -> { sendFn, onRoomJoined, displayName }
 let timerId = null;
 let countdown = null;
 
@@ -87,7 +87,7 @@ function launch()
 	const room = createRoom();
 	for (const [playerId, entry] of group)
 	{
-		room.addPlayer(playerId, entry.sendFn);
+		room.addPlayer(playerId, entry.sendFn, { displayName: entry.displayName });
 		entry.onRoomJoined(room);
 	}
 	room.startNewRound();
@@ -98,9 +98,9 @@ function launch()
 
 //onRoomJoined(room) previent l'appelant quand le joueur passe en partie :
 //server.js s'en sert pour raccrocher la room a la socket.
-export function enqueue(playerId, sendFn, onRoomJoined)
+export function enqueue(playerId, sendFn, onRoomJoined, displayName = null)
 {
-	waiting.set(playerId, { sendFn, onRoomJoined });
+	waiting.set(playerId, { sendFn, onRoomJoined, displayName });
 
 	const { min, max } = humansNeeded();
 	if (waiting.size >= max)

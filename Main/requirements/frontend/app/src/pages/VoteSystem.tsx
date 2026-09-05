@@ -8,10 +8,11 @@ type VoteMenuProps = {
   turnOrder: string[];
   myCharacter: string | null;
   hasVoted: boolean;
+  leftCharacters: string[];
   onVote: (targetCharacter: string) => void;
 };
 
-export function VoteMenu({ turnOrder, myCharacter, hasVoted, onVote }: VoteMenuProps) {
+export function VoteMenu({ turnOrder, myCharacter, hasVoted, leftCharacters, onVote }: VoteMenuProps) {
   // Nouvel état local pour stocker la sélection avant validation
   const [selected, setSelected] = useState<string | null>(null);
 
@@ -33,16 +34,23 @@ export function VoteMenu({ turnOrder, myCharacter, hasVoted, onVote }: VoteMenuP
       <div className="flex flex-wrap gap-2 justify-center mb-4">
         {turnOrder.map((character) => {
           if (character === myCharacter) return null;
-          
+
+          // Un joueur qui s'est deconnecte est forcement humain : le bot n'a
+          // pas de socket et ne part jamais. Voter pour lui serait une defaite
+          // certaine, on ne laisse donc pas le piege ouvert.
+          const hasLeft = leftCharacters.includes(character);
           const isSelected = selected === character;
-          
+
           return (
             <button
               key={character}
+              disabled={hasLeft}
               onClick={() => setSelected(character)}
               className={`rounded px-3 py-1 text-sm font-medium transition ${
-                isSelected 
-                  ? 'bg-orange-500 text-slate-900 shadow-[0_0_8px_rgba(245,166,35,0.6)]' 
+                hasLeft
+                  ? 'bg-slate-700 text-slate-500 line-through cursor-not-allowed'
+                  : isSelected
+                  ? 'bg-orange-500 text-slate-900 shadow-[0_0_8px_rgba(245,166,35,0.6)]'
                   : 'bg-sky-600 text-white hover:bg-sky-500'
               }`}
             >
@@ -142,9 +150,13 @@ export function ScoreboardModal({ aiCharacter, results, countdown }: ScoreboardM
 type GameEndModalProps = {
   winnerId: string;
   ranking: FinalRank[];
+  onReplay: () => void;
+  // La room met quelques secondes a fermer apres la fin de partie : tant
+  // qu'elle vit, redemander une partie n'aurait aucun effet cote serveur.
+  canReplay: boolean;
 };
 
-export function GameEndModal({ winnerId, ranking }: GameEndModalProps) {
+export function GameEndModal({ winnerId, ranking, onReplay, canReplay }: GameEndModalProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md">
       <div className="w-full max-w-md rounded-xl border border-yellow-600 bg-slate-900 p-8 shadow-2xl text-center">
@@ -168,7 +180,7 @@ export function GameEndModal({ winnerId, ranking }: GameEndModalProps) {
                 <tr key={rank.playerId} className="border-t border-slate-700 bg-slate-800/50">
                   <td className="px-4 py-3 font-bold text-white">{index + 1}</td>
                   <td className="px-4 py-3 font-medium text-white">
-                    {rank.playerId} 
+                    {rank.name ?? rank.playerId}
                     {rank.isAI && <span className="ml-2 rounded bg-indigo-500 px-2 py-1 text-[10px]">🤖 BOT</span>}
                   </td>
                   <td className="px-4 py-3 text-right font-bold text-emerald-400">
@@ -180,9 +192,58 @@ export function GameEndModal({ winnerId, ranking }: GameEndModalProps) {
           </table>
         </div>
 
-        <button 
-          onClick={() => window.location.href = '/'} 
-          className="mt-2 w-full rounded-lg bg-sky-500 px-6 py-3 font-semibold text-slate-950 hover:bg-sky-400 transition"
+        <button
+          disabled={!canReplay}
+          onClick={onReplay}
+          className={`w-full rounded-lg px-6 py-3 font-semibold transition ${
+            canReplay
+              ? 'bg-emerald-500 text-slate-950 hover:bg-emerald-400'
+              : 'bg-slate-700 text-slate-500 cursor-not-allowed'
+          }`}
+        >
+          {canReplay ? 'Rejouer' : 'Clôture de la séance…'}
+        </button>
+
+        <button
+          onClick={() => window.location.href = '/'}
+          className="mt-2 w-full rounded-lg border border-slate-600 px-6 py-3 font-semibold text-slate-300 hover:bg-slate-800 transition"
+        >
+          Retour à l'accueil
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// --- MODALE DE FERMETURE ANORMALE ---
+// Fin de partie autre que la fin normale : plus assez de joueurs, ou room
+// desertee. Il n'y a pas de classement a montrer dans ces cas-la.
+
+const MOTIFS: Record<string, string> = {
+  not_enough_players: "Trop de membres ont quitté la séance : le quorum n'est plus atteint.",
+  empty_room: 'La séance a été levée, plus aucun membre n\'était présent.',
+  agent_failure: 'La séance a été interrompue pour raison technique.',
+};
+
+export function RoomClosedModal({ code, onReplay }: { code: string; onReplay: () => void }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md">
+      <div className="w-full max-w-md rounded-xl border border-slate-600 bg-slate-900 p-8 text-center">
+        <h2 className="text-2xl font-bold text-slate-100 mb-3">Séance levée</h2>
+        <p className="text-slate-400 mb-6">
+          {MOTIFS[code] ?? 'La séance a pris fin.'}
+        </p>
+
+        <button
+          onClick={onReplay}
+          className="w-full rounded-lg bg-emerald-500 px-6 py-3 font-semibold text-slate-950 hover:bg-emerald-400 transition"
+        >
+          Rejouer
+        </button>
+
+        <button
+          onClick={() => window.location.href = '/'}
+          className="mt-2 w-full rounded-lg border border-slate-600 px-6 py-3 font-semibold text-slate-300 hover:bg-slate-800 transition"
         >
           Retour à l'accueil
         </button>

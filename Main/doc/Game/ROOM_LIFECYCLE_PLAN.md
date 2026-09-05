@@ -114,12 +114,12 @@ Un commit, une intention. Chaque étape est testable indépendamment.
 |---|---|---|---|
 | 1 | `destroy()` + registre | O1 + O2 du TODO. Ordre strict : broadcast -> clearInterval (room puis round) -> retrait de la Map. Corrige B1 et B3. | **fait** (`eb55021`) |
 | 2 | Retrait propre du Round | O4 + piège 2. Approche retenue : **marquer plutôt que retirer**. `turnOrder`, `playerById` et `assignments` restent intacts ; un `Set leftPlayers` décide qui joue. Corrige B6, rend B4 et B5 sans objet. | **fait** |
-| 3 | Notification au front | `playerDisconnected` par **nom de personnage**, jamais par `playerId`. | à faire |
+| 3 | Notification au front | `playerDisconnected` par **nom de personnage**, jamais par `playerId`. Le partant reste affiché, grisé et barré, et n'est plus une cible de vote. | **fait** |
 | 4 | Quorum de continuation | `minPlayersToContinue` (A4), appliqué aux seuls statuts `playing` et `scoreboard`. Sous le seuil : `destroy('not_enough_players')`. Corrige B2. | **fait** |
 | 5 | Rooms orphelines | O5, via un getter `humanCount` : `players.size === 0` n'arrive jamais, le bot n'ayant pas de socket n'est jamais retiré. Testé avant les autres motifs, il couvre le cas qui échappait à tout : une room en attente désertée. | **fait** |
 | 6 | État « fermée » | O3, via `isOpen()`. **Rendu caduc par l'étape 7** : une room naissant avec son effectif définitif n'accueille jamais personne, `isOpen()` a donc été supprimé. L'étape a servi dans l'intervalle. | remplacée |
 | 7 | File d'attente | `game/queue.js` remplace `findOrCreateRoom` (A6). La room naît avec son effectif définitif : `isOpen()`, `canStart()`, le compte à rebours de démarrage et les déclencheurs de `addPlayer` disparaissent de `Room`. Retour au lobby en fin de partie via `roomClosed`. | **fait** |
-| 8 | Documentation | Protocole WebSocket dans `BACKEND.MD` et `FRONTEND.MD`. | à faire |
+| 8 | Documentation | Protocole WebSocket à jour dans `BACKEND.MD` et `FRONTEND.MD`, y compris le système de vote qui n'y figurait pas. | **fait** |
 
 L'étape 2 est la plus délicate du lot : c'est elle qui contient les pièges.
 
@@ -138,7 +138,7 @@ Relevés à la lecture, en plus des pièges du TODO.
 | B5 | `round.js` `startTurn()` | `playerById.get()` déréférencé sans garde. **Sans objet** depuis l'étape 2 : `playerById` et `turnOrder` ne sont jamais modifiés, donc la recherche aboutit toujours. C'est l'avantage principal de « marquer plutôt que retirer ». | — |
 | B6 | `round.js` constructeur | `humanPlayers` et `expectedVotes` figés à la construction : un joueur parti restait compté dans les scores. | **fait** |
 | B7 | `main.tsx` `<StrictMode>` | Double-monte les effets en dev : la socket est ouverte, fermée, rouverte. Produit de fausses déconnexions en développement. | — |
-| B8 | `room.js` `endGame()`, `round.js` `endRound()` | Diffusent les `playerId` à tous les joueurs, contre la règle n°1 du TODO. Cosmétique aujourd'hui (`joueur-3`), mais interdit toute idée de rendre `player.id` secret. | 8 |
+| B8 | `room.js` `endGame()`, `round.js` `endRound()` | Diffusent les `playerId` à tous les joueurs, contre la règle n°1 du TODO. **Partiellement traité** : `gameEnd` porte désormais un champ `name` lisible et le front n'affiche plus l'identifiant. Mais `roundEnd` et `ranking` transportent toujours `playerId`. Le retirer suppose de séparer la charge diffusée de l'objet interne, qui sert au calcul des scores — à faire avec le chantier vote. | partiel |
 | B9 | `player.js` | `this.isAI = false` ignore le paramètre reçu ; rien ne lit ce champ, tout le code teste `agentName`. Champ mort et faux. | — |
 
 **Principe retenu : on ne code pas de garde contre un état impossible.** B4 et
@@ -163,10 +163,14 @@ minPlayersToContinue: 3,    // quorum de continuation (A4)                   [fa
 Toujours par **nom de personnage**, jamais par `playerId`. Le `code` est une
 chaîne machine : le front choisit le texte et la langue.
 
+Table complète tenue à jour dans `BACKEND.MD` § 3.6. Résumé des ajouts de ce
+lot :
+
 | Message | Sens | Étape |
 |---|---|---|
 | `{ type:'roomClosed', code }` | La room ferme. Codes émis à ce jour : `game_finished`, `not_enough_players`, `empty_room`. Prévu : `agent_failure`. | 1 (émis, pas encore traité par le front) |
 | `{ type:'playerDisconnected', character }` | Un joueur a quitté la partie | 3 |
+| `{ type:'replay' }` (client → serveur) | Le joueur redemande une partie. Le serveur ne remet **jamais** personne dans la file de lui-même. | 7 |
 | `{ type:'state', status:'waiting', players, room_number:null, countdown }` | Lobby : uniquement un compteur. **Le message `state` existant est réutilisé** plutôt qu'un type `queue` dédié, pour que le front continue de fonctionner sans modification (`room_number: null` s'affiche déjà « Salle #— »). Un type dédié pourra venir avec l'étape 8. | 7 |
 
 **Le front ignore encore `roomClosed`** : la liste blanche de
