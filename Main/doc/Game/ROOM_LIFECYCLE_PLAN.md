@@ -13,77 +13,68 @@ Dernière mise à jour : 5 septembre 2026.
 
 ### A1 — Le jeu reste jouable sans compte
 
-On ne conditionne pas la partie à une authentification. Un invité joue comme
-un joueur connecté, avec **la même politique de déconnexion**. Une seule
-identité, un seul chemin de code :
+On ne conditionne pas la partie à une authentification. Combiné à A2, cela
+signifie qu'il n'y a **aucun mécanisme d'identité** dans le service de jeu :
+`playerId` reste un compteur serveur, comme aujourd'hui.
 
-```js
-playerId = sessionId   // genere cote client, identique pour invite et connecte
-```
+### A2 — On ne gère aucune reconnexion
 
-Un JWT pourra plus tard être transmis **en plus**, pour rattacher une partie à
-un profil (stats, historique). Il ne remplacera pas `sessionId` : ce sont deux
-notions différentes (qui tu es / quelle place tu occupes).
+Décision structurante du lot. On part du principe que le réseau est stable et
+que le cas courant ne comporte pas de coupure.
 
-*Pourquoi pas deux politiques (connecté = reconnexion, invité = kick) : la
-partie coûteuse de la reconnexion est la resynchronisation, et elle est
-identique dans les deux cas. Séparer n'économise rien et double les chemins de
-code, les politiques et les tests.*
+**Toute perte de socket est définitive.** Coupure réseau, rafraîchissement de
+page, fermeture d'onglet : dans les trois cas, le joueur quitte la partie et
+ne peut pas récupérer sa place.
 
-### A2 — On gère la coupure réseau, pas le rafraîchissement
+*Pourquoi : la reconnexion demande une identité stable côté client, un délai
+de grâce côté serveur, une reprise de socket, et surtout une
+resynchronisation complète de l'état (personnage, historique, tour courant,
+votes). C'est la plus grosse charge du dossier pour un gain qui ne se
+manifeste que dans les cas rares. On préfère un lot simple et solide.*
 
-C'est la décision structurante du lot.
+Conséquence à afficher clairement côté front : **rafraîchir la page pendant
+une partie fait perdre sa place.**
 
-| Cas | Contexte JS | État React | Traité ? |
-|---|---|---|---|
-| Coupure réseau courte | vivant | intact | **oui** — il suffit de rebrancher la socket |
-| Rafraîchissement de page | détruit | perdu | **non** — demanderait un snapshot complet |
+### A3 — Abandonné : identité de session
 
-Un refresh en cours de partie fait donc **perdre sa place**. C'est un
-comportement assumé, à afficher clairement côté front.
+*Cet arbitrage prévoyait un `sessionId` en mémoire côté client pour survivre
+aux coupures réseau courtes. Il est **abandonné** avec A2 : sans reconnexion,
+l'identité de session n'a plus d'usage. Le code correspondant a été retiré.*
 
-*Pourquoi : la coupure réseau est subie, le refresh est volontaire. Le premier
-ne demande aucune resynchronisation puisque le client a gardé son état en
-mémoire ; le second demande de tout reconstruire. On traite le cas subi et on
-documente l'autre.*
-
-### A3 — L'identité vit en mémoire, pas dans un stockage persistant
-
-```ts
-// portee module : meurt avec le contexte JS
-const sessionId = crypto.randomUUID();
-```
-
-**Ne pas utiliser `sessionStorage`, `localStorage` ni de cookie.** Tous les
-trois survivent au rafraîchissement : le joueur reviendrait avec la même
-identité, récupérerait sa place, et se retrouverait devant une interface vide
-(ni personnage, ni historique). Une variable en mémoire a exactement la bonne
-durée de vie — elle *est* la frontière entre récupérable et non récupérable.
+*Conservé ici pour mémoire, avec le point de conception à ne pas oublier si le
+sujet revenait un jour : un jeton de session ne doit **jamais** devenir
+`player.id`, car `endGame` et `endRound` diffusent les `playerId` à tous les
+joueurs (voir B8). Ce seraient deux champs distincts.*
 
 ### A4 — Seuil de continuation distinct du seuil de démarrage
 
 `minPlayers` sert à **démarrer**. Le réutiliser pour **continuer** rend une
-partie mortelle au premier départ : avec `minPlayers: 4` et 1 bot, une partie
-démarre à 3 humains et mourrait dès qu'un seul s'en va.
+partie mortelle au premier départ.
 
 ```js
-minPlayers: 4,             // pour DEMARRER
+minPlayers: 3,             // pour DEMARRER
 minPlayersToContinue: 3,   // pour CONTINUER une partie lancee
 ```
 
-Le comptage porte sur les joueurs **connectés**, pas sur `players.size` : un
-joueur en délai de grâce est encore dans la Map mais ne joue pas.
+**À arbitrer avec les réglages actuels** (`minPlayers: 3`, un seul bot) : une
+partie démarre donc à 2 humains. En perdre un laisse 1 humain face à 1 bot,
+où le vote n'a plus de sens. Avec cette configuration, `minPlayersToContinue`
+égal à `minPlayers` est défendable : **toute déconnexion annule la partie**.
+Si l'effectif remonte (`minPlayers: 4` et plus), un seuil de continuation plus
+bas redevient intéressant.
+
+Le comptage porte sur `players.size` (bot inclus, voir piège 1 du TODO).
 
 ### A5 — Un silence est toujours de durée identique
 
-Ne **jamais** raccourcir le tour d'un joueur déconnecté. Si un déconnecté est
-sauté instantanément alors qu'un silence normal dure 10 s, « silencieux
-pendant 10 s » devient un signal distinctif — et le bot, quand son LLM traîne
-ou échoue, est précisément dans ce cas. Ce serait un canal auxiliaire
-désignant l'IA, en violation de la règle n°1.
+Ne **jamais** raccourcir un tour resté muet. Si un silence pouvait durer moins
+que `turnDuration` dans certains cas, sa durée deviendrait un signal — et le
+bot, quand son LLM traîne ou échoue, est justement un joueur muet. Ce serait
+un canal auxiliaire désignant l'IA, en violation de la règle n°1.
 
-Déconnecté, muet, ou bot en panne doivent produire le **même** `silence`, au
-**même** moment.
+Une **déconnexion**, elle, est annoncée ouvertement (voir §6) : ce n'est pas
+une information secrète, et le tour d'un joueur parti peut donc être clos
+immédiatement sans rien trahir.
 
 ### A6 — Une file d'attente, pas un lobby riche
 
@@ -106,12 +97,12 @@ disparaissent de Room. Le cycle devient `créée -> en jeu -> détruite`.
 
 À ne pas implémenter dans ce lot, mais à ne pas rendre impossible :
 
-- **Snapshot / resynchronisation complète** (voir A2). Les étapes 2 et 3
-  ci-dessous en sont les prérequis : l'ajouter plus tard ne demandera aucune
-  réécriture.
+- **Toute forme de reconnexion** : identité de session, délai de grâce,
+  reprise de socket, snapshot de resynchronisation (A2, A3).
 - **Rattachement d'une partie à un compte** (stats, historique).
 - **Règles anti-affinité** dans la file d'attente : on pose l'emplacement,
   pas les règles.
+- **Heartbeat ping/pong** — optionnel, voir §7.
 
 ---
 
@@ -119,19 +110,18 @@ disparaissent de Room. Le cycle devient `créée -> en jeu -> détruite`.
 
 Un commit, une intention. Chaque étape est testable indépendamment.
 
-| # | Étape | Contenu |
-|---|---|---|
-| 1 | `destroy()` + registre | O1 + O2 du TODO. Ordre strict : broadcast -> clearInterval (room puis round) -> retrait de la Map. Corrige B1. |
-| 2 | Identité de session | `sessionId` en mémoire côté client, passé en query param. Un seul chemin invité/connecté (A1, A3). |
-| 3 | Heartbeat + grâce + retry | Ping/pong serveur, délai de grâce, reconnexion automatique côté client. Couvre A2. |
-| 4 | Retrait propre du Round | O4 + piège 2. Corrige B4, B5, B6. |
-| 5 | Quorum de continuation | `minPlayersToContinue` sur les connectés (A4). |
-| 6 | État « fermée » | O3. Une partie lancée n'accepte plus personne. |
-| 7 | File d'attente | Remplace `findOrCreateRoom` (A6). |
-| 8 | Documentation | Protocole WebSocket dans `BACKEND.MD` et `FRONTEND.MD`. |
+| # | Étape | Contenu | État |
+|---|---|---|---|
+| 1 | `destroy()` + registre | O1 + O2 du TODO. Ordre strict : broadcast -> clearInterval (room puis round) -> retrait de la Map. Corrige B1 et B3. | **fait** (`eb55021`) |
+| 2 | Retrait propre du Round | O4 + piège 2. Approche retenue : **marquer plutôt que retirer**. `turnOrder`, `playerById` et `assignments` restent intacts ; un `Set leftPlayers` décide qui joue. Corrige B6, rend B4 et B5 sans objet. | **fait** |
+| 3 | Notification au front | `playerDisconnected` par **nom de personnage**, jamais par `playerId`. | à faire |
+| 4 | Quorum de continuation | `minPlayersToContinue` (A4), appliqué aux seuls statuts `playing` et `scoreboard`. Sous le seuil : `destroy('not_enough_players')`. Corrige B2. | **fait** |
+| 5 | Rooms orphelines | O5, via un getter `humanCount` : `players.size === 0` n'arrive jamais, le bot n'ayant pas de socket n'est jamais retiré. Testé avant les autres motifs, il couvre le cas qui échappait à tout : une room en attente désertée. | **fait** |
+| 6 | État « fermée » | O3, via `isOpen()` : une room n'accueille que tant qu'elle est en `waiting` et non pleine. `isFull()` seul laissait entrer un arrivant dans une partie lancée dont un joueur venait de partir. | **fait** |
+| 7 | File d'attente | Remplace `findOrCreateRoom` (A6). Permet le retour au lobby en fin de partie. | à faire |
+| 8 | Documentation | Protocole WebSocket dans `BACKEND.MD` et `FRONTEND.MD`. | à faire |
 
-L'étape 3 est celle qui délivre la valeur visible. L'étape 1 est le socle :
-tout le reste s'appuie dessus.
+L'étape 2 est la plus délicate du lot : c'est elle qui contient les pièges.
 
 ---
 
@@ -141,26 +131,29 @@ Relevés à la lecture, en plus des pièges du TODO.
 
 | # | Où | Problème | Étape |
 |---|---|---|---|
-| B1 | `room.js` `endGame()` | Ne détruit pas la room. Une partie terminée peut recevoir un nouveau joueur. | 1 |
-| B2 | `room.js` `removePlayer()` | Remet le statut à `waiting` pendant un scoreboard : `timerId` sert à deux usages. | 5 |
-| B3 | `room.js` `numberOfPlayer` | Champ mort maintenu en parallèle de `players.size`, décrémenté même si absent. | 1 |
-| B4 | `round.js` `endRound()` | `players.find(p => p.agentName)` déréférencé sans garde -> crash du process. | 4 |
-| B5 | `round.js` `startTurn()` | `playerById.get()` déréférencé sans garde. Inoffensif aujourd'hui, devient un crash dès qu'on retire un joueur du Round. | 4 |
-| B6 | `round.js` constructeur | `humanPlayers` et `expectedVotes` figés à la construction. | 4 |
+| B1 | `room.js` `endGame()` | Ne détruisait pas la room. Une partie terminée pouvait recevoir un nouveau joueur. | **fait** |
+| B2 | `room.js` `removePlayer()` | Remettait le statut à `waiting` pendant un scoreboard : le test portait sur `timerId`, qui sert à deux usages. Le statut est désormais testé aussi. | **fait** |
+| B3 | `room.js` `numberOfPlayer` | Champ maintenu à la main, décrémenté même pour un joueur absent. | **fait** |
+| B4 | `round.js` `endRound()` | `players.find(p => p.agentName)` déréférencé sans garde. **Sans objet** : `this.players` n'est jamais modifié, chaque room reçoit un bot à sa création, et un bot ne se déconnecte jamais. | — |
+| B5 | `round.js` `startTurn()` | `playerById.get()` déréférencé sans garde. **Sans objet** depuis l'étape 2 : `playerById` et `turnOrder` ne sont jamais modifiés, donc la recherche aboutit toujours. C'est l'avantage principal de « marquer plutôt que retirer ». | — |
+| B6 | `round.js` constructeur | `humanPlayers` et `expectedVotes` figés à la construction : un joueur parti restait compté dans les scores. | **fait** |
 | B7 | `main.tsx` `<StrictMode>` | Double-monte les effets en dev : la socket est ouverte, fermée, rouverte. Produit de fausses déconnexions en développement. | — |
+| B8 | `room.js` `endGame()`, `round.js` `endRound()` | Diffusent les `playerId` à tous les joueurs, contre la règle n°1 du TODO. Cosmétique aujourd'hui (`joueur-3`), mais interdit toute idée de rendre `player.id` secret. | 8 |
+| B9 | `player.js` | `this.isAI = false` ignore le paramètre reçu ; rien ne lit ce champ, tout le code teste `agentName`. Champ mort et faux. | — |
 
-**B5 et B7 sont ceux qui font perdre du temps si on ne les a pas en tête.**
+**Principe retenu : on ne code pas de garde contre un état impossible.** B4 et
+B5 le sont devenus grâce au choix de conception de l'étape 2, pas grâce à des
+`if` défensifs. Une garde sur un cas inatteignable est du code mort : elle
+alourdit la lecture et laisse croire que le cas peut survenir.
 
 ---
 
-## 5. Configuration à prévoir
+## 5. Configuration
 
 ```js
 // game/config.js
-roomCloseDelayMs: 10000,    // lecture du scoreboard avant destruction
-disconnectGraceMs: 15000,   // delai avant kick definitif
-heartbeatIntervalMs: 10000, // ping/pong
-minPlayersToContinue: 3,    // quorum de continuation (A4)
+roomCloseDelayMs: 10000,    // ms : lecture du classement avant destruction  [fait]
+minPlayersToContinue: 3,    // quorum de continuation (A4)                   [fait]
 ```
 
 ---
@@ -170,12 +163,28 @@ minPlayersToContinue: 3,    // quorum de continuation (A4)
 Toujours par **nom de personnage**, jamais par `playerId`. Le `code` est une
 chaîne machine : le front choisit le texte et la langue.
 
-| Message | Sens |
-|---|---|
-| `{ type:'roomClosed', code }` | La room ferme. Codes : `game_finished`, `not_enough_players`, `agent_failure` |
-| `{ type:'playerDisconnected', character }` | Un joueur a perdu la connexion |
-| `{ type:'playerReconnected', character }` | Il est revenu avant expiration |
-| `{ type:'queue', waiting }` | Lobby : uniquement un compteur |
+| Message | Sens | Étape |
+|---|---|---|
+| `{ type:'roomClosed', code }` | La room ferme. Codes émis à ce jour : `game_finished`, `not_enough_players`, `empty_room`. Prévu : `agent_failure`. | 1 (émis, pas encore traité par le front) |
+| `{ type:'playerDisconnected', character }` | Un joueur a quitté la partie | 3 |
+| `{ type:'queue', waiting }` | Lobby : uniquement un compteur | 7 |
 
-Toute évolution du protocole doit être répercutée dans `BACKEND.MD` et
-`FRONTEND.MD` (étape 8).
+**Le front ignore encore `roomClosed`** : la liste blanche de
+`gameSocket.ts` filtre les types inconnus, donc le message part du serveur
+mais n'atteint jamais `Game.tsx`. À traiter à l'étape 8.
+
+---
+
+## 7. Optionnel : heartbeat ping/pong
+
+Une socket tuée brutalement (mise en veille, wifi coupé, machine éteinte) ne
+produit **pas** d'événement `close` : il n'y a pas de handshake de fermeture.
+Le TCP keepalive de Linux met environ deux heures à s'en apercevoir. Le joueur
+reste alors dans la room, compte dans le quorum, et ne répond jamais.
+
+Sous l'hypothèse d'un réseau stable et d'un usage normal (on ferme son
+onglet), `close` est fiable et ce cas reste rare — d'où le classement en
+optionnel. À garder en tête si des joueurs fantômes apparaissent en test.
+
+Le pattern existe déjà dans le projet : `presence.gateway.ts` du backend
+NestJS utilise un `isAlive` avec ping/pong. Environ 15 lignes.

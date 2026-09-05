@@ -1,9 +1,10 @@
 export const gameConfig = {
-	bots: ['mistral_medium', 'mistral_big', 'mistral_small'],//bots ajoutes dans l'ordre
-	turnPerRound: 2,   // nombre de tours par manche
+	bots: ['mistral_medium'],//bots ajoutes dans l'ordre
+	turnPerRound: 5,   // nombre de tours par manche
 	turnDuration: 10,   // secondes par tour
-	maxPlayers: 6,
-	minPlayers: 4,
+	maxPlayers: 4,
+	minPlayers: 3,          // seuil pour DEMARRER une partie
+	minPlayersToContinue: 3, // seuil pour CONTINUER une partie deja lancee
 	startingTimer: 10,
 	maxRounds: 2, // nombre de manche
 	scoreboardDuration: 10,

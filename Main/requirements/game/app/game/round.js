@@ -26,12 +26,45 @@ export class Round {
 		this.onRoundEnded = onRoundEndedFn;
 		this.roundStartTime = null; 
         this.votes = new Map(); // Stockera : playerId -> { targetCharacter, isCorrect, timeElapsed, score }
-        this.humanPlayers = this.players.filter(p => !p.agentName);
-        this.expectedVotes = this.humanPlayers.length;
+
+		//O4 : joueurs partis en cours de manche. On les MARQUE au lieu de les
+		//retirer des structures. Retirer une entree de turnOrder decalerait tous
+		//les indices suivants : selon que le partant est avant ou apres
+		//turnIndex, on sauterait un tour ou on en rejouerait un.
+		this.leftPlayers = new Set();
 
 	
 		this.assignCaracters();
 		this.assignTurnOrder();
+	}
+
+	//B6 : ces deux valeurs etaient figees dans le constructeur. Un joueur parti
+	//en cours de manche y restait, ce qui faussait le calcul des scores de
+	//endRound. Des getters les recalculent a chaque lecture : la divergence
+	//devient impossible, et les appelants n'ont pas a changer.
+	get humanPlayers()
+	{
+		return this.players.filter((p) => !p.agentName && !this.leftPlayers.has(p.id));
+	}
+
+	get expectedVotes()
+	{
+		return this.humanPlayers.length;
+	}
+
+	//Retire un joueur de la manche en cours, appele par Room.removePlayer.
+	//On se contente de le marquer :
+	//  - son tour en cours, s'il l'avait, se termine normalement par un silence
+	//    au bout de turnDuration, comme n'importe quel joueur muet
+	//  - ses tours suivants sont sautes (voir startTurn)
+	//  - la manche suivante est construite sans lui, puisque Room l'a deja
+	//    retire de sa Map avant de nous appeler
+	removePlayer(playerId)
+	{
+		if (!this.playerById.has(playerId) || this.leftPlayers.has(playerId))
+			return false;
+		this.leftPlayers.add(playerId);
+		return true;
 	}
 
 	start() //Lance une manche
@@ -46,6 +79,11 @@ export class Round {
 	startTurn()
 	{
 		const playerId = this.turnOrder[this.turnIndex];
+
+		//O4 : on saute le tour d'un joueur parti.
+		if (this.leftPlayers.has(playerId))
+			return this.advanceTurn();
+
 		this.currentPlayer = this.playerById.get(playerId);
 		this.countdown = this.turnDuration
 		this.currentPlayer.send({ type: 'yourTurn', countdown: this.countdown });

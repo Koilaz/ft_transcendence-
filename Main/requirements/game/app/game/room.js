@@ -12,7 +12,7 @@ let nextRoomId = 1;
 
 export function findOrCreateRoom() {
 	for (const room of rooms.values()) {
-		if (!room.isFull())
+		if (room.isOpen())
 			return room;
 	}
 	const newRoom = new Room(nextRoomId++);
@@ -99,14 +99,41 @@ class Room
 	removePlayer(playerId)
 	{
 		this.players.delete(playerId);
-		if(this.timerId && this.players.size < this.minPlayers)
+
+		//O4 : le Round garde ses propres copies des joueurs (piege 2 du TODO).
+		//Sans cet appel, le tour du joueur parti arriverait quand meme et le
+		//serveur enverrait `yourTurn` dans le vide.
+		if (this.currentRound)
+			this.currentRound.removePlayer(playerId);
+
+		//O5 : plus aucun humain, la room ne sert plus a rien. Ce test passe
+		//avant les autres : les motifs de fermeture ci-dessous s'adressent aux
+		//joueurs restants, et il n'y en a plus. Il couvre aussi le cas qui
+		//echappait a tout le reste, celui d'une room en attente desertee, que
+		//le quorum de continuation ne regarde pas.
+		if (this.humanCount === 0)
+			return this.destroy('empty_room');
+
+		//B2 : ce test portait sur timerId seul, or timerId sert a la fois au
+		//compte a rebours de demarrage et a celui du scoreboard. Un depart
+		//pendant un scoreboard renvoyait donc la room en attente au beau milieu
+		//d'une partie. On teste desormais aussi le statut.
+		if (this.status === 'waiting' && this.timerId && this.players.size < this.minPlayers)
 		{
 			clearInterval(this.timerId);
 			this.timerId = null;
 			this.countdown = null;
-			this.setStatus('waiting');
-			return;
 		}
+
+		//A4 : minPlayers est un seuil de DEMARRAGE, minPlayersToContinue un
+		//seuil de CONTINUATION. Le quorum ne vaut que pour une partie en cours :
+		//avant le lancement la room attend simplement d'autres joueurs, et une
+		//fois endGame atteint sa fermeture est deja programmee avec le bon
+		//motif (game_finished), qu'il ne faut pas devancer.
+		if ((this.status === 'playing' || this.status === 'scoreboard')
+			&& this.players.size < gameConfig.minPlayersToContinue)
+			return this.destroy('not_enough_players');
+
 		this.broadcastState();
 	}
 
@@ -164,9 +191,28 @@ class Room
 		return this.players.size;
 	}
 
+	//O5 : players.size ne tombe JAMAIS a zero. Le bot n'a pas de socket, donc
+	//removePlayer n'est jamais appele pour lui : une room desertee garde son
+	//bot indefiniment. Seul le nombre d'humains dit si la room sert encore.
+	//On teste agentName, comme partout ailleurs dans le code (le champ isAI de
+	//Player vaut toujours false, voir B9 du plan).
+	get humanCount()
+	{
+		return [...this.players.values()].filter((p) => !p.agentName).length;
+	}
+
 	isFull()
 	{
 		return this.players.size >= this.maxPlayers;
+	}
+
+	//O3 : une room n'accueille de nouveaux joueurs que tant qu'elle attend.
+	//isFull() ne suffisait pas : une partie lancee dont un joueur vient de
+	//partir n'est plus pleine, et findOrCreateRoom y aurait parachute un
+	//arrivant en pleine manche, sans personnage ni historique.
+	isOpen()
+	{
+		return this.status === 'waiting' && !this.isFull();
 	}
 
 	canStart()
