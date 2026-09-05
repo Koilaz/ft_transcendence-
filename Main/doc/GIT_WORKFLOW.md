@@ -33,7 +33,7 @@ main   <- uniquement du code stable, defendable en eval aujourd'hui
  |
  +-- dev   <- integration : les features arrivent ici d'abord, on teste ensemble
       |
-      +-- feat/auth-oauth       (eliott)
+      +-- feat/auth-oauth       (Leo)
       +-- feat/vote-system      (chouaib)
       +-- fix/docker-ollama     (mathys)
 ```
