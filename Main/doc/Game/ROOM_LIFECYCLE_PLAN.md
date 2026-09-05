@@ -116,7 +116,7 @@ Un commit, une intention. Chaque étape est testable indépendamment.
 | 2 | Retrait propre du Round | O4 + piège 2. Approche retenue : **marquer plutôt que retirer**. `turnOrder`, `playerById` et `assignments` restent intacts ; un `Set leftPlayers` décide qui joue. Corrige B6, rend B4 et B5 sans objet. | **fait** |
 | 3 | Notification au front | `playerDisconnected` par **nom de personnage**, jamais par `playerId`. | à faire |
 | 4 | Quorum de continuation | `minPlayersToContinue` (A4), appliqué aux seuls statuts `playing` et `scoreboard`. Sous le seuil : `destroy('not_enough_players')`. Corrige B2. | **fait** |
-| 5 | Rooms orphelines | O5. Attention : `players.size === 0` n'arrive jamais, le bot ne se déconnecte pas. | à faire |
+| 5 | Rooms orphelines | O5, via un getter `humanCount` : `players.size === 0` n'arrive jamais, le bot n'ayant pas de socket n'est jamais retiré. Testé avant les autres motifs, il couvre le cas qui échappait à tout : une room en attente désertée. | **fait** |
 | 6 | État « fermée » | O3. Une partie lancée n'accepte plus personne. | à faire |
 | 7 | File d'attente | Remplace `findOrCreateRoom` (A6). Permet le retour au lobby en fin de partie. | à faire |
 | 8 | Documentation | Protocole WebSocket dans `BACKEND.MD` et `FRONTEND.MD`. | à faire |
@@ -165,7 +165,7 @@ chaîne machine : le front choisit le texte et la langue.
 
 | Message | Sens | Étape |
 |---|---|---|
-| `{ type:'roomClosed', code }` | La room ferme. Codes : `game_finished`, `not_enough_players`, `agent_failure` | 1 (émis, pas encore traité par le front) |
+| `{ type:'roomClosed', code }` | La room ferme. Codes émis à ce jour : `game_finished`, `not_enough_players`, `empty_room`. Prévu : `agent_failure`. | 1 (émis, pas encore traité par le front) |
 | `{ type:'playerDisconnected', character }` | Un joueur a quitté la partie | 3 |
 | `{ type:'queue', waiting }` | Lobby : uniquement un compteur | 7 |
 

@@ -106,6 +106,14 @@ class Room
 		if (this.currentRound)
 			this.currentRound.removePlayer(playerId);
 
+		//O5 : plus aucun humain, la room ne sert plus a rien. Ce test passe
+		//avant les autres : les motifs de fermeture ci-dessous s'adressent aux
+		//joueurs restants, et il n'y en a plus. Il couvre aussi le cas qui
+		//echappait a tout le reste, celui d'une room en attente desertee, que
+		//le quorum de continuation ne regarde pas.
+		if (this.humanCount === 0)
+			return this.destroy('empty_room');
+
 		//B2 : ce test portait sur timerId seul, or timerId sert a la fois au
 		//compte a rebours de demarrage et a celui du scoreboard. Un depart
 		//pendant un scoreboard renvoyait donc la room en attente au beau milieu
@@ -181,6 +189,16 @@ class Room
 	get numberOfPlayer()
 	{
 		return this.players.size;
+	}
+
+	//O5 : players.size ne tombe JAMAIS a zero. Le bot n'a pas de socket, donc
+	//removePlayer n'est jamais appele pour lui : une room desertee garde son
+	//bot indefiniment. Seul le nombre d'humains dit si la room sert encore.
+	//On teste agentName, comme partout ailleurs dans le code (le champ isAI de
+	//Player vaut toujours false, voir B9 du plan).
+	get humanCount()
+	{
+		return [...this.players.values()].filter((p) => !p.agentName).length;
 	}
 
 	isFull()
