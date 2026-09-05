@@ -10,6 +10,7 @@ import {
   type GameMessage,
   type RoundResult,
   type FinalRank,
+  type AgentStatus,
 } from '../services/gameSocket';
 import { VoteMenu, ScoreboardModal, GameEndModal, RoomClosedModal } from './VoteSystem';
 import { Lobby } from './Lobby';
@@ -44,6 +45,9 @@ type GameUIState = {
   leftCharacters: string[];
   // Motif de fermeture de la room, null tant qu'elle est vivante.
   closedCode: string | null;
+  // Bots annonces hors service par le serveur a la connexion. Vide dans le cas
+  // normal, et l'ecrasante majorite des parties n'y touchera jamais.
+  agentsDown: AgentStatus[];
 };
 
 const initialState: GameUIState = {
@@ -64,7 +68,8 @@ const initialState: GameUIState = {
   totalTurns: null,
   players: 0,
   leftCharacters: [],
-  closedCode: null
+  closedCode: null,
+  agentsDown: []
 };
 
 // Pas de "join"/"quickplay" : le serveur assigne le joueur des l'ouverture de
@@ -119,6 +124,13 @@ function gameReducer(state: GameUIState, action: GameAction): GameUIState {
         hasVoted: false,
         roundResults: null,
         aiCharacter: null,
+        // Un nom de personnage n'a de sens QUE dans sa manche : ils sont
+        // retires au sort a chaque nouvelle manche. Garder les partants d'une
+        // manche a l'autre grisait un joueur bien present, celui qui heritait
+        // du personnage libere, et interdisait de voter pour lui.
+        // Les joueurs reellement partis, eux, ne figurent plus du tout dans le
+        // turnOrder de la manche suivante : il n'y a rien a reporter.
+        leftCharacters: [],
         messages: [
           ...state.messages,
           {
@@ -211,8 +223,14 @@ function gameReducer(state: GameUIState, action: GameAction): GameUIState {
         countdown: null,
       };
 
+    case 'agentsDown':
+      return { ...state, agentsDown: action.agents };
+
+    // La socket n'est pas rouverte au « Rejouer » : le serveur ne renverra
+    // jamais son diagnostic, donc on le garde plutot que de renvoyer le joueur
+    // dans la file sans l'avertissement qu'il vient de lire.
     case 'reset':
-      return { ...initialState };
+      return { ...initialState, agentsDown: state.agentsDown };
 
     case 'silence':
       return {
@@ -475,6 +493,7 @@ export default function Game() {
         waiting={state.players}
         countdown={state.countdown}
         connected={connectionOpen}
+        agentsDown={state.agentsDown}
       />
     );
   }

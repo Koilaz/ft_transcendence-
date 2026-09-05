@@ -3,7 +3,7 @@ import express from 'express';
 import http from 'node:http';
 import { WebSocketServer } from 'ws';
 import { enqueue, dequeue } from './game/queue.js';
-import { checkAllAgents } from './agents/index.js';
+import { checkAllAgents, unavailableBots } from './agents/index.js';
 import { warmupOllama } from './agents/ollama_local.js';
 
 const app = express();
@@ -53,6 +53,14 @@ wss.on('connection', (socket, request) =>
 
 	socket.playerId = playerId;
 	socket.room = null;   // null tant qu'il patiente dans la file
+
+	//Avant la file, pas apres : le joueur doit savoir qu'il attend une partie
+	//sans imposteur pendant qu'il attend, pas une fois la partie finie. Le
+	//rapport date du demarrage, il ne coute rien a relire ici.
+	const brokenAgents = unavailableBots();
+	if (brokenAgents.length)
+		sendFn({ type: 'agentsDown', agents: brokenAgents });
+
 	enqueue(playerId, sendFn, joinRoom, displayName);
 	console.log(`${playerId} (${displayName ?? 'anonyme'}) connecté → file d'attente`);
 	//2. messages entrants

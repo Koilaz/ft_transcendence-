@@ -21,6 +21,21 @@ export type GamePlayerDisconnectedMessage = {
   character: string;
 };
 
+// Envoye des la connexion quand un agent de game/config.js n'a pas passe le
+// healthcheck au demarrage du serveur : ces bots-la ne parleront pas. `reason`
+// est une chaine machine, c'est le front qui choisit le texte ; `detail` est le
+// motif technique brut, pour celui qui doit le reparer.
+export type AgentStatus = {
+  name: string;
+  reason: string;
+  detail: string;
+};
+
+export type GameAgentsDownMessage = {
+  type: 'agentsDown';
+  agents: AgentStatus[];
+};
+
 export type GameAssignmentMessage = {
   type: 'assignment';
   character: string;
@@ -102,6 +117,7 @@ export type GameMessage =
   | GameGameEndMessage
   | GameRoomClosedMessage
   | GamePlayerDisconnectedMessage
+  | GameAgentsDownMessage
   | GameSilenceMessage;
 
 export type GameMessageHandler = (
@@ -149,7 +165,8 @@ export function connectGameSocket(
         message.type !== 'roundEnd' &&
         message.type !== 'gameEnd' &&
         message.type !== 'roomClosed' &&
-        message.type !== 'playerDisconnected'
+        message.type !== 'playerDisconnected' &&
+        message.type !== 'agentsDown'
       ) {
         return;
       }

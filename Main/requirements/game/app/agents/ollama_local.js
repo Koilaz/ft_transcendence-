@@ -37,23 +37,24 @@ export const mistral_7B_local =
 		{
 			const res = await fetch(`${OLLAMA_URL}/api/tags`, { signal: controller.signal });
 			if (!res.ok)
-				return { ok: false, detail: `HTTP ${res.status} sur /api/tags` };
+				return { ok: false, reason: 'http_error', detail: `HTTP ${res.status} sur /api/tags` };
 
 			const data = await res.json();
 			const tags = (data.models ?? []).map((m) => m.name);
+			console.log(`  [ollama] ${tags.length} modeles pull : ${tags.join(', ') || 'aucun'}`);
 			//le tag compte : mistral et mistral:7b sont deux entrees distinctes.
 			//sans tag explicite, ollama stocke sous :latest
 			const wanted = OLLAMA_MODEL.includes(':') ? OLLAMA_MODEL : `${OLLAMA_MODEL}:latest`;
 			if (!tags.includes(wanted))
-				return { ok: false, detail: `modele ${wanted} pas pull (dispo : ${tags.join(', ') || 'aucun'})` };
+				return { ok: false, reason: 'model_unavailable', detail: `modele ${wanted} pas pull (dispo : ${tags.join(', ') || 'aucun'})` };
 
 			return { ok: true, detail: `${wanted} pull sur ${OLLAMA_URL}` };
 		}
 		catch (err)
 		{
 			if (err.name === 'AbortError')
-				return { ok: false, detail: `timeout apres ${HEALTHCHECK_TIMEOUT_MS} ms` };
-			return { ok: false, detail: `injoignable sur ${OLLAMA_URL} : ${err.message}` };
+				return { ok: false, reason: 'timeout', detail: `timeout apres ${HEALTHCHECK_TIMEOUT_MS} ms` };
+			return { ok: false, reason: 'unreachable', detail: `injoignable sur ${OLLAMA_URL} : ${err.message}` };
 		}
 		finally
 		{

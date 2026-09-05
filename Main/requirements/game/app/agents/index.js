@@ -1,7 +1,7 @@
 //Liste les differents agents disponibles
 
 import { gameConfig } from '../game/config.js';
-import { mistral_medium, mistral_big, mistral_small } from './mistral_common.js';
+import { mistral_medium, mistral_big, mistral_small, ministral_14b } from './mistral_common.js';
 import { mistral_7B_local } from './ollama_local.js';
 
 const DEFAULT_AGENT='mistral_medium'
@@ -11,6 +11,7 @@ const agents =
 	[mistral_medium.name]: mistral_medium,
 	[mistral_big.name]: mistral_big,
 	[mistral_small.name]: mistral_small,
+	[ministral_14b.name]: ministral_14b,
 	[mistral_7B_local.name]: mistral_7B_local,
 };
 
@@ -42,40 +43,70 @@ export async function generateReply(history, agentName = `${DEFAULT_AGENT}`, add
 	return agent.generate(history, additionalContext);
 }
 
+//Dernier rapport de sante, garde pour la duree du processus : le healthCheck
+//tourne une fois au demarrage, mais la question « les bots vont-ils parler ? »
+//se pose a chaque joueur qui se connecte.
+let healthReport = new Map(); // name -> { ok, reason, detail }
+
 export async function checkAllAgents()
 {
 	const checkable = Object.values(agents).filter((a) => a.healthCheck);
 
-	const results = await Promise.allSettled(
+	//Le titre avant l'attente : les agents logguent les modeles qu'ils voient
+	//pendant leur healthCheck, autant que ces lignes tombent dans le bloc.
+	console.log('--- Etat des agents ---');
+	const results = await Promise.all(
 		checkable.map(async (a) => ({ name: a.name, ...(await a.healthCheck()) }))
 	);
+	healthReport = new Map(results.map((r) => [r.name, r]));
 
-	console.log('--- Etat des agents ---');
-	for (const r of results)
-	{
-		if (r.status === 'rejected')
-		{
-			console.error(`  [KO] healthCheck a throw : ${r.reason?.message}`);
-			continue;
-		}
-		const { name, ok, detail } = r.value;
+	for (const { name, ok, detail } of results)
 		console.log(`  [${ok ? 'OK' : 'KO'}] ${name} — ${detail}`);
-	}
-	checkBotsConfig();
+	logUnavailableBots();
 	console.log('-----------------------');
 
-	return results;
+	return healthReport;
 }
 
-//Le healthCheck ne teste que les agents du registre : il ne voit pas qu'un nom
-//ecrit dans gameConfig.bots n'existe pas. Sans ce controle l'erreur ne sort
-//qu'au premier tour de jeu, sous la forme d'un bot muet.
-function checkBotsConfig()
+//Les agents nommes dans gameConfig.bots qui ne joueront pas. Un nom absent du
+//registre et un agent dont l'API refuse de repondre donnent exactement la meme
+//partie — une partie sans imposteur — donc la meme liste, celle que le front
+//recoit pour prevenir le joueur.
+export function unavailableBots(bots = gameConfig.bots, report = healthReport)
 {
-	const unknown = (gameConfig.bots ?? []).filter((name) => !agents[name]);
-	if (!unknown.length)
+	const seen = new Set();
+	const broken = [];
+
+	for (const name of bots)
+	{
+		if (seen.has(name))
+			continue;
+		seen.add(name);
+
+		if (!agents[name])
+		{
+			broken.push({ name, reason: 'unknown_agent',
+				detail: `absent du registre — agents disponibles : ${availableAgents().join(', ')}` });
+			continue;
+		}
+
+		const health = report.get(name);
+		if (health && !health.ok)
+			broken.push({ name, reason: health.reason, detail: health.detail });
+	}
+
+	return broken;
+}
+
+//Sans cette ligne, un bot inconnu ou une cle sans quota ne se voient qu'au
+//premier tour de jeu, sous la forme d'un bot muet.
+function logUnavailableBots()
+{
+	const broken = unavailableBots();
+	if (!broken.length)
 		return;
 
-	console.error(`  [KO] game/config.js — bots inconnus : ${unknown.join(', ')}`);
-	console.error(`       agents disponibles : ${availableAgents().join(', ')}`);
+	console.error(`  [KO] game/config.js — bots indisponibles :`);
+	for (const { name, detail } of broken)
+		console.error(`       ${name} — ${detail}`);
 }
