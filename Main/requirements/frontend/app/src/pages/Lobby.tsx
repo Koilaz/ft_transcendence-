@@ -12,7 +12,7 @@ import {
   loreAgentsDownIntro,
   loreAgentsDownMotifs,
   loreAgentsDownDefaut,
-  loreAgentsDownPied,
+  loreAgentsDownCode,
 } from '../content/lore';
 import type { AgentStatus } from '../services/gameSocket';
 
@@ -49,9 +49,14 @@ export function Lobby({
           document promet une partie qui n'aura pas lieu. */}
       {agentsDown.length > 0 && (
         <section className="w-full max-w-3xl mb-6 border border-red-900/60 bg-red-950/20 p-6 font-mono text-[13px] leading-relaxed">
-          <p className="text-xs uppercase tracking-[0.2em] text-red-400/80 mb-4">
-            {loreAgentsDownTitre}
-          </p>
+          <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 mb-4 pb-3 border-b border-red-900/60">
+            <span className="text-2xl font-bold tracking-[0.15em] text-red-400">
+              {loreAgentsDownCode}
+            </span>
+            <span className="text-xs uppercase tracking-[0.2em] text-red-400/80">
+              {loreAgentsDownTitre}
+            </span>
+          </div>
 
           <p className="text-slate-200 mb-4">{loreAgentsDownIntro}</p>
 
@@ -73,8 +78,6 @@ export function Lobby({
               </li>
             ))}
           </ul>
-
-          <p className="text-amber-200/80">{loreAgentsDownPied}</p>
         </section>
       )}
 
