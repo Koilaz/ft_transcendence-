@@ -216,16 +216,14 @@ export class Round {
 
         // Diffuser les résultats à tous les joueurs
         this.broadcast({
-            type: 'roundEnd',
-            aiCharacter: aiCharacter,
-            results: results
+			type: 'roundTransition'
         });
 		if (this.onRoundEnded)
 		{
             this.onRoundEnded(results);
         }
 
-        // console.log(`[room] Fin du round. Gagnant : ${results[0].character}`);
+        console.log(`[room] Fin de la manche. (Calcul des scores secret terminé)`);
 
         // (Optionnel) ajouter ici un appel à la Room si on
         // veux enchaîner sur un autre round automatiquement.

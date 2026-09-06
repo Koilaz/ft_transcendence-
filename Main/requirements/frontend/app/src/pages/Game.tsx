@@ -184,11 +184,10 @@ function gameReducer(state: GameUIState, action: GameAction): GameUIState {
       return { ...state, roundPhase: action.status };
 
 
-    case 'roundEnd':
+    case 'roundTransition':
       return {
         ...state,
-        roundResults: action.results,
-        aiCharacter: action.aiCharacter
+        roomStatus: 'transition'
       };
 
     case 'gameEnd':
@@ -660,13 +659,16 @@ export default function Game() {
           </div>
         </div>
       </section>
-      {/* AFFICHAGE DES MODALES DE RÉSULTATS */}
-      {state.roomStatus === 'scoreboard' && state.roundResults && state.aiCharacter && (
-        <ScoreboardModal 
-          aiCharacter={state.aiCharacter} 
-          results={state.roundResults} 
-          countdown={state.countdown} 
-        />
+      {/* ÉCRAN DE TRANSITION ENTRE LES MANCHES */}
+      {state.roomStatus === 'transition' && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md">
+          <div className="text-center">
+            <h2 className="mb-4 text-4xl font-bold text-white animate-pulse">Manche terminée !</h2>
+            <p className="text-xl text-sky-400">
+              Préparation de la manche suivante dans {state.countdown ?? '-'} secondes...
+            </p>
+          </div>
+        </div>
       )}
 
       {state.roomStatus === 'endGame' && state.winnerId && state.gameRanking && (

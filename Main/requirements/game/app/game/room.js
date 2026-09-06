@@ -215,9 +215,7 @@ class Room
         if (this.roundNumber >= maxRounds) {
             this.endGame();
         } else {
-
-            this.setStatus('scoreboard');
-
+            this.setStatus('transition');
             this.launchStartTimer(gameConfig.scoreboardDuration);
         }
     }
