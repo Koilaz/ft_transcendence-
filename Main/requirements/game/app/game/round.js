@@ -212,7 +212,7 @@ export class Round {
             isAI: true
         });
 
-        results.sort((a, b) => a.score - b.score);
+        results.sort((a, b) => b.score - a.score);
 
         // Diffuser les résultats à tous les joueurs
         this.broadcast({

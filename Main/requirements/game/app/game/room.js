@@ -116,7 +116,12 @@ class Room
 			return;
 
 		const character = this.currentRound.caracterOf(sender);
-		this.history.push({ sender: character, text });
+		const player = this.players.get(sender);
+
+		this.history.push({ sender: character,
+							text: text,
+							isAI: !!player.agentName});
+
 		this.broadcast({ type: 'chat', sender: character, text });
 
 		this.currentRound.onPlayerMessage(sender)
@@ -233,7 +238,8 @@ class Room
         this.broadcast({
             type: 'gameEnd',
             ranking: finalRanking,
-            winnerId: finalRanking[0].name
+            winnerId: finalRanking[0].name,
+			history: this.history
         });
 		this.closeTimeoutId = setTimeout(() => this.destroy('game_finished'),
 										 gameConfig.roomCloseDelayMs);

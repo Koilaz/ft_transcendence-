@@ -48,6 +48,7 @@ type GameUIState = {
   // Bots annonces hors service par le serveur a la connexion. Vide dans le cas
   // normal, et l'ecrasante majorite des parties n'y touchera jamais.
   agentsDown: AgentStatus[];
+  gameHistory: ChatHistoryItem[] | null;
 };
 
 const initialState: GameUIState = {
@@ -69,7 +70,8 @@ const initialState: GameUIState = {
   players: 0,
   leftCharacters: [],
   closedCode: null,
-  agentsDown: []
+  agentsDown: [],
+  gameHistory: null
 };
 
 // Pas de "join"/"quickplay" : le serveur assigne le joueur des l'ouverture de
@@ -195,6 +197,7 @@ function gameReducer(state: GameUIState, action: GameAction): GameUIState {
         ...state,
         gameRanking: action.ranking,
         winnerId: action.winnerId,
+        gameHistory: action.history,
         roomStatus: 'endGame'
       };
 
@@ -671,12 +674,12 @@ export default function Game() {
         </div>
       )}
 
-      {state.roomStatus === 'endGame' && state.winnerId && state.gameRanking && (
+      {state.roomStatus === 'endGame' && state.winnerId && state.gameRanking && state.gameRanking && state.gameHistory && (
         <GameEndModal 
           winnerId={state.winnerId} 
-          ranking={state.gameRanking} 
+          ranking={state.gameRanking}
+          history={state.gameHistory}
           onReplay={handleReplay}
-          canReplay={state.closedCode !== null}
         />
       )}
 

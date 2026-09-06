@@ -105,10 +105,17 @@ export type FinalRank = {
   isAI?: boolean;
 };
 
+export type ChatHistoryItem = {
+  sender: string;
+  text: string;
+  isAI: boolean;
+};
+
 export type GameGameEndMessage = {
   type: 'gameEnd';
   ranking: FinalRank[];
   winnerId: string;
+  history: ChatHistoryItem[];
 };
 
 export type GameMessage =
