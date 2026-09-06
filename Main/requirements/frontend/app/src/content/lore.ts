@@ -82,5 +82,6 @@ export const loreAgentsDownMotifs: Record<string, string> = {
 export const loreAgentsDownDefaut =
   "GPT_DTC ne répond pas, et personne ici ne sait vraiment pourquoi.";
 
-export const loreAgentsDownPied =
-  "La séance peut se tenir quand même, mais il n'y aura personne à démasquer.";
+// Code affiche en grand : c'est lui qu'on cite quand on vient signaler le
+// probleme, bien plus facilement qu'une phrase de fiction.
+export const loreAgentsDownCode = 'ERR_NO_AGENT';

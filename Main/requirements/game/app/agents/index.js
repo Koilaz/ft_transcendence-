@@ -72,6 +72,14 @@ export async function checkAllAgents()
 //registre et un agent dont l'API refuse de repondre donnent exactement la meme
 //partie — une partie sans imposteur — donc la meme liste, celle que le front
 //recoit pour prevenir le joueur.
+//Les agents que le healthCheck a vus repondre. C'est la seule liste utile a
+//qui doit corriger gameConfig.bots : lui proposer un nom du registre qui ne
+//repond pas le ferait tourner en rond.
+export function healthyAgents(report = healthReport)
+{
+	return [...report.values()].filter((r) => r.ok).map((r) => r.name);
+}
+
 export function unavailableBots(bots = gameConfig.bots, report = healthReport)
 {
 	const seen = new Set();
@@ -85,8 +93,9 @@ export function unavailableBots(bots = gameConfig.bots, report = healthReport)
 
 		if (!agents[name])
 		{
+			const ok = healthyAgents(report);
 			broken.push({ name, reason: 'unknown_agent',
-				detail: `absent du registre — agents disponibles : ${availableAgents().join(', ')}` });
+				detail: `absent du registre — agents operationnels : ${ok.length ? ok.join(', ') : 'aucun'}` });
 			continue;
 		}
 
