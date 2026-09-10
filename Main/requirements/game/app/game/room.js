@@ -1,7 +1,9 @@
 import { Player } from './player.js';
 import { Round } from './round.js';
 import { createBotSendFn } from './bot.js';
-import { gameConfig } from './config.js';
+import { gameConfig, botEntries } from './config.js';
+import { preheatAgent } from '../agents/index_agent.js';
+import { getPrompt } from '../agents/prompt/index_prompt.js';
 
 export const CARACTERS = ['Colonel Moutarde', 'Major Wasabi', 'Caporal Mayo', 'Lieutenant Samourai', 'General Ketchup', 'Marechal Cocktail'];
 
@@ -10,13 +12,13 @@ let nextRoomId = 1;
 
 //Cree une room peuplee de ses bots et l'enregistre. Elle recoit ensuite son
 //effectif humain definitif en une fois, depuis queue.js
-//agentNames permet a la file de n'injecter que les bots reellement
-//exploitables. Omis, on retombe sur gameConfig.bots.
-export function createRoom(agentNames)
+//bots permet a la file de n'injecter que les bots reellement exploitables.
+//Omis, on retombe sur gameConfig.bots.
+export function createRoom(bots)
 {
 	const room = new Room(nextRoomId++);
 	rooms.set(room.id, room);
-	room.addBots(agentNames);
+	room.addBots(bots);
 	return room;
 }
 
@@ -61,25 +63,28 @@ class Room
 		return player;
 	}
 
-	addBot(agentName = 'mistral_medium')
+	//Un bot, c'est un agent et le prompt qu'on lui envoie. agentName reste seul
+	//sur le Player : c'est lui qui marque l'imposteur pour le reste du jeu, le
+	//prompt ne sert qu'a fabriquer ses messages.
+	addBot({ agent, prompt })
 	{
 		const botId = `bot-${this.id}-${this.players.size}`;
-		const sendFn = createBotSendFn(this, botId, agentName);
-		this.addPlayer(botId, sendFn, { isAI: true, agentName });
+		const sendFn = createBotSendFn(this, botId, { agent, prompt });
+		this.addPlayer(botId, sendFn, { isAI: true, agentName: agent, promptName: prompt });
 	}
 
 	//Peuple la room a partir de gameConfig.bots. On s'arrete si la room est
 	//pleine
-	addBots(agentNames = gameConfig.bots)
+	addBots(bots = gameConfig.bots)
 	{
-		for (const agentName of agentNames)
+		for (const entry of botEntries(bots))
 		{
 			if (this.isFull())
 			{
-				console.warn(`[room ${this.id}] room pleine : bot ${agentName} ignore`);
+				console.warn(`[room ${this.id}] room pleine : bot ${entry.agent} ignore`);
 				break;
 			}
-			this.addBot(agentName);
+			this.addBot(entry);
 		}
 	}
 
@@ -190,12 +195,34 @@ class Room
 		for (const playerId of round.turnOrder)
 		{
 			const player = this.players.get(playerId);
-			console.log(`  ${round.caracterOf(playerId).padEnd(22)} = ${playerId} (${player.agentName ?? 'humain'})`);
+			const identity = player.agentName ? `${player.agentName} + ${player.promptName}` : 'humain';
+			console.log(`  ${round.caracterOf(playerId).padEnd(22)} = ${playerId} (${identity})`);
 		}
 		console.log('--------------------------------------------------');
 
+		this.preheatBots();
 		round.start();
 		return round;
+	}
+
+	//Les personnages viennent d'etre tires, le contexte de la manche est donc
+	//connu et ne bougera plus : c'est le premier instant ou les bots peuvent
+	//preparer leur prompt, et le plus tot est le mieux — un bot qui parle en
+	//deuxieme gagne un tour entier d'avance.
+	//Sans await : le prechauffage dure plus longtemps qu'un tour.
+	preheatBots()
+	{
+		for (const player of this.players.values())
+		{
+			if (!player.agentName)
+				continue;
+
+			const prompt = getPrompt(player.promptName);
+			if (!prompt)
+				continue;
+
+			preheatAgent(player.agentName, player.promptName, prompt.buildContextPrompt(this, player.id));
+		}
 	}
 
 

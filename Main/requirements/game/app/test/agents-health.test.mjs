@@ -1,7 +1,7 @@
 // unavailableBots() prend son rapport en argument : c'est ce qui la rend
 // testable sans reseau, alors que les healthChecks eux-memes appellent Mistral
 // et ollama. On lui injecte un rapport ecrit a la main.
-import { unavailableBots } from '../agents/index.js';
+import { unavailableBots } from '../agents/index_agent.js';
 import { check, report } from './check.mjs';
 
 const rapport = new Map(

@@ -1,5 +1,5 @@
-import { generateReply } from '../agents/index.js';
-import { buildContextPrompt } from '../agents/prompt.js';
+import { generateReply } from '../agents/index_agent.js';
+import { requirePrompt } from '../agents/prompt/index_prompt.js';
 import { postTreatment } from './typos.js';
 
 const BOT_MIN_DELAY = 2000; // delais minimal de reponse du bot
@@ -9,21 +9,25 @@ const MAX_CONSECUTIVE_FAILURES = 3; // au-dela, l'agent est considere mort et on
 //info sur les config (timeout etc)
 //contexte meteo , 42 ??
 
-export function createBotSendFn(room, botId, agentName)
+//Le bot recoit son couple { agent, prompt } tel qu'il est ecrit dans
+//gameConfig.bots : le modele qui repond et le texte qu'on lui envoie sont deux
+//reglages independants, ils voyagent ensemble jusqu'a l'appel.
+export function createBotSendFn(room, botId, { agent: agentName, prompt: promptName })
 {
 	let consecutiveFailures = 0;
 	let isDead = false;
+	const identity = `${agentName} + ${promptName}`;
 
 	function kill(reason)
 	{
 		isDead = true;
-		console.error(`[bot] ${botId} (${agentName}) considere mort : ${reason}`);
+		console.error(`[bot] ${botId} (${identity}) considere mort : ${reason}`);
 	}
 
 	function onFailure(reason)
 	{
 		consecutiveFailures++;
-		console.warn(`[bot] ${botId} (${agentName}) muet (${consecutiveFailures}/${MAX_CONSECUTIVE_FAILURES}) : ${reason}`);
+		console.warn(`[bot] ${botId} (${identity}) muet (${consecutiveFailures}/${MAX_CONSECUTIVE_FAILURES}) : ${reason}`);
 		if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES)
 			kill(`${consecutiveFailures} echecs consecutifs`);
 	}
@@ -39,7 +43,12 @@ export function createBotSendFn(room, botId, agentName)
 		try
 		{
 			const start = Date.now();
-			const rawReply = await generateReply(room.history, agentName, buildContextPrompt(room, botId));
+			//Le contexte de la partie vient du prompt lui-meme : c'est lui qui
+			//decide comment l'etat du jeu se raconte au modele. Un nom de prompt
+			//absent du registre jette une erreur fatale, traitee plus bas comme
+			//un agent introuvable.
+			const prompt = requirePrompt(promptName);
+			const rawReply = await generateReply(room.history, agentName, prompt.buildContextPrompt(room, botId), promptName);
 			if (!rawReply)
 			{
 				onFailure('reponse vide');
@@ -58,7 +67,7 @@ export function createBotSendFn(room, botId, agentName)
 			//un echec : le bot parait muet sans qu'aucune ligne ne l'explique.
 			const round = room.currentRound;
 			const aLaParole = round?.status === 'chatting' && round.canSpeak(botId);
-			console.log(`[#TMP bot] ${botId} (${agentName})`
+			console.log(`[#TMP bot] ${botId} (${identity})`
 				+ ` gen=${genMs}ms attente=${Math.max(0, remaining)}ms total=${Date.now() - start}ms`
 				+ ` budget=${msg.countdown}s`
 				+ ` | round=${round?.status ?? 'aucun'}`
@@ -87,5 +96,4 @@ function randomInt(min, max)
 	return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 //#TODO troncation aleatoire des messages (selement si on envoi les message dans la inbox pqs complet voir FRONT)
-//#TODO randomize syntaxe error (inverse ou supprime une lettre)
-//#TODO
+
