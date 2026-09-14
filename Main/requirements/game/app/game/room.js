@@ -41,6 +41,7 @@ class Room
 	{
 		this.id = id;
 		this.history = [];
+		this.globalHistory = []; // historique du chat
 		this.players = new Map(); // playerId -> Player, identite persistante
 		this.rounds = [];
 		this.currentRound = null;
@@ -104,7 +105,8 @@ class Room
 
 	addSystemMessage(text)
 	{
-		this.history.push({ sender: 'Système', text });
+		this.history.push({ sender: 'Systeme', text });
+		this.globalHistory.push({ sender: 'Systeme', text, isAI: false});
 	}
 
 	addMessage(sender, text)
@@ -117,10 +119,10 @@ class Room
 
 		const character = this.currentRound.caracterOf(sender);
 		const player = this.players.get(sender);
+		const msgData = { sender: character, text: text, isAI: !!player.agentName };
 
-		this.history.push({ sender: character,
-							text: text,
-							isAI: !!player.agentName});
+		this.history.push(msgData);
+		this.globalHistory.push(msgData);
 
 		this.broadcast({ type: 'chat', sender: character, text });
 
@@ -239,7 +241,7 @@ class Room
             type: 'gameEnd',
             ranking: finalRanking,
             winnerId: finalRanking[0].name,
-			history: this.history
+			history: this.globalHistory
         });
 		this.closeTimeoutId = setTimeout(() => this.destroy('game_finished'),
 										 gameConfig.roomCloseDelayMs);
