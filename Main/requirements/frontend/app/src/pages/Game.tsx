@@ -48,6 +48,7 @@ type GameUIState = {
   // Bots annonces hors service par le serveur a la connexion. Vide dans le cas
   // normal, et l'ecrasante majorite des parties n'y touchera jamais.
   agentsDown: AgentStatus[];
+  gameHistory: ChatHistoryItem[] | null;
 };
 
 const initialState: GameUIState = {
@@ -69,7 +70,8 @@ const initialState: GameUIState = {
   players: 0,
   leftCharacters: [],
   closedCode: null,
-  agentsDown: []
+  agentsDown: [],
+  gameHistory: null
 };
 
 // Pas de "join"/"quickplay" : le serveur assigne le joueur des l'ouverture de
@@ -184,11 +186,10 @@ function gameReducer(state: GameUIState, action: GameAction): GameUIState {
       return { ...state, roundPhase: action.status };
 
 
-    case 'roundEnd':
+    case 'roundTransition':
       return {
         ...state,
-        roundResults: action.results,
-        aiCharacter: action.aiCharacter
+        roomStatus: 'transition'
       };
 
     case 'gameEnd':
@@ -196,6 +197,7 @@ function gameReducer(state: GameUIState, action: GameAction): GameUIState {
         ...state,
         gameRanking: action.ranking,
         winnerId: action.winnerId,
+        gameHistory: action.history,
         roomStatus: 'endGame'
       };
 
@@ -660,21 +662,24 @@ export default function Game() {
           </div>
         </div>
       </section>
-      {/* AFFICHAGE DES MODALES DE RÉSULTATS */}
-      {state.roomStatus === 'scoreboard' && state.roundResults && state.aiCharacter && (
-        <ScoreboardModal 
-          aiCharacter={state.aiCharacter} 
-          results={state.roundResults} 
-          countdown={state.countdown} 
-        />
+      {/* ÉCRAN DE TRANSITION ENTRE LES MANCHES */}
+      {state.roomStatus === 'transition' && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md">
+          <div className="text-center">
+            <h2 className="mb-4 text-4xl font-bold text-white animate-pulse">Manche terminée !</h2>
+            <p className="text-xl text-sky-400">
+              Préparation de la manche suivante dans {state.countdown ?? '-'} secondes...
+            </p>
+          </div>
+        </div>
       )}
 
-      {state.roomStatus === 'endGame' && state.winnerId && state.gameRanking && (
+      {state.roomStatus === 'endGame' && state.winnerId && state.gameRanking && state.gameRanking && state.gameHistory && (
         <GameEndModal 
           winnerId={state.winnerId} 
-          ranking={state.gameRanking} 
+          ranking={state.gameRanking}
+          history={state.gameHistory}
           onReplay={handleReplay}
-          canReplay={state.closedCode !== null}
         />
       )}
 

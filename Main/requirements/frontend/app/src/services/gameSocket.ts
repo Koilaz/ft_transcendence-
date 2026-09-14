@@ -31,6 +31,12 @@ export type AgentStatus = {
   detail: string;
 };
 
+// envoyer quand entre chaque manche
+
+export type GameRoundTransitionMessage = {
+  type: 'roundTransition';
+}
+
 export type GameAgentsDownMessage = {
   type: 'agentsDown';
   agents: AgentStatus[];
@@ -99,10 +105,17 @@ export type FinalRank = {
   isAI?: boolean;
 };
 
+export type ChatHistoryItem = {
+  sender: string;
+  text: string;
+  isAI: boolean;
+};
+
 export type GameGameEndMessage = {
   type: 'gameEnd';
   ranking: FinalRank[];
   winnerId: string;
+  history: ChatHistoryItem[];
 };
 
 export type GameMessage =
@@ -118,6 +131,7 @@ export type GameMessage =
   | GameRoomClosedMessage
   | GamePlayerDisconnectedMessage
   | GameAgentsDownMessage
+  | GameRoundTransitionMessage
   | GameSilenceMessage;
 
 export type GameMessageHandler = (
@@ -166,6 +180,7 @@ export function connectGameSocket(
         message.type !== 'gameEnd' &&
         message.type !== 'roomClosed' &&
         message.type !== 'playerDisconnected' &&
+        message.type !== 'roundTransition' &&
         message.type !== 'agentsDown'
       ) {
         return;

@@ -41,6 +41,7 @@ class Room
 	{
 		this.id = id;
 		this.history = [];
+		this.globalHistory = []; // historique du chat
 		this.players = new Map(); // playerId -> Player, identite persistante
 		this.rounds = [];
 		this.currentRound = null;
@@ -104,7 +105,8 @@ class Room
 
 	addSystemMessage(text)
 	{
-		this.history.push({ sender: 'Système', text });
+		this.history.push({ sender: 'Systeme', text });
+		this.globalHistory.push({ sender: 'Systeme', text, isAI: false});
 	}
 
 	addMessage(sender, text)
@@ -116,7 +118,12 @@ class Room
 			return;
 
 		const character = this.currentRound.caracterOf(sender);
-		this.history.push({ sender: character, text });
+		const player = this.players.get(sender);
+		const msgData = { sender: character, text: text, isAI: !!player.agentName };
+
+		this.history.push(msgData);
+		this.globalHistory.push(msgData);
+
 		this.broadcast({ type: 'chat', sender: character, text });
 
 		this.currentRound.onPlayerMessage(sender)
@@ -215,9 +222,7 @@ class Room
         if (this.roundNumber >= maxRounds) {
             this.endGame();
         } else {
-
-            this.setStatus('scoreboard');
-
+            this.setStatus('transition');
             this.launchStartTimer(gameConfig.scoreboardDuration);
         }
     }
@@ -235,7 +240,8 @@ class Room
         this.broadcast({
             type: 'gameEnd',
             ranking: finalRanking,
-            winnerId: finalRanking[0].name
+            winnerId: finalRanking[0].name,
+			history: this.globalHistory
         });
 		this.closeTimeoutId = setTimeout(() => this.destroy('game_finished'),
 										 gameConfig.roomCloseDelayMs);

@@ -1,7 +1,7 @@
 export const gameConfig = {
 	bots: ['ministral_14b'],//bots ajoutes dans l'ordre
 	turnPerRound: 5,   // nombre de tours par manche
-	turnDuration: 10,   // secondes par tour
+	turnDuration: 12,   // secondes par tour
 	maxPlayers: 4,
 	minPlayers: 3,          // seuil pour DEMARRER une partie
 	minPlayersToContinue: 3, // seuil pour CONTINUER une partie deja lancee
