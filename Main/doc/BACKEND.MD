@@ -394,7 +394,7 @@ Contrat commun : `{ name, generate(history, additionalContext), healthCheck() }`
 
 Agents enregistres : `mistral_medium` (mistral-medium-3.5), `mistral_big`
 (mistral-large-latest), `mistral_small` (mistral-small-latest),
-`mistral_7B_local` (ollama).
+`local_agent` (ollama, modele nomme par `OLLAMA_MODEL`).
 
 **Agents Mistral** : `POST https://api.mistral.ai/v1/chat/completions`,
 `temperature 0.85`, `max_tokens 70`. Cle lue par l'entrypoint depuis

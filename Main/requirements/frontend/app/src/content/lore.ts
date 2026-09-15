@@ -77,6 +77,8 @@ export const loreAgentsDownMotifs: Record<string, string> = {
     "GPT_DTC répond n'importe quoi. On a rouvert un ticket, comme les six derniers.",
   unknown_agent:
     "On a convoqué une IA qui ne figure nulle part au registre. Erreur de paperasse, ça arrive.",
+  unknown_prompt:
+    "L'IA est bien là, mais son dossier de mission est introuvable. Sans consignes, elle refuse de dire un mot.",
 };
 
 export const loreAgentsDownDefaut =

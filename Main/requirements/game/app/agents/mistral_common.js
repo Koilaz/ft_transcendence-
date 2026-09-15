@@ -1,15 +1,44 @@
-//Tout ce que les agents Mistral partagent : endpoint, cle, prompt, appel, logs.
+//Tout ce que les agents Mistral partagent : endpoint, cle, appel, logs.
 //Les fichiers mistral_*.js ne declarent plus que leur nom et leur modele.
-
-import { buildSystemPrompt, buildUserPrompt } from './prompt.js';
+//Le texte envoye, lui, n'est pas ici : le prompt arrive en argument de
+//generate(), choisi bot par bot dans game/config.js.
 
 const MISTRAL_API_URL = 'https://api.mistral.ai/v1';
 const apiKey = process.env.MISTRAL_API_KEY;
-const SYSTEM_PROMPT = buildSystemPrompt();
 
 const HEALTHCHECK_TIMEOUT_MS = 5000;
-const TEMPERATURE = 0.85;
-const MAX_TOKENS = 70;
+
+//Valeurs par defaut, qu'un prompt peut redefinir par son champ `sampling`.
+const MISTRAL_DEFAULTS =
+{
+	temperature: 0.80,
+	max_tokens: 70,
+};
+
+//Vocabulaire portable des prompts traduit vers celui de l'API. Le bloc
+//`mistral` passe tel quel, pour les reglages qui n'existent que chez elle.
+const PORTABLE_OPTIONS =
+{
+	temperature: 'temperature',
+	maxTokens: 'max_tokens',
+	topP: 'top_p',
+	stop: 'stop',
+};
+
+function resolveOptions(prompt)
+{
+	const { mistral = {}, ...portable } = prompt?.sampling ?? {};
+	const options = { ...MISTRAL_DEFAULTS };
+
+	for (const [key, value] of Object.entries(portable))
+	{
+		const name = PORTABLE_OPTIONS[key];
+		if (name)
+			options[name] = value;
+	}
+
+	return { ...options, ...mistral };
+}
 
 //Fabrique un agent conforme au contrat { name, generate, healthCheck }.
 export function createMistralAgent({ name, model })
@@ -22,27 +51,36 @@ export function createMistralAgent({ name, model })
 			return checkMistralModel(model);
 		},
 
-		async generate(history, additionalContext = {})
+		async generate(history, additionalContext = {}, prompt)
 		{
-			return ask(model, buildMessages(history, additionalContext));
+			return ask(model, buildMessages(history, additionalContext, prompt), resolveOptions(prompt));
 		},
 	};
 }
 
 //Le contexte arrive en deux morceaux parce que l'agent local en a besoin pour
 //son KV cache (voir ollama_local.js). Ici rien a optimiser : on recolle.
-function buildMessages(history, { shared = '', perBot = '' })
+function buildMessages(history, { shared = '', perBot = '' }, prompt)
 {
 	const additionalContext = [shared, perBot].filter(Boolean).join('\n');
 
 	return [
-		{ role: 'system', content: `${SYSTEM_PROMPT}\n${additionalContext}` },
-		{ role: 'user', content: buildUserPrompt(history) },
+		{ role: 'system', content: `${prompt.buildSystemPrompt()}\n${additionalContext}` },
+		{ role: 'user', content: prompt.buildUserPrompt(history) },
 	];
 }
 
-async function ask(model, messages)
+async function ask(model, messages, options)
 {
+	//#TMP a supprimer : prompt + contexte complet envoye a l'agent Mistral
+	console.log(`----- [mistral ${model}] prompt envoye -----`);
+	for (const m of messages)
+	{
+		console.log(`--- ${m.role} ---`);
+		console.log(m.content);
+	}
+	console.log('------------------------------------------');
+
 	const response = await fetch(`${MISTRAL_API_URL}/chat/completions`,
 	{
 		method: 'POST',
@@ -55,8 +93,7 @@ async function ask(model, messages)
 		{
 			model,
 			messages,
-			temperature: TEMPERATURE,
-			max_tokens: MAX_TOKENS,
+			...options,
 		}),
 	});
 

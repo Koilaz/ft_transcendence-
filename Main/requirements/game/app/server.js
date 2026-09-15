@@ -3,7 +3,7 @@ import express from 'express';
 import http from 'node:http';
 import { WebSocketServer } from 'ws';
 import { enqueue, dequeue } from './game/queue.js';
-import { checkAllAgents, unavailableBots } from './agents/index.js';
+import { checkAllAgents, unavailableBots } from './agents/index_agent.js';
 import { warmupOllama } from './agents/ollama_local.js';
 
 const app = express();

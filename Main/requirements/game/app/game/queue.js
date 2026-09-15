@@ -1,15 +1,10 @@
 import { gameConfig } from './config.js';
 import { createRoom } from './room.js';
-import { unavailableBots } from '../agents/index.js';
-
-//Les bots de gameConfig.bots reellement exploitables : ni absents du registre,
-//ni recales par le healthCheck du demarrage. Recalcule a chaque appel, comme
-//le reste : la config bouge et le rapport de sante n'existe qu'apres le boot.
-function usableBots()
-{
-	const hs = new Set(unavailableBots().map((b) => b.name));
-	return gameConfig.bots.filter((name) => !hs.has(name));
-}
+//usableBots : les bots de gameConfig.bots reellement exploitables — agent
+//present au registre et repondant au healthCheck, prompt present au registre.
+//Recalcule a chaque appel, comme le reste : la config bouge et le rapport de
+//sante n'existe qu'apres le boot.
+import { usableBots } from '../agents/index_agent.js';
 
 //File d'attente unique. Les joueurs y patientent jusqu'a ce qu'un groupe
 //complet puisse etre forme, puis la room nait avec son effectif definitif.

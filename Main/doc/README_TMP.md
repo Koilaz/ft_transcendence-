@@ -34,7 +34,7 @@ cp .env.example .env
 | `POSTGRES_DB` | nom de la base creee au demarrage | non |
 | `POSTGRES_USER` | utilisateur SQL cree au demarrage | non |
 | `OLLAMA_DATA_DIR` | dossier hote monte sur `/root/.ollama`, il contient les poids | **oui** |
-| `OLLAMA_MODEL` | modele utilise par l'agent local | si tu changes de modele |
+| `OLLAMA_MODEL` | modele utilise par l'agent local, **obligatoire** | si tu changes de modele |
 
 Deux pieges :
 
@@ -42,9 +42,10 @@ Deux pieges :
   chemin, existant et accessible en ecriture. A 42 on le met sous `/sgoinfre`
   et pas dans `$HOME`, sinon les poids sautent au nettoyage.
 - `OLLAMA_MODEL` doit correspondre **exactement** au modele pull, tag compris.
-  `mistral` et `mistral:7b-instruct` sont deux entrees differentes, et sans tag
+  `llama3.2` et `llama3.2:3b` sont deux entrees differentes, et sans tag
   explicite ollama stocke sous `:latest`. Le healthcheck au demarrage compare
-  cette chaine a la sortie de `ollama list`.
+  cette chaine a la sortie de `ollama list`. Elle n'a pas de valeur par defaut :
+  ollama ne choisit pas de modele tout seul, il faut lui en nommer un.
 
 ### 2.2 `secrets/`
 
@@ -63,7 +64,7 @@ fichier**, pas de `KEY=`, pas de guillemets, pas de ligne vide en trop.
 
 `secrets/*.txt` est gitignore : ne jamais committer de vraies valeurs.
 
-Sans cle Mistral valide, seul l'agent local (`mistral_7B_local`) fonctionne.
+Sans cle Mistral valide, seul l'agent local (`local_agent`) fonctionne.
 C'est suffisant pour tester le jeu, les trois agents distants apparaitront
 juste en `[KO]` au demarrage.
 
@@ -134,9 +135,9 @@ Starting game...
   [OK] mistral_medium — mistral-medium-3.5 disponible
   [OK] mistral_big — mistral-large-latest disponible
   [OK] mistral_small — mistral-small-latest disponible
-  [OK] mistral_7B_local — mistral:7b-instruct pull sur http://ollama:11434
+  [OK] local_agent — llama3.2:3b pull sur http://ollama:11434
 -----------------------
-[ollama] prechargement de mistral:7b-instruct...
+[ollama] prechargement de llama3.2:3b (prompt_basic)...
 serveur sur :3000
 [ollama] pret en 45292 ms
 ```
@@ -145,8 +146,9 @@ serveur sur :3000
 |---|---|
 | `[KO] mistral_* — MISTRAL_API_KEY absente` | `secrets/mistral_api_key.txt` vide ou mal monte |
 | `[KO] mistral_* — HTTP 401` | cle invalide |
-| `[KO] mistral_7B_local — modele X pas pull` | `OLLAMA_MODEL` ne correspond pas a `make ollama-list` (tag compris) |
-| `[KO] mistral_7B_local — injoignable` | container ollama pas demarre |
+| `[KO] local_agent — OLLAMA_MODEL non defini` | la variable manque dans `.env` |
+| `[KO] local_agent — modele X pas pull` | `OLLAMA_MODEL` ne correspond pas a `make ollama-list` (tag compris) |
+| `[KO] local_agent — injoignable` | container ollama pas demarre |
 | `[ollama] pret en N ms` | modele charge en RAM et cache amorce, le jeu est utilisable |
 
 Le prechargement est lance sans `await` : le serveur accepte les connexions
@@ -159,7 +161,7 @@ timeout tant que `pret en` n'est pas affiche.
 
 ```js
 export const gameConfig = {
-	bots: ['mistral_7B_local', 'mistral_7B_local', 'mistral_7B_local'],
+	bots: ['local_agent', 'local_agent', 'local_agent'],
 	turnPerRound: 10,
 	turnDuration: 25,
 	maxPlayers: 6,
@@ -180,8 +182,8 @@ export const gameConfig = {
 | `votingDuration` | secondes de la phase de vote — **pas encore branche**, `Round.startVotingPhase()` est un `#TODO` |
 
 Agents disponibles pour `bots` : `mistral_medium`, `mistral_big`,
-`mistral_small` (API Mistral, cle requise) et `mistral_7B_local` (ollama).
-On peut melanger, par exemple `['mistral_7B_local', 'mistral_small']`.
+`mistral_small` (API Mistral, cle requise) et `local_agent` (ollama).
+On peut melanger, par exemple `['local_agent', 'mistral_small']`.
 
 La liste est appliquee par `Room.addBots()` a la creation de la room. Si elle
 depasse `maxPlayers`, les entrees en trop sont ignorees avec un warning —

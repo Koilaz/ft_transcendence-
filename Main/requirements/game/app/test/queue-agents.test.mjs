@@ -9,7 +9,7 @@ gameConfig.bots = ['ministral_big'];
 
 const { enqueue, dequeue, queueSize } = await import('../game/queue.js');
 const { roomCount } = await import('../game/room.js');
-const { unavailableBots } = await import('../agents/index.js');
+const { unavailableBots } = await import('../agents/index_agent.js');
 const { check, report } = await import('./check.mjs');
 
 check('le bot configure est bien detecte comme indisponible',
