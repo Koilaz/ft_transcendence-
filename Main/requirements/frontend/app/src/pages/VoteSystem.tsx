@@ -180,7 +180,7 @@ export function GameEndModal({ winnerId, ranking, history, onReplay }: GameEndMo
                   <tr key={rank.playerId} className="border-t border-slate-700 bg-slate-800/50">
                     <td className="px-3 py-2 font-bold text-white">{index + 1}</td>
                     <td className="px-3 py-2 font-medium text-white">
-                      {rank.playerId} 
+                      {rank.name}
                       {rank.isAI && <span className="ml-2 rounded bg-indigo-500 px-1 py-0.5 text-[10px]">BOT</span>}
                     </td>
                     <td className="px-3 py-2 text-right font-bold text-emerald-400">

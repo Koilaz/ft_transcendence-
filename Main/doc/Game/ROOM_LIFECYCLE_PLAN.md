@@ -17,6 +17,11 @@ On ne conditionne pas la partie à une authentification. Combiné à A2, cela
 signifie qu'il n'y a **aucun mécanisme d'identité** dans le service de jeu :
 `playerId` reste un compteur serveur, comme aujourd'hui.
 
+Un joueur connecté envoie son JWT (`?token=`), vérifié par `game/app/auth.js`
+avec le même secret que le backend : il n'en tire que le pseudo affiché au
+classement et `socket.userId`. Token absent, invalide ou expiré : le joueur
+entre en invité. `playerId` reste le compteur, même pour un compte.
+
 ### A2 — On ne gère aucune reconnexion
 
 Décision structurante du lot. On part du principe que le réseau est stable et
@@ -102,7 +107,7 @@ disparaissent de Room. Le cycle devient `créée -> en jeu -> détruite`.
 - **Rattachement d'une partie à un compte** (stats, historique).
 - **Règles anti-affinité** dans la file d'attente : on pose l'emplacement,
   pas les règles.
-- **Heartbeat ping/pong** — optionnel, voir §7.
+- ~~**Heartbeat ping/pong**~~ — fait, voir §7.
 
 ---
 
@@ -115,7 +120,7 @@ Un commit, une intention. Chaque étape est testable indépendamment.
 | 1 | `destroy()` + registre | O1 + O2 du TODO. Ordre strict : broadcast -> clearInterval (room puis round) -> retrait de la Map. Corrige B1 et B3. | **fait** (`eb55021`) |
 | 2 | Retrait propre du Round | O4 + piège 2. Approche retenue : **marquer plutôt que retirer**. `turnOrder`, `playerById` et `assignments` restent intacts ; un `Set leftPlayers` décide qui joue. Corrige B6, rend B4 et B5 sans objet. | **fait** |
 | 3 | Notification au front | `playerDisconnected` par **nom de personnage**, jamais par `playerId`. Le partant reste affiché, grisé et barré, et n'est plus une cible de vote. | **fait** |
-| 4 | Quorum de continuation | `minPlayersToContinue` (A4), appliqué aux seuls statuts `playing` et `scoreboard`. Sous le seuil : `destroy('not_enough_players')`. Corrige B2. | **fait** |
+| 4 | Quorum de continuation | `minPlayersToContinue` (A4), appliqué aux seuls statuts `playing` et `transition` (entre deux manches). Sous le seuil : `destroy('not_enough_players')`. Corrige B2. | **fait** |
 | 5 | Rooms orphelines | O5, via un getter `humanCount` : `players.size === 0` n'arrive jamais, le bot n'ayant pas de socket n'est jamais retiré. Testé avant les autres motifs, il couvre le cas qui échappait à tout : une room en attente désertée. | **fait** |
 | 6 | État « fermée » | O3, via `isOpen()`. **Rendu caduc par l'étape 7** : une room naissant avec son effectif définitif n'accueille jamais personne, `isOpen()` a donc été supprimé. L'étape a servi dans l'intervalle. | remplacée |
 | 7 | File d'attente | `game/queue.js` remplace `findOrCreateRoom` (A6). La room naît avec son effectif définitif : `isOpen()`, `canStart()`, le compte à rebours de démarrage et les déclencheurs de `addPlayer` disparaissent de `Room`. Retour au lobby en fin de partie via `roomClosed`. | **fait** |
@@ -140,6 +145,11 @@ Relevés à la lecture, en plus des pièges du TODO.
 | B7 | `main.tsx` `<StrictMode>` | Double-monte les effets en dev : la socket est ouverte, fermée, rouverte. Produit de fausses déconnexions en développement. | — |
 | B8 | `room.js` `endGame()`, `round.js` `endRound()` | Diffusent les `playerId` à tous les joueurs, contre la règle n°1 du TODO. **Partiellement traité** : `gameEnd` porte désormais un champ `name` lisible et le front n'affiche plus l'identifiant. Mais `roundEnd` et `ranking` transportent toujours `playerId`. Le retirer suppose de séparer la charge diffusée de l'objet interne, qui sert au calcul des scores — à faire avec le chantier vote. | partiel |
 | B9 | `player.js` | `this.isAI = false` ignore le paramètre reçu ; rien ne lit ce champ, tout le code teste `agentName`. Champ mort et faux. | — |
+| B10 | `server.js` | Un message `null` (JSON valide) ou une trame invalide sans écouteur `error` faisait tomber le process, et toutes les parties. Texte de chat désormais vérifié et borné, `maxPayload` réduit. | **fait** |
+| B11 | `round.js` `stop()` | La manche restait `chatting` après `destroy` : la réponse tardive d'un bot relançait les tours d'une room morte, vers des sockets déjà ailleurs. | **fait** |
+| B12 | `room.js` `removePlayer()` | Le quorum testait `scoreboard`, statut qui n'existe plus : un départ entre deux manches y échappait. | **fait** |
+| B13 | `room.js` `endGame()` | La room survivait 10 s après `gameEnd` : « Rejouer » cliqué pendant ce délai était ignoré, et le joueur restait bloqué hors de la file. La room ferme désormais aussitôt. | **fait** |
+| B14 | `round.js` `removePlayer()` | Le départ du joueur qui avait la parole faisait attendre tout le monde `turnDuration`. Le tour passe désormais aussitôt. | **fait** |
 
 **Principe retenu : on ne code pas de garde contre un état impossible.** B4 et
 B5 le sont devenus grâce au choix de conception de l'étape 2, pas grâce à des
@@ -152,7 +162,6 @@ alourdit la lecture et laisse croire que le cas peut survenir.
 
 ```js
 // game/config.js
-roomCloseDelayMs: 10000,    // ms : lecture du classement avant destruction  [fait]
 minPlayersToContinue: 3,    // quorum de continuation (A4)                   [fait]
 ```
 
@@ -179,16 +188,15 @@ mais n'atteint jamais `Game.tsx`. À traiter à l'étape 8.
 
 ---
 
-## 7. Optionnel : heartbeat ping/pong
+## 7. Heartbeat ping/pong — fait
+
+Implémenté dans `server.js` : ping toutes les 30 s, `terminate()` sans pong
+depuis le tour précédent, puis `close` retire le joueur.
 
 Une socket tuée brutalement (mise en veille, wifi coupé, machine éteinte) ne
 produit **pas** d'événement `close` : il n'y a pas de handshake de fermeture.
 Le TCP keepalive de Linux met environ deux heures à s'en apercevoir. Le joueur
 reste alors dans la room, compte dans le quorum, et ne répond jamais.
 
-Sous l'hypothèse d'un réseau stable et d'un usage normal (on ferme son
-onglet), `close` est fiable et ce cas reste rare — d'où le classement en
-optionnel. À garder en tête si des joueurs fantômes apparaissent en test.
-
-Le pattern existe déjà dans le projet : `presence.gateway.ts` du backend
-NestJS utilise un `isAlive` avec ping/pong. Environ 15 lignes.
+Même pattern que `presence.gateway.ts` du backend NestJS (`isAlive` avec
+ping/pong).

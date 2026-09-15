@@ -43,8 +43,8 @@ export class Round {
 
 	//Retire un joueur de la manche en cours, appele par Room.removePlayer.
 	//On se contente de le marquer :
-	//  - son tour en cours, s'il l'avait, se termine normalement par un silence
-	//    au bout de turnDuration, comme n'importe quel joueur muet
+	//  - son tour en cours, s'il l'avait, passe aussitot au suivant : personne
+	//    ne doit attendre turnDuration un joueur qui ne reviendra pas
 	//  - ses tours suivants sont sautes (voir startTurn)
 	//  - la manche suivante est construite sans lui, puisque Room l'a deja
 	//    retire de sa Map avant de nous appeler
@@ -53,6 +53,8 @@ export class Round {
 		if (!this.playerById.has(playerId) || this.leftPlayers.has(playerId))
 			return false;
 		this.leftPlayers.add(playerId);
+		if (this.status === 'chatting' && this.currentPlayer?.id === playerId)
+			this.endTurn();
 		return true;
 	}
 
@@ -285,10 +287,13 @@ export class Round {
 		return this.turnOrder.map((id) => this.caracterOf(id));
 	}
 
-	//Arret net de la manche, appele par Room.destroy. On coupe le chrono et
-	//rien d'autre : il n'y a pas de fin de manche a jouer quand la room ferme.
+	//Arret net de la manche, appele par Room.destroy. Il n'y a pas de fin de
+	//manche a jouer quand la room ferme. Le statut compte autant que le chrono :
+	//la reponse d'un bot encore en cours de generation arrive apres coup, et
+	//tant que la manche se croit 'chatting' elle relancerait un tour.
 	stop()
 	{
+		this.status = 'stopped';
 		if (this.turnTimerId)
 		{
 			clearInterval(this.turnTimerId);

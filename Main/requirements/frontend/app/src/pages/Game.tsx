@@ -395,7 +395,12 @@ export default function Game() {
 
     socketRef.current = socket;
 
+    // Les evenements d'une socket deja remplacee (double montage StrictMode)
+    // arrivent en retard : ils ne doivent pas ecraser l'etat de la nouvelle.
+    const isCurrent = () => socketRef.current === socket;
+
     socket.addEventListener('open', () => {
+      if (!isCurrent()) return;
       setConnectionOpen(true);
       // Memorise qu'une connexion a bien eu lieu : sans ce drapeau, l'ecran de
       // perte de connexion s'afficherait une fraction de seconde au chargement,
@@ -405,11 +410,13 @@ export default function Game() {
     });
 
     socket.addEventListener('close', () => {
+      if (!isCurrent()) return;
       setConnectionOpen(false);
       dispatch({ type: 'connection', text: 'déconnecté' });
     });
 
     socket.addEventListener('error', () => {
+      if (!isCurrent()) return;
       setConnectionOpen(false);
     });
 

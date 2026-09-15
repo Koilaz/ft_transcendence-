@@ -91,16 +91,16 @@ manque. La page est donc montee puis remplacee, au lieu de ne jamais l'etre.
 
 | Cle `localStorage` | Ecrite par | Lue par | Effacee par |
 |---|---|---|---|
-| `accessToken` | `Login` apres un login reussi | `Profile`, `Friends`, `api.requestWithAuth`, `Game` (presence du token seulement) | `Profile` (deconnexion, ou `getMe` en echec) |
-| `guestName` | `Home`, formulaire invite | `Game`, pour l'afficher | jamais |
+| `accessToken` | `Login` apres un login reussi | `Profile`, `Friends`, `api.requestWithAuth`, `Game`, `gameSocket` (`?token=`) | `Profile` (deconnexion, ou `getMe` en echec) |
+| `guestName` | `Home`, formulaire invite | `Game` pour l'afficher, `gameSocket` (`?name=`) | `Home`, bouton « Partie rapide » |
 
 Etat des lieux, sans detour :
 
 - Pas de contexte React, pas de provider. Chaque page relit `localStorage`.
 - Pas d'intercepteur 401 : seul `Profile` efface le token quand `getMe` echoue.
   Ailleurs, un token expire produit une erreur affichee et rien d'autre.
-- `guestName` est purement decoratif : **il n'est jamais envoye au serveur de
-  jeu**, qui nomme les joueurs `joueur-N` de son cote.
+- `guestName` est purement decoratif : il n'apparait qu'au classement final.
+  Sans pseudo (« Partie rapide »), le serveur affiche `joueur-N`.
 
 ---
 
@@ -168,8 +168,9 @@ Sortants : `chat`, `vote`, `replay`.
 > silencieusement, sans erreur ni log. C'est exactement ce qui est arrive a
 > `roomClosed`, qui figeait le client a chaque fermeture de room.
 
-L'URL porte `?name=` avec le pseudo local, quand il existe. Voir
-[BACKEND.MD § 3.6](BACKEND.MD).
+L'URL porte `?token=` si `accessToken` existe (le serveur verifie le token et
+prend le pseudo du compte), sinon `?name=` avec le pseudo invite, quand il
+existe. Voir [BACKEND.MD § 3.1](BACKEND.MD).
 
 ---
 

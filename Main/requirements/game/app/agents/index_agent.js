@@ -72,6 +72,22 @@ export function preheatAgent(agentName, promptName, additionalContext = {})
 //se pose a chaque joueur qui se connecte.
 let healthReport = new Map(); // name -> { ok, reason, detail }
 
+const BOOT_ATTEMPTS = 10;   // un essai par seconde
+
+//Les conteneurs demarrent ensemble : ollama n'ecoute souvent pas encore quand
+//game fait son premier essai. Seule l'absence de reponse merite d'insister,
+//un refus (cle, quota, modele absent) ne changera pas en quelques secondes.
+async function checkUntilReachable(agent)
+{
+	for (let attempt = 1; ; attempt++)
+	{
+		const result = await agent.healthCheck();
+		if (result.reason !== 'unreachable' || attempt === BOOT_ATTEMPTS)
+			return result;
+		await new Promise((resolve) => setTimeout(resolve, 1000));
+	}
+}
+
 export async function checkAllAgents()
 {
 	const checkable = Object.values(agents).filter((a) => a.healthCheck);
@@ -80,7 +96,7 @@ export async function checkAllAgents()
 	//pendant leur healthCheck, autant que ces lignes tombent dans le bloc.
 	console.log('--- Etat des agents ---');
 	const results = await Promise.all(
-		checkable.map(async (a) => ({ name: a.name, ...(await a.healthCheck()) }))
+		checkable.map(async (a) => ({ name: a.name, ...(await checkUntilReachable(a)) }))
 	);
 	healthReport = new Map(results.map((r) => [r.name, r]));
 

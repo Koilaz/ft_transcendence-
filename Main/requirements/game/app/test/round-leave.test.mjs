@@ -39,6 +39,21 @@ check('h2 garde son personnage (historique coherent)', typeof round.caracterOf('
 
 round.stop();   // sinon le chrono de tour empeche le process de sortir
 
+// ------------------------------- depart du joueur qui a la parole
+{
+	const r = new Round([mk('h1'), mk('h2'), mk('bot', 'mistral_medium')], () => {}, () => {}, () => {});
+	r.turnOrder = ['h1', 'h2', 'bot'];
+	r.start();
+
+	sent.length = 0;
+	r.removePlayer('h1');
+	check('le tour du partant passe aussitot au suivant', r.currentPlayer.id === 'h2');
+	check('le suivant recoit yourTurn', sent.some((s) => s.to === 'h2' && s.type === 'yourTurn'));
+	check('avec un chrono complet', r.countdown === r.turnDuration);
+
+	r.stop();
+}
+
 // -------------------------------------------------------- cablage cote Room
 const room = createRoom();
 let notified = null;

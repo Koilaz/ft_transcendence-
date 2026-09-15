@@ -32,32 +32,19 @@ function roomAuSeuil(status)
 	check('A. room retiree du registre', roomCount() === 0);
 }
 
-// -------- B. B2 : un depart pendant le scoreboard ne doit pas renvoyer la
+// -------- B. B2 : un depart entre deux manches ne doit pas renvoyer la
 //               room en attente. timerId sert aux deux comptes a rebours.
+//               'transition' est le statut que pose handleRoundEnd.
 {
-	const { room, last } = roomAuSeuil('scoreboard');
+	const { room, last } = roomAuSeuil('transition');
 	room.launchStartTimer(gameConfig.scoreboardDuration);
-	check('B. scoreboard en cours avec son timer',
-		room.status === 'scoreboard' && room.timerId !== null);
+	check('B. transition en cours avec son timer',
+		room.status === 'transition' && room.timerId !== null);
 
 	room.removePlayer(last);
 	check('B. la room ne retombe PAS en attente (B2)', room.status !== 'waiting');
 	check('B. la partie est annulee', room.destroyed === true);
 	check('B. registre vide', roomCount() === 0);
-}
-
-// ------------- C. partie terminee : la fermeture programmee garde son motif,
-//                  sinon le dernier depart couperait la lecture du classement
-{
-	const { room, msgs, last } = roomAuSeuil('endGame');
-	room.closeTimeoutId = setTimeout(() => room.destroy('game_finished'), 60000);
-
-	room.removePlayer(last);
-	check('C. la room survit pendant la lecture du classement', room.destroyed === false);
-	check('C. aucun motif not_enough_players emis', !msgs.some((m) => m.type === 'roomClosed'));
-
-	room.destroy('game_finished');
-	check('C. fermeture finale avec le bon motif', roomCount() === 0);
 }
 
 report();

@@ -253,17 +253,28 @@ warmupOllama().catch(...);              // sans await : ne bloque pas le demarra
 
 A chaque connexion WebSocket : le joueur entre dans la **file d'attente**
 (`game/queue.js`), pas dans une room. Il recoit un `playerId` du type `joueur-N`
-issu d'un compteur global, et un pseudo optionnel lu dans `?name=` (borne a 20
-caracteres, caracteres de controle retires ; purement decoratif, il n'apparait
-qu'au classement final).
+issu d'un compteur global, et un pseudo qui n'apparait qu'au classement final :
+
+- `?token=<JWT>` : joueur connecte. `app/auth.js` verifie la signature HS256
+  avec le meme secret que le backend (`jwt_secret.txt`, lu par
+  `tools/entrypoint.sh`) et l'expiration. Le pseudo est le `username` du token,
+  l'id du compte est garde dans `socket.userId`.
+- sinon `?name=` : invite (borne a 20 caracteres, caracteres de controle
+  retires).
+- token invalide ou expire : traite comme un invite, la connexion n'est pas
+  refusee.
 
 La room n'est creee que lorsqu'un groupe complet peut etre forme, et elle nait
 avec son effectif definitif. Il n'y a plus de remplissage progressif : une room
 n'accueille jamais de nouvel arrivant.
 
-> **Aucune authentification.** N'importe quelle connexion a `/ws/game` devient
-> un joueur. Le service ignore tout des comptes du NestJS. C'est le principal
-> chantier d'integration restant.
+> **L'authentification est optionnelle.** N'importe quelle connexion a
+> `/ws/game` devient un joueur ; le compte ne sert qu'au pseudo pour l'instant.
+
+Robustesse de la socket : `maxPayload` de 16 Kio, message non-objet ignore,
+texte de chat verifie et borne a 500 caracteres, ecouteur `error` (sans lui
+une trame invalide ferait tomber le process). Heartbeat : `ping` toutes les
+30 s, `terminate()` sans `pong` depuis le tour precedent.
 
 ### 3.2 Objets
 
@@ -357,7 +368,8 @@ commettre. Details dans [Game/VOTING_TODO.md](Game/VOTING_TODO.md).
 | `playerDisconnected` | broadcast | `{ character }` | un joueur a quitte la partie |
 | `roomClosed` | broadcast | `{ code }` | la room ferme definitivement |
 
-Codes de `roomClosed` : `game_finished`, `not_enough_players`, `empty_room`.
+Codes de `roomClosed` : `game_finished` (envoye juste apres `gameEnd`),
+`not_enough_players`, `empty_room`.
 `agent_failure` est prevu mais pas encore emis. Ce sont des chaines machine :
 le front choisit le texte et la langue.
 

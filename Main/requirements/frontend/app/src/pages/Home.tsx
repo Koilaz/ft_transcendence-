@@ -80,8 +80,11 @@ export default function Home() {
           Profile
         </Link>
 
+        {/* Partie rapide = sans pseudo : on oublie celui d'une session invite
+            precedente. */}
         <Link
           to="/game"
+          onClick={() => localStorage.removeItem('guestName')}
           className="rounded-lg bg-orange-500 px-6 py-3 font-semibold text-slate-950 hover:bg-orange-400"
         >
           Partie rapide

@@ -5,21 +5,25 @@ import { WebSocketServer } from 'ws';
 import { enqueue, dequeue } from './game/queue.js';
 import { checkAllAgents, unavailableBots } from './agents/index_agent.js';
 import { warmupOllama } from './agents/ollama_local.js';
+import { verifyToken } from './auth.js';
+
+const MAX_CHAT_LENGTH = 500;
+const HEARTBEAT_MS = 30000;
 
 const app = express();
 app.use(express.static('public'));//#tmp
 const server = http.createServer(app);
-const wss = new WebSocketServer({ server, path: '/ws/game' });
+//maxPayload : ws accepte 100 Mio par defaut, bien plus qu'un message de chat
+const wss = new WebSocketServer({ server, path: '/ws/game', maxPayload: 16 * 1024 });
 let nextPlayerId = 1;   // compteur global provisoire pour nommer les joueurs
 
-//Pseudo choisi par le joueur, transmis en query param a l'ouverture de la
-//socket. C'est une entree non fiable : on borne la longueur et on retire les
-//caracteres de controle, qui pollueraient les logs et l'affichage.
+//Pseudo choisi par un invite. C'est une entree non fiable : on borne la
+//longueur et on retire les caracteres de controle, qui pollueraient les logs et
+//l'affichage.
 //Purement decoratif : il ne sert qu'au classement final, jamais a identifier
 //un joueur cote serveur.
-function readDisplayName(request)
+function cleanDisplayName(raw)
 {
-	const raw = new URL(request.url, 'http://placeholder').searchParams.get('name');
 	if (!raw)
 		return null;
 	return raw.replace(/\p{C}/gu, '').trim().slice(0, 20) || null;
@@ -29,9 +33,23 @@ wss.on('connection', (socket, request) =>
 {
 	//  inscription : on entre dans la file d'attente, pas dans une room. La room
 	//  ne nait que lorsqu'un groupe complet peut etre forme (voir queue.js).
-	const playerId = `joueur-${nextPlayerId++}`;//#tmp utiliser vrai ID
+	//  playerId reste interne meme pour un joueur connecte : le meme compte
+	//  ouvert dans deux onglets ne doit pas entrer en collision dans les Map.
+	const playerId = `joueur-${nextPlayerId++}`;
 
-	const displayName = readDisplayName(request);
+	//Un joueur connecte prend le pseudo de son compte, signe par le backend.
+	//Sans token valide, il est traite comme un invite.
+	const params = new URL(request.url, 'http://placeholder').searchParams;
+	const user = verifyToken(params.get('token'));
+	const displayName = user?.username ?? cleanDisplayName(params.get('name'));
+	socket.userId = user?.userId ?? null;
+
+	//Sans ecouteur, une trame invalide emise en 'error' ferait tomber le
+	//process, et toutes les parties avec. 'close' suit et fait le menage.
+	socket.on('error', (err) => console.error(`[ws] ${playerId} :`, err.message));
+
+	socket.isAlive = true;
+	socket.on('pong', () => { socket.isAlive = true; });
 
 	const sendFn = function(msg)
 	{
@@ -62,7 +80,7 @@ wss.on('connection', (socket, request) =>
 		sendFn({ type: 'agentsDown', agents: brokenAgents });
 
 	enqueue(playerId, sendFn, joinRoom, displayName);
-	console.log(`${playerId} (${displayName ?? 'anonyme'}) connecté → file d'attente`);
+	console.log(`${playerId} (${displayName ?? 'anonyme'}${user ? `, compte ${user.userId}` : ''}) connecté → file d'attente`);
 	//2. messages entrants
 	socket.on('message', (data) =>
 	{
@@ -76,6 +94,9 @@ wss.on('connection', (socket, request) =>
 			console.error('message non-JSON ignoré:', error.message);
 			return;
 		}
+		//'null' est du JSON valide : msg.type ferait tomber le process
+		if (!msg || typeof msg !== 'object')
+			return;
 		//Seul message accepte hors partie : il remet le joueur dans la file, a
 		//son initiative.
 		if (msg.type === 'replay')
@@ -92,7 +113,12 @@ wss.on('connection', (socket, request) =>
 
 		if (msg.type === 'chat')
 		{
-			socket.room.addMessage(socket.playerId, msg.text);
+			//Le texte finit dans l'historique et dans le prompt des bots
+			if (typeof msg.text !== 'string')
+				return;
+			const text = msg.text.trim().slice(0, MAX_CHAT_LENGTH);
+			if (text)
+				socket.room.addMessage(socket.playerId, text);
 		}
 		/* Ajoute systeme de vote */
 		else if (msg.type === 'vote')
@@ -118,6 +144,24 @@ wss.on('connection', (socket, request) =>
 			dequeue(socket.playerId);
 	});
 });
+
+//Une connexion coupee sans fermeture propre (veille, wifi perdu) n'emet pas
+//'close' avant longtemps : le joueur fantome resterait compte dans la file ou
+//dans sa room. Le navigateur repond seul aux ping ; sans pong depuis le tour
+//precedent, on coupe, et 'close' retire le joueur.
+setInterval(() =>
+{
+	for (const client of wss.clients)
+	{
+		if (!client.isAlive)
+		{
+			client.terminate();
+			continue;
+		}
+		client.isAlive = false;
+		client.ping();
+	}
+}, HEARTBEAT_MS);
 //etat des agents avant d'accepter des connexions : rapide, aucun token consomme
 await checkAllAgents();
 
