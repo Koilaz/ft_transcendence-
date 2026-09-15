@@ -53,7 +53,6 @@ class Room
 		this.timerId = null;
 		this.status = "waiting";//(waiting, chating, voting, shuffeling, endGame)
 		this.destroyed = false;
-		this.closeTimeoutId = null;
 	}
 
 	addPlayer(playerId, sendFn, opts = {})
@@ -96,15 +95,21 @@ class Room
 		//il n'a plus rien a recevoir.
 		const character = this.currentRound?.caracterOf(playerId) ?? null;
 		this.players.delete(playerId);
-		if (this.currentRound)
-			this.currentRound.removePlayer(playerId);
-		if (character)
-			this.broadcast({ type: 'playerDisconnected', character });
+		//La fermeture se decide avant de prevenir la manche : retirer le joueur
+		//peut passer la parole au bot, et une room condamnee n'a pas a lancer
+		//d'appel a l'agent.
 		if (this.humanCount === 0)
 			return this.destroy('empty_room');
-		if ((this.status === 'playing' || this.status === 'scoreboard')
+		if ((this.status === 'playing' || this.status === 'transition')
 			&& this.players.size < gameConfig.minPlayersToContinue)
 			return this.destroy('not_enough_players');
+		if (this.currentRound)
+			this.currentRound.removePlayer(playerId);
+		//Le tour saute a pu clore la derniere manche, donc la partie et la room
+		if (this.destroyed)
+			return;
+		if (character)
+			this.broadcast({ type: 'playerDisconnected', character });
 		this.broadcastState();
 	}
 
@@ -270,8 +275,10 @@ class Room
             winnerId: finalRanking[0].name,
 			history: this.globalHistory
         });
-		this.closeTimeoutId = setTimeout(() => this.destroy('game_finished'),
-										 gameConfig.roomCloseDelayMs);
+		//Le front a tout ce qu'il faut pour afficher le classement : la room
+		//n'a plus de raison de vivre, et tant qu'elle vit le joueur ne peut pas
+		//repartir en file avec « Rejouer ».
+		this.destroy('game_finished');
     }
 
 	launchStartTimer(timer)
@@ -314,11 +321,6 @@ class Room
 			clearInterval(this.timerId);
 			this.timerId = null;
 			this.countdown = null;
-		}
-		if (this.closeTimeoutId)
-		{
-			clearTimeout(this.closeTimeoutId);
-			this.closeTimeoutId = null;
 		}
 		if (this.currentRound)
 			this.currentRound.stop();

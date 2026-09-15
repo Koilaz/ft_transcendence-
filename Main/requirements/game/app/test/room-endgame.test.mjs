@@ -11,12 +11,9 @@ room.addPlayer('h1', (msg) => received.push(msg));
 room.endGame();
 
 check('gameEnd diffuse', received.some((m) => m.type === 'gameEnd'));
-check('fermeture programmee (closeTimeoutId arme)', room.closeTimeoutId !== null);
-check('room encore vivante pendant la lecture du classement', roomCount() === 1);
-
-// On force la fermeture sans attendre roomCloseDelayMs
-room.destroy('game_finished');
-check('fermeture effective apres destroy', roomCount() === 0);
-check('timeout de fermeture annule', room.closeTimeoutId === null);
+check('room fermee des la fin de partie', roomCount() === 0);
+check('roomClosed suit gameEnd, avec le motif game_finished',
+	received.findIndex((m) => m.type === 'gameEnd')
+		< received.findIndex((m) => m.type === 'roomClosed' && m.code === 'game_finished'));
 
 report();

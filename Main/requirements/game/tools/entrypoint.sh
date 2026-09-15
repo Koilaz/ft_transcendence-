@@ -5,7 +5,11 @@ set -e
 # tr -d '\n' supprime le retour à la ligne éventuel du fichier.
 MISTRAL_API_KEY="$(tr -d '\n' < /run/secrets/mistral_api_key.txt)"
 
+# Meme secret que le backend : le jeu verifie les JWT qu'il a signes.
+JWT_SECRET="$(tr -d '\n' < /run/secrets/jwt_secret.txt)"
+
 export MISTRAL_API_KEY
+export JWT_SECRET
 
 echo "Starting game..."
 

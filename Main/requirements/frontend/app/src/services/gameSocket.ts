@@ -150,12 +150,22 @@ export function sendVoteMessage(socket: WebSocket, targetCharacter: string): voi
 
 function getGameWebSocketUrl(): string {
   const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-  // Pseudo purement decoratif : il n'apparait qu'au classement final. Le
-  // serveur le tronque et le nettoie, on ne lui fait pas confiance non plus.
+  // Connecte : le serveur verifie le token et prend le pseudo du compte. Le
+  // header Authorization est impossible sur une WebSocket, d'ou l'URL.
+  // Invite : pseudo purement decoratif, que le serveur tronque et nettoie.
+  const token = localStorage.getItem('accessToken');
   const name = localStorage.getItem('guestName');
-  const query = name ? `?name=${encodeURIComponent(name)}` : '';
+  const params = new URLSearchParams();
 
-  return `${protocol}://${window.location.host}/ws/game${query}`;
+  if (token) {
+    params.set('token', token);
+  } else if (name) {
+    params.set('name', name);
+  }
+
+  const query = params.toString();
+
+  return `${protocol}://${window.location.host}/ws/game${query ? `?${query}` : ''}`;
 }
 
 export function connectGameSocket(

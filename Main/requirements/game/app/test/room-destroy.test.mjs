@@ -1,5 +1,6 @@
 // Etape 1 : Room.destroy(), le registre et ses accesseurs.
 import { createRoom, deleteRoom, roomCount } from '../game/room.js';
+import { Round } from '../game/round.js';
 import { gameConfig } from '../game/config.js';
 import { check, report } from './check.mjs';
 
@@ -36,5 +37,26 @@ const room2 = createRoom();
 check('deleteRoom ferme une room existante', deleteRoom(room2.id) === true);
 check('deleteRoom sur id inconnu renvoie false', deleteRoom(99999) === false);
 check('registre vide', roomCount() === 0);
+
+// La room ferme pendant que le bot genere sa reponse. Sa reponse arrive apres
+// coup et ne doit pas relancer la manche d'une room morte.
+{
+	const room3 = createRoom();
+	const humain = [];
+	room3.addPlayer('h1', (m) => humain.push(m));
+	const bot = [...room3.players.values()].find((p) => p.agentName);
+	bot.sendFn = () => {};   // aucun appel a l'agent
+
+	const round = new Round([...room3.players.values()], (m) => room3.broadcast(m), () => {}, () => {});
+	round.turnOrder = [bot.id, 'h1'];
+	room3.currentRound = round;
+	round.start();
+
+	room3.destroy('not_enough_players');
+	humain.length = 0;
+	room3.addMessage(bot.id, 'reponse tardive');
+	check('la reponse tardive du bot est jetee', humain.length === 0);
+	check('aucun tour relance apres destroy', round.turnTimerId === null);
+}
 
 report();
