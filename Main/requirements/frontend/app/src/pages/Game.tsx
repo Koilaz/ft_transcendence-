@@ -49,6 +49,10 @@ type GameUIState = {
   // normal, et l'ecrasante majorite des parties n'y touchera jamais.
   agentsDown: AgentStatus[];
   gameHistory: ChatHistoryItem[] | null;
+  // L'IA prend plus longtemps que prevu pour analyser la manche precedente : le
+  // compte a rebours de transition est reparti de zero. Remis a false au debut
+  // de chaque transition.
+  debriefWaiting: boolean;
 };
 
 const initialState: GameUIState = {
@@ -71,7 +75,8 @@ const initialState: GameUIState = {
   leftCharacters: [],
   closedCode: null,
   agentsDown: [],
-  gameHistory: null
+  gameHistory: null,
+  debriefWaiting: false
 };
 
 // Pas de "join"/"quickplay" : le serveur assigne le joueur des l'ouverture de
@@ -189,7 +194,17 @@ function gameReducer(state: GameUIState, action: GameAction): GameUIState {
     case 'roundTransition':
       return {
         ...state,
-        roomStatus: 'transition'
+        roomStatus: 'transition',
+        debriefWaiting: false
+      };
+
+    // Le serveur prolonge la transition : l'analyse de la manche precedente
+    // n'est pas revenue. Le compte a rebours repart tout seul via 'state', il
+    // ne reste qu'a dire au joueur pourquoi.
+    case 'debriefWait':
+      return {
+        ...state,
+        debriefWaiting: true
       };
 
     case 'gameEnd':
@@ -677,6 +692,11 @@ export default function Game() {
             <p className="text-xl text-sky-400">
               Préparation de la manche suivante dans {state.countdown ?? '-'} secondes...
             </p>
+            {state.debriefWaiting && (
+              <p className="mt-4 text-lg text-red-400 animate-pulse">
+                L'AImpostor rejoue la manche dans sa tête… il apprend de ses erreurs.
+              </p>
+            )}
           </div>
         </div>
       )}

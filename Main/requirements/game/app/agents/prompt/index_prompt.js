@@ -19,16 +19,22 @@
 //                      traduit ; une cle nommee d'apres un agent (`ollama`,
 //                      `mistral`) lui est transmise telle quelle. Absent, le
 //                      prompt herite des defauts de l'agent.
+//  debrief             optionnel. `true` si le prompt consomme les blocs
+//                      roundSummary et corrections : la room declenche alors
+//                      l'analyse d'apres-manche (voir prompt/debrief.js), et
+//                      prolonge sa transition le temps qu'elle reponde.
 
 import { prompt_default } from './prompt_default.js';
 import { prompt_easy } from './prompt_easy.js';
 import { prompt_basic } from './prompt_basic.js';
+import { prompt_advanced } from './prompt_advanced.js';
 
 const prompts =
 {
 	[prompt_default.name]: prompt_default,
 	[prompt_easy.name]: prompt_easy,
 	[prompt_basic.name]: prompt_basic,
+	[prompt_advanced.name]: prompt_advanced,
 };
 
 //Les cles du registre, c'est-a-dire les seules valeurs acceptees dans le champ

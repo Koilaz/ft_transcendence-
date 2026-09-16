@@ -49,6 +49,28 @@ function clockOf(round)
 	return clock;
 }
 
+//Le debrief de la manche precedente (voir prompt/debrief.js) est ecrit pendant
+//la transition et peut arriver apres le debut de la manche. On le fige au
+//premier acces, exactement comme l'horloge et pour la meme raison : les deux
+//blocs qui le lisent sont de portee `shared`, donc dans le prefixe stable du
+//prompt d'ollama. Un texte qui change en cours de manche ferait repayer tout le
+//prefill au tour suivant, soit des dizaines de secondes hors budget.
+//Une note arrivee trop tard n'est donc pas perdue, elle sert a la manche
+//d'apres.
+const roundDebrief = new WeakMap();
+
+function debriefOf(room)
+{
+	let debrief = roundDebrief.get(room.currentRound);
+	if (!debrief)
+	{
+		debrief = room.debrief ?? { summary: '', fixes: '' };
+		roundDebrief.set(room.currentRound, debrief);
+	}
+
+	return debrief;
+}
+
 //Les blocs de contexte disponibles. La portee appartient au bloc et non au
 //prompt qui le choisit : `shared` vaut pour tous les bots de la manche et se
 //place avant le transcript, `perBot` change d'un bot a l'autre. C'est cette
@@ -87,6 +109,45 @@ tu peux l'utiliser pour t'adresser a eux`;
 	{
 		scope: 'shared',
 		build: (room) => `Nous sommes au round ${room.roundNumber}.`,
+	},
+
+	//La memoire du bot entre les manches. room.history est remise a zero a
+	//chaque manche (voir game/room.js) : c'est la seule chose qu'il garde de la
+	//precedente, et elle coute trois phrases la ou le transcript complet
+	//couterait des centaines de tokens.
+	//Vide tant qu'aucune manche n'a ete analysee — la premiere, donc.
+	roundSummary:
+	{
+		scope: 'shared',
+		build: (room) =>
+		{
+			const { summary } = debriefOf(room);
+			if (!summary)
+				return '';
+
+			return `voici ce que tu retiens des manches precedentes.
+les joueurs sont les memes, mais leurs personnages ont change, aucun nom de
+personnage ne designe encore la meme personne :
+${summary}`;
+		},
+	},
+
+	//Les correctifs de l'analyste. Ils sont ranges dans le contexte et non dans
+	//le message systeme parce qu'ils changent d'une manche a l'autre, alors que
+	//le systeme, lui, ne bouge jamais de toute la partie.
+	corrections:
+	{
+		scope: 'shared',
+		build: (room) =>
+		{
+			const { fixes } = debriefOf(room);
+			if (!fixes)
+				return '';
+
+			return `la manche derniere, des joueurs ont failli te demasquer.
+corrige le tir, ces consignes priment sur tes tactiques habituelles :
+${fixes}`;
+		},
 	},
 
 	character:

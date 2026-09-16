@@ -37,6 +37,16 @@ export type GameRoundTransitionMessage = {
   type: 'roundTransition';
 }
 
+// L'IA analyse la manche qui vient de finir et n'a pas encore rendu sa copie :
+// le tableau des scores est prolonge d'un tour de compte a rebours. `attempt` et
+// `max` disent ou l'on en est dans les prolongations accordees ; le texte, lui,
+// est choisi par le front.
+export type GameDebriefWaitMessage = {
+  type: 'debriefWait';
+  attempt: number;
+  max: number;
+};
+
 export type GameAgentsDownMessage = {
   type: 'agentsDown';
   agents: AgentStatus[];
@@ -132,6 +142,7 @@ export type GameMessage =
   | GamePlayerDisconnectedMessage
   | GameAgentsDownMessage
   | GameRoundTransitionMessage
+  | GameDebriefWaitMessage
   | GameSilenceMessage;
 
 export type GameMessageHandler = (
@@ -191,6 +202,7 @@ export function connectGameSocket(
         message.type !== 'roomClosed' &&
         message.type !== 'playerDisconnected' &&
         message.type !== 'roundTransition' &&
+        message.type !== 'debriefWait' &&
         message.type !== 'agentsDown'
       ) {
         return;
