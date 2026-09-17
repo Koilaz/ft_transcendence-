@@ -9,14 +9,21 @@ export const gameConfig = {
 	//	{ rounds: ['ministral_14b', { agent, prompt }, ...] }  un bot par manche, dans
 	//	                                                      l'ordre ; la derniere entree
 	//	                                                      vaut pour les manches suivantes
-	bots: [{ agent: 'local_agent', prompt: 'prompt_basic' }],
+	//Difficulte progressive : le bot garde son siege et son score toute la
+	//partie, seuls son agent et son prompt changent d'une manche a l'autre.
+	bots: [{ rounds: [
+		{ agent: 'local_agent', prompt: 'prompt_basic' },      // manche 1
+		{ agent: 'ministral_14b', prompt: 'prompt_advanced' }, // manche 2
+		{ agent: 'ministral_14b', prompt: 'prompt_advanced' }, // manche 3
+		{ agent: 'mistral_small', prompt: 'prompt_advanced' }, // manche 4
+	] }],
 	turnPerRound: 3,   // nombre de tours par manche
 	turnDuration: 17,   // secondes par tour
 	maxPlayers: 8,
 	minPlayers: 3,          // seuil pour DEMARRER une partie
 	minPlayersToContinue: 3, // seuil pour CONTINUER une partie deja lancee
 	startingTimer: 20,
-	maxRounds: 3, // nombre de manche
+	maxRounds: 4, // nombre de manche
 	scoreboardDuration: 10,
 	//Prolongations du tableau des scores accordees a l'analyse d'apres-manche
 	//quand elle n'a pas encore repondu (prompt_advanced uniquement). Chacune
