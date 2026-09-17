@@ -13,10 +13,17 @@
 //L'appel ne bloque personne : il part a la fin de la manche, la room lui laisse
 //la transition pour repondre, et ce qui arrive trop tard est ignore par la
 //manche en cours (voir le gel dans prompt/context.js).
-
-import { mistral_big } from '../mistral_common.js';
+import { getAgent, availableAgents } from '../index_agent.js';
 import { buildRawTranscript } from './context.js';
 import { getPrompt } from './index_prompt.js';
+
+//L'agent qui ecrit la note, par son nom dans le registre (agents/index_agent.js).
+//C'est le seul endroit a changer pour analyser avec un autre modele : un gros
+//modele analyse mieux, un petit coute moins cher et repond avant la fin de la
+//transition. Compter un appel par fin de manche.
+//Un nom inconnu n'arrete rien : l'analyse est ignoree, les manches se jouent
+//sans note (voir requestDebrief).
+const DEBRIEF_AGENT = 'ministral_14b';
 
 //Le modele lit une partie a laquelle il n'a pas joue : il lui faut les regles
 //avant les faits, sinon il commente la conversation au lieu d'analyser le
@@ -68,8 +75,20 @@ export function requestDebrief(room, results)
 	if (!wantsDebrief(room))
 		return;
 
+	//Un nom d'agent errone ne doit pas emporter la partie avec lui : on se
+	//contente de le dire et la manche suivante se joue sans note, comme quand
+	//l'analyse echoue.
+	const analyst = getAgent(DEBRIEF_AGENT);
+	if (!analyst)
+	{
+		console.error(`[debrief] agent "${DEBRIEF_AGENT}" absent du registre — analyse ignoree.`
+			+ ` Corrige DEBRIEF_AGENT dans prompt/debrief.js.`
+			+ ` Agents disponibles : ${availableAgents().join(', ')}`);
+		return;
+	}
+
 	room.debriefPending = true;
-	askAnalyst(room, results)
+	askAnalyst(analyst, room, results)
 		.then((text) =>
 		{
 			//Une analyse vide ou ratee garde la note precedente : perdre la
@@ -93,16 +112,19 @@ function wantsDebrief(room)
 	return [...room.players.values()].some((p) => getPrompt(room.nextRoundPromptOf(p))?.debrief);
 }
 
-//On reutilise l'agent mistral tel quel — logs, entetes de quota, gestion
-//d'erreur comprises — en lui passant un objet qui remplit le sous-ensemble du
-//contrat de prompt que createMistralAgent consomme reellement.
+//On reutilise l'agent tel quel — logs, entetes de quota, gestion d'erreur
+//comprises — en lui passant un objet qui remplit le sous-ensemble du contrat de
+//prompt que les agents consomment reellement.
 //maxTokens est indispensable : le defaut de l'agent est 70 tokens, taille d'un
 //message de joueur, pas d'une note d'analyse.
-function askAnalyst(room, results)
+//async : ce qui casse ici doit repartir en promesse rejetee, que requestDebrief
+//rattrape. Une exception synchrone remonterait jusqu'au chrono de la manche et
+//emporterait le serveur, pour une note dont personne ne depend.
+async function askAnalyst(analyst, room, results)
 {
 	const body = buildAnalysisPrompt(room, results);
 
-	return mistral_big.generate(null, {},
+	return analyst.generate(null, {},
 	{
 		name: 'debrief',
 		buildSystemPrompt: () => ANALYSIS_SYSTEM,

@@ -23,7 +23,9 @@ export function availableAgents()
 	return Object.keys(agents);
 }
 
-function getAgent(name)
+//null si le nom est inconnu : l'appelant decide si c'est fatal (une partie qui
+//demarre) ou si ca se contourne (l'analyse d'apres-manche, qui se passe du sien).
+export function getAgent(name)
 {
 	return agents[name] ?? null;
 }
@@ -67,6 +69,17 @@ export function preheatAgent(agentName, promptName, additionalContext = {})
 		.catch((err) => console.error(`[${agentName}] prechauffage echoue :`, err.message));
 }
 
+//Le rapport de sante est ce qu'il y a de plus critique au demarrage : sans bot
+//jouable, la file refuse de lancer la moindre partie. Il doit donc se retrouver
+//d'un coup d'oeil au milieu des logs de docker compose, d'ou les couleurs.
+//NO_COLOR est la convention des outils en ligne de commande. On ne teste pas
+//isTTY : la sortie d'un conteneur n'en est jamais un, ce qui eteindrait les
+//couleurs precisement la ou elles servent.
+const paint = (code) => (text) => (process.env.NO_COLOR ? text : `\x1b[${code}m${text}\x1b[0m`);
+const green = paint('1;32');
+const red = paint('1;31');
+const bold = paint('1');
+
 //Dernier rapport de sante, garde pour la duree du processus : le healthCheck
 //tourne une fois au demarrage, mais la question « les bots vont-ils parler ? »
 //se pose a chaque joueur qui se connecte.
@@ -94,16 +107,17 @@ export async function checkAllAgents()
 
 	//Le titre avant l'attente : les agents logguent les modeles qu'ils voient
 	//pendant leur healthCheck, autant que ces lignes tombent dans le bloc.
-	console.log('--- Etat des agents ---');
+	console.log(bold('\n========== Etat des agents =========='));
 	const results = await Promise.all(
 		checkable.map(async (a) => ({ name: a.name, ...(await checkUntilReachable(a)) }))
 	);
 	healthReport = new Map(results.map((r) => [r.name, r]));
 
 	for (const { name, ok, detail } of results)
-		console.log(`  [${ok ? 'OK' : 'KO'}] ${name} — ${detail}`);
+		console.log(`  ${ok ? green('[ OK ]') : red('[ KO ]')} ${name} — ${detail}`);
 	logUnavailableBots();
-	console.log('-----------------------');
+	logVerdict();
+	console.log(bold('====================================\n'));
 
 	return healthReport;
 }
@@ -204,13 +218,42 @@ export function usableBots(bots = gameConfig.bots, report = healthReport)
 
 //Sans cette ligne, un bot inconnu ou une cle sans quota ne se voient qu'au
 //premier tour de jeu, sous la forme d'un bot muet.
+//console.log et non console.error : docker melange les deux flux a l'arrivee, et
+//ces lignes tombaient hors du bloc, apres son trait de fermeture.
 function logUnavailableBots()
 {
 	const broken = unavailableBots();
 	if (!broken.length)
 		return;
 
-	console.error(`  [KO] game/config.js — bots indisponibles :`);
+	console.log(red(`  [ KO ] game/config.js — bots indisponibles :`));
 	for (const { name, detail } of broken)
-		console.error(`       ${name} — ${detail}`);
+		console.log(red(`         ${name} — ${detail}`));
+}
+
+//Le chiffre a lire au demarrage : sans bot jouable, la file garde les joueurs
+//en attente plutot que de lancer une partie sans imposteur (voir game/queue.js).
+//Les manches perdues se comptent a part — la partie se joue, mais pas avec la
+//difficulte prevue (voir gameConfig.bots).
+function logVerdict()
+{
+	//On compte les bots tels qu'ils s'ecrivent dans la config, manche par
+	//manche : c'est ce que relit celui qui cherche ce qui manque. Un bot qui
+	//change d'agent a chaque manche en pese donc autant que de manches.
+	const prevus = botEntries().flat().length;
+	if (!prevus)
+		return console.log(bold('  aucun bot configure — les parties se joueront sans imposteur'));
+
+	const usable = usableBots();
+	if (!usable.length)
+		return console.log(red('  AUCUN BOT JOUABLE — aucune partie ne demarrera'));
+
+	const jouables = usable.flat().length;
+	if (jouables === prevus)
+		return console.log(green('  tous les bots de game/config.js sont disponibles'));
+
+	//Le bot d'une manche hors service est retire de la liste de son bot (voir
+	//splitBots) : la partie se joue, mais pas avec la progression prevue.
+	console.log(red(`  ${prevus - jouables} bot(s) sur ${prevus} indisponible(s) :`
+		+ ` la difficulte jouee ne sera pas celle prevue`));
 }
