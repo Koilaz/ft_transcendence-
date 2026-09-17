@@ -6,7 +6,10 @@ import { preheatAgent } from '../agents/index_agent.js';
 import { getPrompt } from '../agents/prompt/index_prompt.js';
 import { requestDebrief } from '../agents/prompt/debrief.js';
 
-export const CARACTERS = ['Colonel Moutarde', 'Major Wasabi', 'Caporal Mayo', 'Lieutenant Samourai', 'General Ketchup', 'Marechal Cocktail'];
+//Il en faut au moins gameConfig.maxPlayers : Round.assignCaracters se sert dans
+//cette liste, et les joueurs en trop repartiraient sans personnage.
+export const CARACTERS = ['Colonel Moutarde', 'Major Wasabi', 'Caporal Mayo', 'Lieutenant Samourai',
+						  'General Ketchup', 'Marechal Cocktail', 'Sergent Barbecue', 'Capitaine Tartare'];
 
 const rooms = new Map(); //id -> room
 let nextRoomId = 1;
