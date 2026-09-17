@@ -139,7 +139,7 @@ function splitBots(bots = gameConfig.bots, report = healthReport)
 		broken.push(entry);
 	};
 
-	for (const { agent, prompt } of botEntries(bots))
+	const isUsable = ({ agent, prompt }) =>
 	{
 		let ok = true;
 
@@ -170,8 +170,18 @@ function splitBots(bots = gameConfig.bots, report = healthReport)
 				detail: `prompt du bot ${agent} absent du registre — prompts disponibles : ${availablePrompts().join(', ')}` });
 		}
 
-		if (ok)
-			usable.push({ agent, prompt });
+		return ok;
+	};
+
+	//Une manche dont le bot est casse est retiree de la liste, les suivantes
+	//avancent d'un cran : la partie se joue quand meme. Le bot n'est ecarte que
+	//si aucune de ses manches n'est jouable. filter verifie chaque manche, meme
+	//apres une erreur, pour que toutes soient signalees.
+	for (const rounds of botEntries(bots))
+	{
+		const playable = rounds.filter(isUsable);
+		if (playable.length)
+			usable.push(playable);
 	}
 
 	return { usable, broken };
@@ -183,9 +193,10 @@ export function unavailableBots(bots = gameConfig.bots, report = healthReport)
 	return splitBots(bots, report).broken;
 }
 
-//Les bots reellement exploitables, sous leur forme complete { agent, prompt }.
-//C'est cette liste que la file injecte dans la room : elle ne contient que des
-//bots dont l'agent repond et dont le prompt existe.
+//Les bots reellement exploitables, sous leur forme complete : pour chacun, la
+//liste de ses { agent, prompt } par manche. C'est cette liste que la file
+//injecte dans la room : elle ne contient que des manches dont l'agent repond et
+//dont le prompt existe.
 export function usableBots(bots = gameConfig.bots, report = healthReport)
 {
 	return splitBots(bots, report).usable;
