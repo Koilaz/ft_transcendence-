@@ -12,8 +12,8 @@ let nextRoomId = 1;
 
 //Cree une room peuplee de ses bots et l'enregistre. Elle recoit ensuite son
 //effectif humain definitif en une fois, depuis queue.js
-//bots permet a la file de n'injecter que les bots reellement exploitables.
-//Omis, on retombe sur gameConfig.bots.
+//bots permet a la file de n'injecter que les bots reellement exploitables, sous
+//la forme complete de botEntries. Omis, on retombe sur gameConfig.bots.
 export function createRoom(bots)
 {
 	const room = new Room(nextRoomId++);
@@ -63,28 +63,44 @@ class Room
 		return player;
 	}
 
-	//Un bot, c'est un agent et le prompt qu'on lui envoie. agentName reste seul
-	//sur le Player : c'est lui qui marque l'imposteur pour le reste du jeu, le
-	//prompt ne sert qu'a fabriquer ses messages.
-	addBot({ agent, prompt })
+	//Un bot, c'est un agent et le prompt qu'on lui envoie, qui peuvent changer a
+	//chaque manche. Le Player, lui, reste le meme toute la partie : meme id, meme
+	//score. agentName marque l'imposteur pour le reste du jeu, le prompt ne sert
+	//qu'a fabriquer ses messages.
+	addBot(rounds)
 	{
 		const botId = `bot-${this.id}-${this.players.size}`;
-		const sendFn = createBotSendFn(this, botId, { agent, prompt });
-		this.addPlayer(botId, sendFn, { isAI: true, agentName: agent, promptName: prompt });
+		const player = this.addPlayer(botId, null, { isAI: true, botRounds: rounds });
+		this.applyBotRound(player, 1);
+	}
+
+	//Donne au bot l'agent et le prompt prevus pour cette manche ; au-dela de sa
+	//liste, le dernier continue. Le sendFn n'est recree que si le bot change : il
+	//repart avec un disjoncteur neuf, la panne d'un agent ne condamne pas celui
+	//de la manche suivante.
+	applyBotRound(player, roundNumber)
+	{
+		const rounds = player.botRounds;
+		const { agent, prompt } = rounds[Math.min(roundNumber, rounds.length) - 1];
+		if (player.agentName === agent && player.promptName === prompt)
+			return;
+		player.agentName = agent;
+		player.promptName = prompt;
+		player.sendFn = createBotSendFn(this, player.id, { agent, prompt });
 	}
 
 	//Peuple la room a partir de gameConfig.bots. On s'arrete si la room est
 	//pleine
-	addBots(bots = gameConfig.bots)
+	addBots(bots = botEntries())
 	{
-		for (const entry of botEntries(bots))
+		for (const rounds of bots)
 		{
 			if (this.isFull())
 			{
-				console.warn(`[room ${this.id}] room pleine : bot ${entry.agent} ignore`);
+				console.warn(`[room ${this.id}] room pleine : bot ${rounds[0].agent} ignore`);
 				break;
 			}
-			this.addBot(entry);
+			this.addBot(rounds);
 		}
 	}
 
@@ -192,6 +208,13 @@ class Room
 			this.countdown = null;
 		}
 		this.roundNumber++;
+		//Avant le Round et le prechauffage : les deux lisent l'agent et le prompt
+		//du bot sur son Player.
+		for (const player of this.players.values())
+		{
+			if (player.botRounds)
+				this.applyBotRound(player, this.roundNumber);
+		}
 		this.setStatus('playing');
 		const round = new Round([...this.players.values()],
 								(msg) => this.broadcast(msg),

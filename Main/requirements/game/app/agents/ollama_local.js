@@ -157,14 +157,14 @@ export const local_agent =
 	},
 };
 
-//Le prompt reellement attribue a cet agent dans game/config.js. Le
-//prechargement doit envoyer exactement le message systeme des vrais appels,
-//sinon le KV cache amorce ne sert a rien (voir warmupOllama). Un nom de prompt
-//errone est deja signale par checkAllAgents : ici on se rabat sur le defaut
-//plutot que de faire echouer le prechargement.
+//Le premier prompt attribue a cet agent dans game/config.js, toutes manches
+//confondues. Le prechargement doit envoyer exactement le message systeme des
+//vrais appels, sinon le KV cache amorce ne sert a rien (voir warmupOllama). Un
+//nom de prompt errone est deja signale par checkAllAgents : ici on se rabat sur
+//le defaut plutot que de faire echouer le prechargement.
 function configuredPrompt()
 {
-	const entry = botEntries().find((b) => b.agent === local_agent.name);
+	const entry = botEntries().flat().find((b) => b.agent === local_agent.name);
 	return getPrompt(entry?.prompt) ?? getPrompt(DEFAULT_PROMPT);
 }
 
