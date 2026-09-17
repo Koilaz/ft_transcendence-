@@ -38,7 +38,8 @@ available prompts (cles du registre dans agents/prompt/index_prompt.js) :
 	prompt_basic     prompt d'origine, un seul bloc sans sections ni exemples
 	prompt_advanced  prompt_default + la note d'apres-manche : resume des
 	                 manches passees et correctifs sur ce qui a demasque le bot.
-	                 Coute un appel a mistral_big par fin de manche, et peut
+	                 Coute un appel a l'agent d'analyse par fin de manche
+	                 (DEBRIEF_AGENT, en tete de prompt/debrief.js), et peut
 	                 prolonger la transition (voir debriefMaxWaits).
 */
 
