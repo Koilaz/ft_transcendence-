@@ -4,6 +4,7 @@ import { createBotSendFn } from './bot.js';
 import { gameConfig, botEntries } from './config.js';
 import { preheatAgent } from '../agents/index_agent.js';
 import { getPrompt } from '../agents/prompt/index_prompt.js';
+import { requestDebrief } from '../agents/prompt/debrief.js';
 
 export const CARACTERS = ['Colonel Moutarde', 'Major Wasabi', 'Caporal Mayo', 'Lieutenant Samourai', 'General Ketchup', 'Marechal Cocktail'];
 
@@ -53,6 +54,13 @@ class Room
 		this.timerId = null;
 		this.status = "waiting";//(waiting, chating, voting, shuffeling, endGame)
 		this.destroyed = false;
+		//La note que l'analyste ecrit entre deux manches : { summary, fixes }.
+		//Elle est posee ici, sur la room, parce que les blocs de contexte la
+		//lisent comme ils lisent history ou roundNumber — prompt/context.js
+		//reste ainsi sans import et sans appel reseau.
+		this.debrief = null;
+		this.debriefPending = false;
+		this.debriefWaits = 0;
 	}
 
 	addPlayer(playerId, sendFn, opts = {})
@@ -275,12 +283,39 @@ class Room
         const maxRounds = gameConfig.maxRounds;
 
         if (this.roundNumber >= maxRounds) {
-            this.endGame();
-        } else {
-            this.setStatus('transition');
-            this.launchStartTimer(gameConfig.scoreboardDuration);
+            return this.endGame();
         }
+
+		//C'est le seul instant ou l'analyse a tout sous la main : history est
+		//encore celle de la manche qui vient de finir (startNewRound la vide) et
+		//results porte les votes. Sans await — la transition qui suit est
+		//justement le temps qu'on lui laisse pour repondre.
+		requestDebrief(this, results);
+		this.debriefWaits = 0;
+		this.setStatus('transition');
+		this.launchStartTimer(gameConfig.scoreboardDuration);
     }
+
+	//Fin du compte a rebours de transition. La manche suivante attend sa note :
+	//le bot partira avec les correctifs de la precedente, ou sans. On prolonge
+	//le tableau des scores au plus gameConfig.debriefMaxWaits fois — au-dela,
+	//mieux vaut un bot generique qu'une salle qui regarde un ecran fige.
+	//debriefPending est faux quand aucun bot ne veut de note, et il retombe en
+	//moins d'une seconde quand l'API refuse (429, cle invalide) : seule une API
+	//reellement lente declenche une prolongation, ce qui est sa raison d'etre.
+	onTransitionElapsed()
+	{
+		if (this.debriefPending && this.debriefWaits < gameConfig.debriefMaxWaits)
+		{
+			this.debriefWaits++;
+			//Une chaine machine et deux compteurs : c'est le front qui ecrit le
+			//texte, comme pour roomClosed.
+			this.broadcast({ type: 'debriefWait', attempt: this.debriefWaits, max: gameConfig.debriefMaxWaits });
+			return this.launchStartTimer(gameConfig.scoreboardDuration);
+		}
+
+		this.startNewRound();
+	}
 
     endGame()
     {
@@ -315,10 +350,13 @@ class Room
 			this.broadcastState();
 			if (this.countdown <= 0)
 			{
+				//Le chrono est eteint avant la suite : onTransitionElapsed peut
+				//decider de relancer ce meme timer, et launchStartTimer refuse
+				//de demarrer tant que timerId n'est pas null.
 				clearInterval(this.timerId);
 				this.timerId = null;
 				this.countdown = null;
-				this.startNewRound();
+				this.onTransitionElapsed();
 			}
 		}, 1000);
 	}

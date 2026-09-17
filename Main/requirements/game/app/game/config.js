@@ -10,14 +10,19 @@ export const gameConfig = {
 	//	                                                      l'ordre ; la derniere entree
 	//	                                                      vaut pour les manches suivantes
 	bots: [{ agent: 'local_agent', prompt: 'prompt_basic' }],
-	turnPerRound: 5,   // nombre de tours par manche
-	turnDuration: 20,   // secondes par tour
-	maxPlayers: 4,
+	turnPerRound: 3,   // nombre de tours par manche
+	turnDuration: 17,   // secondes par tour
+	maxPlayers: 8,
 	minPlayers: 3,          // seuil pour DEMARRER une partie
 	minPlayersToContinue: 3, // seuil pour CONTINUER une partie deja lancee
-	startingTimer: 10,
-	maxRounds: 2, // nombre de manche
+	startingTimer: 20,
+	maxRounds: 3, // nombre de manche
 	scoreboardDuration: 10,
+	//Prolongations du tableau des scores accordees a l'analyse d'apres-manche
+	//quand elle n'a pas encore repondu (prompt_advanced uniquement). Chacune
+	//dure scoreboardDuration : 2 x 10 s d'attente au maximum, apres quoi la
+	//manche demarre sans correctifs.
+	debriefMaxWaits: 2,
 };
 /*
 available agents (cles du registre dans agents/index_agent.js) :
@@ -31,6 +36,10 @@ available prompts (cles du registre dans agents/prompt/index_prompt.js) :
 	prompt_default   prompt complet, pour les gros modeles
 	prompt_easy      version allegee, pour les petits modeles (7B et moins)
 	prompt_basic     prompt d'origine, un seul bloc sans sections ni exemples
+	prompt_advanced  prompt_default + la note d'apres-manche : resume des
+	                 manches passees et correctifs sur ce qui a demasque le bot.
+	                 Coute un appel a mistral_big par fin de manche, et peut
+	                 prolonger la transition (voir debriefMaxWaits).
 */
 
 function botEntry(bot)
