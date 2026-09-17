@@ -84,10 +84,13 @@ export function requestDebrief(room, results)
 //Sans cette question, toutes les rooms paieraient l'appel et prolongeraient
 //leur transition pour attendre une note que personne ne lit. Un prompt declare
 //`debrief: true` quand il consomme les blocs roundSummary/corrections.
+//La note est ecrite maintenant mais lue a la manche suivante : c'est donc le
+//prompt de la manche suivante qu'on interroge, qui n'est pas forcement celui
+//qui vient de jouer (voir gameConfig.bots et Room.nextRoundPromptOf).
 //getPrompt(null) rend null pour les humains, il n'y a rien a filtrer de plus.
 function wantsDebrief(room)
 {
-	return [...room.players.values()].some((p) => getPrompt(p.promptName)?.debrief);
+	return [...room.players.values()].some((p) => getPrompt(room.nextRoundPromptOf(p))?.debrief);
 }
 
 //On reutilise l'agent mistral tel quel — logs, entetes de quota, gestion

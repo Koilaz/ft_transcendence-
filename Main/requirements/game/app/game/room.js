@@ -82,14 +82,30 @@ class Room
 		this.applyBotRound(player, 1);
 	}
 
-	//Donne au bot l'agent et le prompt prevus pour cette manche ; au-dela de sa
-	//liste, le dernier continue. Le sendFn n'est recree que si le bot change : il
-	//repart avec un disjoncteur neuf, la panne d'un agent ne condamne pas celui
-	//de la manche suivante.
-	applyBotRound(player, roundNumber)
+	//Le bot prevu pour cette manche ; au-dela de sa liste, le dernier continue.
+	botOfRound(player, roundNumber)
 	{
 		const rounds = player.botRounds;
-		const { agent, prompt } = rounds[Math.min(roundNumber, rounds.length) - 1];
+		return rounds[Math.min(roundNumber, rounds.length) - 1];
+	}
+
+	//Le prompt qu'aura ce joueur a la manche suivante, sans rien changer tout de
+	//suite. L'analyse d'apres-manche est demandee a la fin d'une manche mais lue
+	//a la suivante : c'est donc le prompt de la manche suivante qui decide s'il
+	//faut la demander (voir prompt/debrief.js).
+	nextRoundPromptOf(player)
+	{
+		if (!player.botRounds)
+			return player.promptName;
+		return this.botOfRound(player, this.roundNumber + 1).prompt;
+	}
+
+	//Donne au bot l'agent et le prompt prevus pour cette manche. Le sendFn n'est
+	//recree que si le bot change : il repart avec un disjoncteur neuf, la panne
+	//d'un agent ne condamne pas celui de la manche suivante.
+	applyBotRound(player, roundNumber)
+	{
+		const { agent, prompt } = this.botOfRound(player, roundNumber);
 		if (player.agentName === agent && player.promptName === prompt)
 			return;
 		player.agentName = agent;
