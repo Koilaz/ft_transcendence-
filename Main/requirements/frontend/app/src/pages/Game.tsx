@@ -53,6 +53,8 @@ type GameUIState = {
   // compte a rebours de transition est reparti de zero. Remis a false au debut
   // de chaque transition.
   debriefWaiting: boolean;
+  currentManche: number;
+  maxManches: number;
 };
 
 const initialState: GameUIState = {
@@ -76,7 +78,9 @@ const initialState: GameUIState = {
   closedCode: null,
   agentsDown: [],
   gameHistory: null,
-  debriefWaiting: false
+  debriefWaiting: false,
+  currentManche: 0,
+  maxManches: 0,
 };
 
 // Pas de "join"/"quickplay" : le serveur assigne le joueur des l'ouverture de
@@ -114,6 +118,8 @@ function gameReducer(state: GameUIState, action: GameAction): GameUIState {
         roomNumber: action.room_number,
         roomStatus: action.status,
         players: action.players,
+        currentManche: action.current_manche ?? state.currentManche,
+        maxManches: action.max_manches ?? state.maxManches,
         ...(playing
           ? {}
           : {
@@ -279,7 +285,7 @@ function isChattingPhase(
   roomStatus: string | null,
   roundPhase: string | null,
 ): boolean {
-  if (roundPhase === 'voting') {
+  if (roundPhase === 'voting' || roundPhase === 'resolution') {
     return false;
   }
 
@@ -531,6 +537,11 @@ export default function Game() {
         <div className="header-left">
           <h1>AImpostor</h1>
           <span className="tag">Salle #{state.roomNumber ?? '—'}</span>
+          {state.maxManches > 0 && (
+            <span className="tag" style={{ color: '#38bdf8', fontWeight: 'bold' }}>
+              Manche {state.currentManche}/{state.maxManches}
+            </span>
+          )}
           <span className="tag">{formatRoundIndicator(state.turnCycle, state.totalTurns)}</span>
         </div>
 

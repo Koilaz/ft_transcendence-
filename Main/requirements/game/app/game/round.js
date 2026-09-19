@@ -218,7 +218,8 @@ export class Round {
 
         // Diffuser les résultats à tous les joueurs
         this.broadcast({
-			type: 'roundTransition'
+			type: 'roundState',
+			status: 'resolution'
         });
 		if (this.onRoundEnded)
 		{

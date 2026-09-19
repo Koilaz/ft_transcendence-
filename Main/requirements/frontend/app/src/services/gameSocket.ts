@@ -5,6 +5,8 @@ export type GameStateMessage = {
   status: string;
   countdown: number | null;
   players: number;
+  current_manche?:number;
+  max_manches?: number
 };
 
 // La room ferme definitivement. `code` est une chaine machine : c'est le front

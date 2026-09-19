@@ -202,7 +202,9 @@ class Room
 			status: this.status,
 			players: this.players.size,
 			room_number: this.id,
-			countdown: this.countdown
+			countdown: this.countdown,
+			current_manche: this.roundNumber,
+			max_manches: gameConfig.maxRounds
 		});
 	}
 
@@ -301,18 +303,20 @@ class Room
 
         const maxRounds = gameConfig.maxRounds;
 
-        if (this.roundNumber >= maxRounds) {
-            return this.endGame();
+        if (this.roundNumber < maxRounds)
+		{
+            requestDebrief(this, results);
+			this.debriefWaits = 0;
         }
 
-		//C'est le seul instant ou l'analyse a tout sous la main : history est
-		//encore celle de la manche qui vient de finir (startNewRound la vide) et
-		//results porte les votes. Sans await — la transition qui suit est
-		//justement le temps qu'on lui laisse pour repondre.
-		requestDebrief(this, results);
-		this.debriefWaits = 0;
-		this.setStatus('transition');
-		this.launchStartTimer(gameConfig.scoreboardDuration);
+		setTimeout(() => {
+            if (this.roundNumber >= maxRounds) {
+                this.endGame();
+            } else {
+                this.setStatus('transition');
+                this.launchStartTimer(gameConfig.scoreboardDuration);
+            }
+        }, 4000);
     }
 
 	//Fin du compte a rebours de transition. La manche suivante attend sa note :
