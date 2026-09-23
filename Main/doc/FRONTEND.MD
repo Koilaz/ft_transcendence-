@@ -120,6 +120,8 @@ en types TypeScript, et il a ete verifie contre le vrai backend.
 | `getMe(token)` | `GET /api/auth/me` |
 | `updateMe(token, data)` | `PATCH /api/auth/me` |
 | `uploadAvatar(token, file)` | `PATCH /api/auth/me/avatar` (FormData) |
+| `verifyCurrentPassword(token, currentPassword)` | `POST /api/auth/me/password/verify` |
+| `changePassword(token, currentPassword, newPassword)` | `PATCH /api/auth/me/password` |
 | `getFriends()` | `GET /api/friends` |
 | `getFriendRequests()` | `GET /api/friends/requests` |
 | `getSentFriendRequests()` | `GET /api/friends/sent-requests` |
@@ -194,6 +196,12 @@ Formulaires controles classiques. `Login` stocke `accessToken` puis va sur
 Les contraintes HTML (`minLength`, `type="email"`) doublent celles des DTO.
 
 ### `Profile.tsx`
+
+`PasswordChangeForm.tsx` ajoute le changement de mot de passe en deux etapes :
+verification de l'ancien par le serveur, puis saisie et confirmation du nouveau.
+La confirmation est verifiee dans le formulaire ; le serveur reverifie l'ancien
+mot de passe a l'enregistrement. Les champs sont vides apres succes ou annulation
+et les mots de passe ne sont jamais stockes dans localStorage.
 Charge le profil via `getMe`, redirige vers `/login` si le token manque ou si
 l'appel echoue (et efface alors le token). Permet de changer le pseudo
 (`updateMe`) et de televerser un avatar (`uploadAvatar`). Bouton de deconnexion

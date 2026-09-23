@@ -13,6 +13,7 @@ import {
   type User,
 } from '../services/api';
 import { setAccessToken } from '../services/session';
+import PasswordChangeForm from './PasswordChangeForm';
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -344,6 +345,7 @@ export default function Profile() {
                 : 'Save changes'}
             </button>
           </form>
+          <PasswordChangeForm />
         </section>
       </div>
     </main>

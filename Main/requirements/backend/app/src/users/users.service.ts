@@ -65,6 +65,22 @@ export class UsersService {
     });
   }
 
+  findCredentialsById(id: number) {
+    return this.prisma.user.findUnique({
+      where: { id },
+      select: { id: true, passwordHash: true },
+    });
+  }
+
+  async updatePasswordHash(id: number, currentHash: string, passwordHash: string) {
+    // Ne pas écraser un mot de passe changé entre la vérification et l'écriture.
+    const result = await this.prisma.user.updateMany({
+      where: { id, passwordHash: currentHash },
+      data: { passwordHash },
+    });
+    return result.count === 1;
+  }
+
   // Création d'un utilisateur.
   // On ne renvoie jamais passwordHash.
   create(data: CreateUserData) {

@@ -145,6 +145,14 @@ puis signature du JWT. Le meme message `Invalid credentials` est renvoye que
 l'email soit inconnu ou le mot de passe faux — pas d'oracle sur l'existence
 d'un compte.
 
+**Changement de mot de passe** : depuis le profil, verification de l'ancien
+mot de passe puis saisie du nouveau. Les deux routes exigent un JWT ; la
+sauvegarde reverifie l'ancien mot de passe, meme apres la premiere etape.
+Le nouveau mot de passe est hache avec bcrypt (cout 12), sans retourner de
+mot de passe ni de hash. L'ecriture compare aussi l'ancien hash pour eviter
+qu'un changement concurrent soit ecrase. Les JWT existants restent valables
+jusqu'a leur expiration, comme pour les autres modifications de profil.
+
 **Payload JWT** : `{ sub: user.id, username }`, `expiresIn: '1h'`.
 
 **`JwtStrategy`** : token extrait du header `Authorization: Bearer`,
@@ -166,6 +174,8 @@ revocation, 2FA. Un token vole reste valable une heure.
 | GET | `/api/auth/me` | JWT | — | utilisateur (projection privee) |
 | PATCH | `/api/auth/me` | JWT | `UpdateProfileDto` | utilisateur, 409 si username pris |
 | PATCH | `/api/auth/me/avatar` | JWT | multipart, champ `avatar` | utilisateur |
+| POST | `/api/auth/me/password/verify` | JWT | `VerifyPasswordDto` | 204, 401 si ancien mot de passe incorrect |
+| PATCH | `/api/auth/me/password` | JWT | `ChangePasswordDto` | 204, 401 si ancien mot de passe incorrect |
 | POST | `/api/friends/:userId` | JWT | — | la `Friendship` creee |
 | PATCH | `/api/friends/:userId/accept` | JWT | — | la `Friendship` acceptee |
 | DELETE | `/api/friends/:userId` | JWT | — | `{ message }` |
@@ -183,6 +193,9 @@ revocation, 2FA. Un token vole reste valable une heure.
 | `LoginDto` | email | trim + lowercase, `IsEmail` |
 | | password | 8–100 |
 | `UpdateProfileDto` | username | optionnel, memes regles que l'inscription |
+| `VerifyPasswordDto` | currentPassword | chaine, 8–100 |
+| `ChangePasswordDto` | currentPassword | chaine, 8–100 |
+| | newPassword | chaine, 8–72 caracteres, au plus 72 octets UTF-8 (limite bcrypt) |
 
 Le controleur `PATCH /auth/me` rejette en plus un username vide apres trim
 (400), donc le champ est en pratique obligatoire malgre l'`@IsOptional()`.

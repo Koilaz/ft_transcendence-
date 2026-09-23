@@ -164,6 +164,43 @@ export async function getMe(accessToken: string): Promise<User> {
   return response.json();
 }
 
+export async function verifyCurrentPassword(
+  accessToken: string,
+  currentPassword: string,
+): Promise<void> {
+  const response = await fetch('/api/auth/me/password/verify', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({ currentPassword }),
+  });
+
+  if (!response.ok) {
+    throw new Error(await parseError(response));
+  }
+}
+
+export async function changePassword(
+  accessToken: string,
+  currentPassword: string,
+  newPassword: string,
+): Promise<void> {
+  const response = await fetch('/api/auth/me/password', {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({ currentPassword, newPassword }),
+  });
+
+  if (!response.ok) {
+    throw new Error(await parseError(response));
+  }
+}
+
 
 
 
