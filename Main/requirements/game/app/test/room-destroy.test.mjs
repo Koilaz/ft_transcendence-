@@ -11,7 +11,7 @@ room.addPlayer('h1', (msg) => received.push(msg));
 // Depuis l'etape 7, addPlayer ne lance plus aucun timer : l'effectif est fixe
 // par la file d'attente. On arme donc le compte a rebours a la main, comme le
 // fait handleRoundEnd pour le scoreboard, afin de verifier que destroy le coupe.
-room.launchStartTimer(gameConfig.scoreboardDuration);
+room.launchStartTimer(gameConfig.roundTransitionDelay);
 
 check('room enregistree dans le registre', roomCount() === 1);
 check('la room contient ses bots et son humain', room.players.size === gameConfig.bots.length + 1);

@@ -314,7 +314,7 @@ class Room
                 this.endGame();
             } else {
                 this.setStatus('transition');
-                this.launchStartTimer(gameConfig.scoreboardDuration);
+                this.launchStartTimer(gameConfig.roundTransitionDelay);
             }
         }, 4000);
     }
@@ -334,7 +334,7 @@ class Room
 			//Une chaine machine et deux compteurs : c'est le front qui ecrit le
 			//texte, comme pour roomClosed.
 			this.broadcast({ type: 'debriefWait', attempt: this.debriefWaits, max: gameConfig.debriefMaxWaits });
-			return this.launchStartTimer(gameConfig.scoreboardDuration);
+			return this.launchStartTimer(gameConfig.roundTransitionDelay);
 		}
 
 		this.startNewRound();

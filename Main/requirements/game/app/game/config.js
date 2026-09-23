@@ -24,10 +24,10 @@ export const gameConfig = {
 	minPlayersToContinue: 3, // seuil pour CONTINUER une partie deja lancee
 	startingTimer: 10,       // secondes apres que tous les joueurs sont prets
 	maxRounds: 4, // nombre de manche
-	scoreboardDuration: 10,
+	roundTransitionDelay: 5,
 	//Prolongations du tableau des scores accordees a l'analyse d'apres-manche
 	//quand elle n'a pas encore repondu (prompt_advanced uniquement). Chacune
-	//dure scoreboardDuration : 2 x 10 s d'attente au maximum, apres quoi la
+	//dure roundTransitionDelay : 2 x 10 s d'attente au maximum, apres quoi la
 	//manche demarre sans correctifs.
 	debriefMaxWaits: 2,
 };
