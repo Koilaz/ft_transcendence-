@@ -6,6 +6,7 @@ import {
   connectGameSocket,
   sendChatMessage,
   sendVoteMessage,
+  sendReadyMessage,
   sendReplayMessage,
   type GameMessage,
   type RoundResult,
@@ -39,6 +40,9 @@ type GameUIState = {
   // Nombre de joueurs annonce par le serveur : effectif de la file en lobby,
   // effectif de la room une fois la partie lancee.
   players: number;
+  minPlayers: number;
+  readyPlayers: number;
+  isReady: boolean;
   // Personnages dont le joueur a quitte la partie. Ils restent affiches, mais
   // grises : le serveur les conserve dans turnOrder, c'est au front de montrer
   // qu'ils ne jouent plus.
@@ -74,6 +78,9 @@ const initialState: GameUIState = {
   winnerId: null,
   totalTurns: null,
   players: 0,
+  minPlayers: 1,
+  readyPlayers: 0,
+  isReady: false,
   leftCharacters: [],
   closedCode: null,
   agentsDown: [],
@@ -118,6 +125,9 @@ function gameReducer(state: GameUIState, action: GameAction): GameUIState {
         roomNumber: action.room_number,
         roomStatus: action.status,
         players: action.players,
+        minPlayers: action.min_players ?? state.minPlayers,
+        readyPlayers: action.ready_players ?? state.readyPlayers,
+        isReady: action.ready ?? state.isReady,
         currentManche: action.current_manche ?? state.currentManche,
         maxManches: action.max_manches ?? state.maxManches,
         ...(playing
@@ -502,6 +512,12 @@ export default function Game() {
     }
   }
 
+  function handleReady() {
+    if (socketRef.current && !state.isReady) {
+      sendReadyMessage(socketRef.current);
+    }
+  }
+
   // Le serveur ne remet personne dans la file tout seul : sans ce clic, le
   // joueur reste sur l'ecran de resultats aussi longtemps qu'il le souhaite.
   function handleReplay() {
@@ -524,8 +540,12 @@ export default function Game() {
     return (
       <Lobby
         waiting={state.players}
+        minPlayers={state.minPlayers}
+        readyPlayers={state.readyPlayers}
+        isReady={state.isReady}
         countdown={state.countdown}
         connected={connectionOpen}
+        onReady={handleReady}
         agentsDown={state.agentsDown}
       />
     );

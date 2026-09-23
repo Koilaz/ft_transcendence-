@@ -6,12 +6,13 @@ import { gameConfig } from '../game/config.js';
 // gameConfig a chaque appel, cette mutation est donc prise en compte.
 gameConfig.bots = [];
 
-const { enqueue, dequeue, queueSize } = await import('../game/queue.js');
+const { enqueue, dequeue, queueSize, ready } = await import('../game/queue.js');
 const { roomCount } = await import('../game/room.js');
 const { check, report } = await import('./check.mjs');
 
 const humansMin = gameConfig.minPlayers;
 const humansMax = gameConfig.maxPlayers;
+gameConfig.startingTimer = 1;
 console.log(`(sans bot : ${humansMin} humains pour demarrer, ${humansMax} au maximum)\n`);
 
 // Un joueur de test : collecte ses messages et retient la room qu'on lui donne.
@@ -50,11 +51,8 @@ check('A. et rien d autre que le compteur',
 	check('B. toujours aucune room', roomCount() === 0);
 }
 
-// --------------------- C. au plafond, la partie se lance immediatement
+// --------------------- C. au plafond, la partie attend le bouton « Prêt »
 {
-	// Le nombre manquant est calcule AVANT la boucle : launch() vide la file des
-	// qu'on atteint le plafond, donc une condition sur queueSize() ne se
-	// terminerait jamais et lancerait une partie a chaque tour.
 	const nouveaux = [];
 	const manquants = humansMax - queueSize();
 	for (let i = 0; i < manquants; i++)
@@ -65,8 +63,15 @@ check('A. et rien d autre que le compteur',
 	}
 
 	const tous = [...premiers, ...nouveaux];
-	check('C. une room a ete creee', roomCount() === 1);
-	check('C. la file est videe', queueSize() === 0);
+	check('C. aucune room avant Prêt', roomCount() === 0);
+	check('C. la file attend Prêt', queueSize() === humansMax);
+	for (const player of tous)
+		ready(player.id);
+	check('C. tous les joueurs sont prets sans lancer immediatement', roomCount() === 0);
+	await new Promise((resolve) => setTimeout(resolve, 1200));
+	check('C. une room a ete creee apres le compte a rebours', roomCount() === 1);
+	check('C. la file est videe apres le compte a rebours', queueSize() === 0);
+	check('C. tous les joueurs ont recu leur room', tous.every((p) => p.room !== null));
 	check('C. tous les joueurs ont recu leur room', tous.every((p) => p.room !== null));
 	check('C. tous dans la MEME room', new Set(tous.map((p) => p.room.id)).size === 1);
 

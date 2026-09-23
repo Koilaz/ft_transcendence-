@@ -5,6 +5,9 @@ export type GameStateMessage = {
   status: string;
   countdown: number | null;
   players: number;
+  min_players?: number;
+  ready_players?: number;
+  ready?: boolean;
   current_manche?:number;
   max_manches?: number
 };
@@ -155,6 +158,10 @@ export type GameVoteOutgoingMessage = {
   type: 'vote';
   targetCharacter: string;
 };
+
+export function sendReadyMessage(socket: WebSocket): void {
+  socket.send(JSON.stringify({ type: 'ready' }));
+}
 
 export function sendVoteMessage(socket: WebSocket, targetCharacter: string): void {
   const message: GameVoteOutgoingMessage = { type: 'vote', targetCharacter };

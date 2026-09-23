@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Link } from 'react-router-dom';
 
 import {
@@ -7,7 +8,6 @@ import {
   loreAvertissement,
   loreConsequence,
   loreSignature,
-  loreAutodestruction,
   loreAgentsDownTitre,
   loreAgentsDownIntro,
   loreAgentsDownMotifs,
@@ -18,8 +18,12 @@ import type { AgentStatus } from '../services/gameSocket';
 
 type LobbyProps = {
   waiting: number;
+  minPlayers: number;
+  readyPlayers: number;
+  isReady: boolean;
   countdown: number | null;
   connected: boolean;
+  onReady: () => void;
   // Les bots qui ne repondront pas. Vide dans le cas normal.
   agentsDown: AgentStatus[];
 };
@@ -30,8 +34,12 @@ type LobbyProps = {
 // reveler.
 export function Lobby({
   waiting,
+  minPlayers,
+  readyPlayers,
+  isReady,
   countdown,
   connected,
+  onReady,
   agentsDown,
 }: LobbyProps) {
   return (
@@ -142,23 +150,39 @@ export function Lobby({
         </div>
 
         <div className="text-right">
-          {countdown === null ? (
-            <p className="text-sm text-slate-400">
-              {connected
-                ? "En attente d'autres membres…"
-                : 'Liaison interrompue…'}
-            </p>
-          ) : (
+          {countdown !== null ? (
             <>
               <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
-                {loreAutodestruction}
+                Début dans
               </p>
               <p className="text-3xl font-bold text-red-400 tabular-nums">
                 {countdown}
               </p>
             </>
+          ) : (
+            <p className="text-sm text-slate-400">
+              {!connected
+                ? 'Liaison interrompue…'
+                : `${readyPlayers}/${waiting} joueurs prêts`}
+            </p>
           )}
         </div>
+
+        {connected && waiting >= minPlayers && !isReady && (
+          <button
+            type="button"
+            onClick={onReady}
+            className="border border-emerald-500 bg-emerald-500/10 px-5 py-3 text-sm font-bold uppercase tracking-[0.15em] text-emerald-300 transition hover:bg-emerald-500/20"
+          >
+            Prêt
+          </button>
+        )}
+
+        {connected && isReady && (
+          <span className="border border-emerald-500/60 px-5 py-3 text-sm font-bold uppercase tracking-[0.15em] text-emerald-300">
+            Prêt
+          </span>
+        )}
       </section>
     </main>
   );

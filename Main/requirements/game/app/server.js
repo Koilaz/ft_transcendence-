@@ -2,7 +2,7 @@
 import express from 'express';
 import http from 'node:http';
 import { WebSocketServer } from 'ws';
-import { enqueue, dequeue } from './game/queue.js';
+import { enqueue, dequeue, ready } from './game/queue.js';
 import { checkAllAgents, unavailableBots } from './agents/index_agent.js';
 import { warmupOllama } from './agents/ollama_local.js';
 import { verifyToken } from './auth.js';
@@ -109,7 +109,11 @@ wss.on('connection', (socket, request) =>
 		//Tant que le joueur patiente dans la file, il n'a rien a dire ni a voter :
 		//le lobby ne permet aucune communication entre joueurs.
 		if (!socket.room)
+		{
+			if (msg.type === 'ready')
+				ready(playerId);
 			return;
+		}
 
 		if (msg.type === 'chat')
 		{
