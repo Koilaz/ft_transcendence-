@@ -12,6 +12,7 @@ import {
   uploadAvatar,
   type User,
 } from '../services/api';
+import { setAccessToken } from '../services/session';
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -48,7 +49,7 @@ export default function Profile() {
         setUser(profile);
         setUsername(profile.username);
       } catch (error) {
-        localStorage.removeItem('accessToken');
+        setAccessToken(null);
 
         if (error instanceof Error) {
           setError(error.message);
@@ -145,7 +146,7 @@ export default function Profile() {
   }
 
   function handleLogout() {
-    localStorage.removeItem('accessToken');
+    setAccessToken(null);
     navigate('/login');
   }
 

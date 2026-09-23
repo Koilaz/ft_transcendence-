@@ -505,9 +505,12 @@ export default function Game() {
   }[connLabel];
 
   const isGuest = !hasAccessToken;
+  const isVotingOpen = connectionOpen === true
+    && isPlayingStatus(state.roomStatus)
+    && state.roundPhase === 'chatting';
 
   function handleVote(targetCharacter: string) {
-    if (socketRef.current) {
+    if (socketRef.current && isVotingOpen && !state.hasVoted) {
       sendVoteMessage(socketRef.current, targetCharacter);
     }
   }
@@ -651,11 +654,14 @@ export default function Game() {
                 </li>
               ))}
             </ul>
-            {isChattingPhase(state.roomStatus, state.roundPhase) && (
+            {isPlayingStatus(state.roomStatus) && (
               <VoteMenu 
+                key={state.currentManche}
                 turnOrder={state.turnOrder} 
                 myCharacter={state.myCharacter} 
                 hasVoted={state.hasVoted} 
+                isVotingOpen={isVotingOpen}
+                isLastRound={state.turnCycle === 1}
                 leftCharacters={state.leftCharacters}
                 onVote={handleVote} 
               />

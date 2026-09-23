@@ -19,6 +19,16 @@ export type PresenceMessageHandler = (
   message: PresenceMessage,
 ) => void;
 
+const listeners = new Set<PresenceMessageHandler>();
+
+// Les pages écoutent les événements sans gérer la connexion de l'application.
+export function subscribePresence(onMessage: PresenceMessageHandler): () => void {
+  listeners.add(onMessage);
+  return () => {
+    listeners.delete(onMessage);
+  };
+}
+
 function getPresenceWebSocketUrl(accessToken: string): string {
   const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
 
@@ -29,7 +39,6 @@ function getPresenceWebSocketUrl(accessToken: string): string {
 
 export function connectPresenceSocket(
   accessToken: string,
-  onMessage: PresenceMessageHandler,
 ): WebSocket {
   const socket = new WebSocket(
     getPresenceWebSocketUrl(accessToken),
@@ -46,7 +55,9 @@ export function connectPresenceSocket(
         return;
       }
 
-      onMessage(message);
+      for (const onMessage of listeners) {
+        onMessage(message);
+      }
     } catch {
       // Message invalide : on ignore.
     }

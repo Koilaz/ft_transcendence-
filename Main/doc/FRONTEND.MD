@@ -142,7 +142,7 @@ doit generer lui-meme le `boundary` du multipart.
 
 ### 5.2 `services/presenceSocket.ts`
 
-`connectPresenceSocket(accessToken, onMessage)` ouvre
+`connectPresenceSocket(accessToken)` ouvre
 `wss://<host>/ws/presence?token=<jwt>` — le protocole (`ws`/`wss`) est deduit de
 `window.location.protocol`. Le token passe en query string parce que l'API
 WebSocket du navigateur ne permet pas de header `Authorization` ; c'est pour
@@ -150,6 +150,12 @@ cette raison que nginx masque `token=` dans ses logs.
 
 Les messages inconnus sont ignores, un JSON invalide aussi. Types :
 `presence:connected`, `presence:update`.
+
+La connexion appartient a `App.tsx` et reste ouverte pendant la navigation sur
+tout le site. `services/session.ts` signale les changements de token dans
+l'onglet courant et les autres onglets : une connexion ouvre la socket, une
+deconnexion la ferme. Les pages recoivent les messages via `subscribePresence`
+et se desabonnent sans fermer la socket globale.
 
 ### 5.3 `services/gameSocket.ts`
 
@@ -198,9 +204,10 @@ La page la plus fournie (542 lignes). Charge en parallele profil, utilisateurs,
 amis, demandes recues et demandes envoyees. Les demandes envoyees servent a
 retirer de « Find users » les gens a qui on a deja ecrit.
 
-Ouvre en plus la WebSocket de presence et met a jour les pastilles en ligne /
-hors ligne a la reception de `presence:update`. C'est le seul endroit de
-l'application ou du temps reel non-jeu est branche.
+Ecoute la WebSocket de presence globale et met a jour les pastilles en ligne /
+hors ligne a la reception de `presence:update`. Quitter cette page ne coupe
+pas la presence : l'utilisateur reste en ligne tant que sa session est ouverte
+sur le site.
 
 ### `Game.tsx`
 Voir la section suivante : c'est la page dont la logique doit etre reprise.

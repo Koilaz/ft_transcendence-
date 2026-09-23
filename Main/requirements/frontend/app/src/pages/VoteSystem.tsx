@@ -8,13 +8,16 @@ type VoteMenuProps = {
   turnOrder: string[];
   myCharacter: string | null;
   hasVoted: boolean;
+  isVotingOpen: boolean;
+  isLastRound: boolean;
   leftCharacters: string[];
   onVote: (targetCharacter: string) => void;
 };
 
-export function VoteMenu({ turnOrder, myCharacter, hasVoted, leftCharacters, onVote }: VoteMenuProps) {
+export function VoteMenu({ turnOrder, myCharacter, hasVoted, isVotingOpen, isLastRound, leftCharacters, onVote }: VoteMenuProps) {
   // Nouvel état local pour stocker la sélection avant validation
   const [selected, setSelected] = useState<string | null>(null);
+  const canSubmit = isVotingOpen && selected !== null && !leftCharacters.includes(selected);
 
   if (hasVoted) {
     return (
@@ -29,6 +32,13 @@ export function VoteMenu({ turnOrder, myCharacter, hasVoted, leftCharacters, onV
       <h3 className="text-sm font-semibold text-slate-300 mb-3 text-center">
         Qui est l'IA selon vous ?
       </h3>
+      {(isLastRound || !isVotingOpen) && (
+        <p role="status" className="mb-3 text-center text-xs text-amber-400">
+          {isVotingOpen
+            ? 'Dernier round ! Validez votre vote avant la fin de la manche. Ensuite, les votes seront clos.'
+            : 'Votes clos — manche terminée.'}
+        </p>
+      )}
       
       {/* Liste des personnages sélectionnables */}
       <div className="flex flex-wrap gap-2 justify-center mb-4">
@@ -44,11 +54,13 @@ export function VoteMenu({ turnOrder, myCharacter, hasVoted, leftCharacters, onV
           return (
             <button
               key={character}
-              disabled={hasLeft}
+              disabled={hasLeft || !isVotingOpen}
               onClick={() => setSelected(character)}
               className={`rounded px-3 py-1 text-sm font-medium transition ${
                 hasLeft
                   ? 'bg-slate-700 text-slate-500 line-through cursor-not-allowed'
+                  : !isVotingOpen
+                  ? 'bg-slate-700 text-slate-500 cursor-not-allowed'
                   : isSelected
                   ? 'bg-orange-500 text-slate-900 shadow-[0_0_8px_rgba(245,166,35,0.6)]'
                   : 'bg-sky-600 text-white hover:bg-sky-500'
@@ -63,10 +75,10 @@ export function VoteMenu({ turnOrder, myCharacter, hasVoted, leftCharacters, onV
       {/* Bouton de validation final */}
       <div className="flex justify-center">
         <button
-          disabled={!selected}
-          onClick={() => selected && onVote(selected)}
+          disabled={!canSubmit}
+          onClick={() => canSubmit && selected && onVote(selected)}
           className={`rounded-lg px-6 py-2 text-sm font-bold transition ${
-            selected
+            canSubmit
               ? 'bg-emerald-500 text-slate-900 hover:bg-emerald-400'
               : 'bg-slate-700 text-slate-500 cursor-not-allowed'
           }`}

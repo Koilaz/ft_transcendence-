@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
 import { login } from '../services/api';
+import { setAccessToken } from '../services/session';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -24,7 +25,7 @@ export default function Login() {
         password,
       });
 
-      localStorage.setItem('accessToken', response.accessToken);
+      setAccessToken(response.accessToken);
 
       navigate('/profile');
     } catch (error) {
