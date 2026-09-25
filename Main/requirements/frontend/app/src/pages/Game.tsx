@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useEffect, useReducer, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 
@@ -7,283 +6,15 @@ import {
   sendChatMessage,
   sendVoteMessage,
   sendReadyMessage,
-  sendReplayMessage,
-  type GameMessage,
-  type RoundResult,
-  type FinalRank,
-  type AgentStatus,
+  getClosedGameCode,
+  getInitialConnectionStatus,
+  type GameConnection,
+  type GameConnectionStatus,
 } from '../services/gameSocket';
-import { VoteMenu, ScoreboardModal, GameEndModal, RoomClosedModal } from './VoteSystem';
+import { gameReducer, initialState, type GameUIState } from '../services/gameState';
+import { VoteMenu, GameEndModal, RoomClosedModal } from './VoteSystem';
 import { Lobby } from './Lobby';
 import './Game.css';
-
-type FeedMessage =
-  | { id: string; kind: 'chat'; sender: string; text: string }
-  | { id: string; kind: 'system'; text: string };
-
-type GameUIState = {
-  myCharacter: string | null;
-  roomNumber: number | null;
-  roomStatus: string | null;
-  roundPhase: string | null;
-  currentTurnCharacter: string | null;
-  turnOrder: string[];
-  turnCycle: number | null;
-  countdown: number | null;
-  messages: FeedMessage[];
-  hasVoted: boolean;
-  roundResults: RoundResult[] | null;
-  aiCharacter: string | null;
-  gameRanking: FinalRank[] | null;
-  winnerId: string | null;
-  totalTurns: number | null;
-  // Nombre de joueurs annonce par le serveur : effectif de la file en lobby,
-  // effectif de la room une fois la partie lancee.
-  players: number;
-  minPlayers: number;
-  readyPlayers: number;
-  isReady: boolean;
-  // Personnages dont le joueur a quitte la partie. Ils restent affiches, mais
-  // grises : le serveur les conserve dans turnOrder, c'est au front de montrer
-  // qu'ils ne jouent plus.
-  leftCharacters: string[];
-  // Motif de fermeture de la room, null tant qu'elle est vivante.
-  closedCode: string | null;
-  // Bots annonces hors service par le serveur a la connexion. Vide dans le cas
-  // normal, et l'ecrasante majorite des parties n'y touchera jamais.
-  agentsDown: AgentStatus[];
-  gameHistory: ChatHistoryItem[] | null;
-  // L'IA prend plus longtemps que prevu pour analyser la manche precedente : le
-  // compte a rebours de transition est reparti de zero. Remis a false au debut
-  // de chaque transition.
-  debriefWaiting: boolean;
-  currentManche: number;
-  maxManches: number;
-};
-
-const initialState: GameUIState = {
-  myCharacter: null,
-  roomNumber: null,
-  roomStatus: null,
-  roundPhase: null,
-  currentTurnCharacter: null,
-  turnOrder: [],
-  turnCycle: null,
-  countdown: null,
-  messages: [],
-  hasVoted: false,
-  roundResults: null,
-  aiCharacter: null,
-  gameRanking: null,
-  winnerId: null,
-  totalTurns: null,
-  players: 0,
-  minPlayers: 1,
-  readyPlayers: 0,
-  isReady: false,
-  leftCharacters: [],
-  closedCode: null,
-  agentsDown: [],
-  gameHistory: null,
-  debriefWaiting: false,
-  currentManche: 0,
-  maxManches: 0,
-};
-
-// Pas de "join"/"quickplay" : le serveur assigne le joueur des l'ouverture de
-// la socket. On ajoute juste une action locale pour les lignes "connecté" /
-// "déconnecté" du fil, qui n'existent pas dans le protocole serveur.
-type LocalConnectionAction = { type: 'connection'; text: string };
-// Remise a zero locale quand le joueur redemande une partie : le serveur, lui,
-// ne renvoie jamais d'etat initial.
-type LocalResetAction = { type: 'reset' };
-type GameAction = GameMessage | LocalConnectionAction | LocalResetAction;
-
-let messageIdCounter = 0;
-
-function nextMessageId(): string {
-  messageIdCounter += 1;
-  return `msg-${messageIdCounter}`;
-}
-
-function gameReducer(state: GameUIState, action: GameAction): GameUIState {
-  switch (action.type) {
-    case 'connection':
-      return {
-        ...state,
-        messages: [
-          ...state.messages,
-          { id: nextMessageId(), kind: 'system', text: action.text },
-        ],
-      };
-
-    case 'state': {
-      const playing = isPlayingStatus(action.status);
-
-      return {
-        ...state,
-        roomNumber: action.room_number,
-        roomStatus: action.status,
-        players: action.players,
-        minPlayers: action.min_players ?? state.minPlayers,
-        readyPlayers: action.ready_players ?? state.readyPlayers,
-        isReady: action.ready ?? state.isReady,
-        currentManche: action.current_manche ?? state.currentManche,
-        maxManches: action.max_manches ?? state.maxManches,
-        ...(playing
-          ? {}
-          : {
-              currentTurnCharacter: null,
-              turnOrder: [],
-              countdown: action.countdown,
-            }),
-      };
-    }
-
-    case 'assignment':
-      return {
-        ...state,
-        myCharacter: action.character,
-        hasVoted: false,
-        roundResults: null,
-        aiCharacter: null,
-        // Un nom de personnage n'a de sens QUE dans sa manche : ils sont
-        // retires au sort a chaque nouvelle manche. Garder les partants d'une
-        // manche a l'autre grisait un joueur bien present, celui qui heritait
-        // du personnage libere, et interdisait de voter pour lui.
-        // Les joueurs reellement partis, eux, ne figurent plus du tout dans le
-        // turnOrder de la manche suivante : il n'y a rien a reporter.
-        leftCharacters: [],
-        // Meme raison : les messages de la manche precedente portent des noms
-        // qui designent desormais quelqu'un d'autre. Les garder lisibles
-        // permettrait de reporter de fausses deductions d'une manche a l'autre,
-        // ce que le rebrassage des personnages existe pour empecher.
-        messages: [
-          {
-            id: nextMessageId(),
-            kind: 'system',
-            text: `>>> nouvelle manche, tu incarnes ${action.character}`,
-          },
-        ],
-      };
-
-    case 'voteRegistered':
-      return { ...state, hasVoted: true };
-
-    case 'yourTurn':
-      return {
-        ...state,
-        currentTurnCharacter: state.myCharacter,
-        roundPhase: 'chatting',
-        countdown: action.countdown,
-      };
-
-    case 'turn':
-      return {
-        ...state,
-        currentTurnCharacter: action.character,
-        turnOrder: action.turnOrder,
-        turnCycle: action.turnCycle,
-        roundPhase: 'chatting',
-        countdown: action.countdown,
-        totalTurns: action.totalTurns
-      };
-
-    case 'chat':
-      return {
-        ...state,
-        messages: [
-          ...state.messages,
-          {
-            id: nextMessageId(),
-            kind: 'chat',
-            sender: action.sender,
-            text: action.text,
-          },
-        ],
-      };
-
-    case 'roundState':
-      return { ...state, roundPhase: action.status };
-
-
-    case 'roundTransition':
-      return {
-        ...state,
-        roomStatus: 'transition',
-        debriefWaiting: false
-      };
-
-    // Le serveur prolonge la transition : l'analyse de la manche precedente
-    // n'est pas revenue. Le compte a rebours repart tout seul via 'state', il
-    // ne reste qu'a dire au joueur pourquoi.
-    case 'debriefWait':
-      return {
-        ...state,
-        debriefWaiting: true
-      };
-
-    case 'gameEnd':
-      return {
-        ...state,
-        gameRanking: action.ranking,
-        winnerId: action.winnerId,
-        gameHistory: action.history,
-        roomStatus: 'endGame'
-      };
-
-    case 'playerDisconnected':
-      return {
-        ...state,
-        leftCharacters: state.leftCharacters.includes(action.character)
-          ? state.leftCharacters
-          : [...state.leftCharacters, action.character],
-        messages: [
-          ...state.messages,
-          {
-            id: nextMessageId(),
-            kind: 'system',
-            text: `${action.character} a quitté la séance.`,
-          },
-        ],
-      };
-
-    // On ne touche PAS a roomStatus : le classement de fin de partie doit
-    // rester affiche jusqu'a ce que le joueur clique sur « Rejouer ».
-    case 'roomClosed':
-      return {
-        ...state,
-        closedCode: action.code,
-        roomNumber: null,
-        currentTurnCharacter: null,
-        countdown: null,
-      };
-
-    case 'agentsDown':
-      return { ...state, agentsDown: action.agents };
-
-    // La socket n'est pas rouverte au « Rejouer » : le serveur ne renverra
-    // jamais son diagnostic, donc on le garde plutot que de renvoyer le joueur
-    // dans la file sans l'avertissement qu'il vient de lire.
-    case 'reset':
-      return { ...initialState, agentsDown: state.agentsDown };
-
-    case 'silence':
-      return {
-        ...state,
-        messages: [
-          ...state.messages,
-          {
-            id: nextMessageId(),
-            kind: 'system',
-            text: `${action.character} est resté muet ce tour...`,
-          },
-        ],
-      };
-  }
-
-  return state;
-}
 
 // ---- Logique métier reprise telle quelle du client HTML existant ----
 
@@ -402,58 +133,30 @@ function getInputState(
 }
 
 export default function Game() {
-  const [state, dispatch] = useReducer(gameReducer, initialState);
-  const [connectionOpen, setConnectionOpen] = useState<boolean | null>(null);
+  const [state, dispatch] = useReducer(gameReducer, initialState, (initial) => ({
+    ...initial, closedCode: getClosedGameCode(),
+  }));
+  const [connectionStatus, setConnectionStatus] = useState<GameConnectionStatus>(getInitialConnectionStatus);
+  const connectionOpen = connectionStatus === 'connected';
   const [draft, setDraft] = useState('');
 
   const [hasAccessToken] = useState(() =>
     Boolean(localStorage.getItem('accessToken')),
   );
   const [guestName] = useState(() => localStorage.getItem('guestName'));
-  const [hasConnected, setHasConnected] = useState(false);
-
-  const socketRef = useRef<WebSocket | null>(null);
+  const connectionRef = useRef<GameConnection | null>(null);
   const feedRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
-  // Une seule connexion par montage : la fonction de nettoyage qui ferme la
-  // socket est obligatoire, sinon StrictMode (mount -> cleanup -> mount en
-  // dev) laisse deux joueurs connectés côté serveur.
+  // Le gestionnaire conserve le jeton par onglet et ignore les evenements
+  // des anciennes sockets, y compris pendant les montages de StrictMode.
   useEffect(() => {
-    const socket = connectGameSocket((message) => {
-      dispatch(message);
-    });
-
-    socketRef.current = socket;
-
-    // Les evenements d'une socket deja remplacee (double montage StrictMode)
-    // arrivent en retard : ils ne doivent pas ecraser l'etat de la nouvelle.
-    const isCurrent = () => socketRef.current === socket;
-
-    socket.addEventListener('open', () => {
-      if (!isCurrent()) return;
-      setConnectionOpen(true);
-      // Memorise qu'une connexion a bien eu lieu : sans ce drapeau, l'ecran de
-      // perte de connexion s'afficherait une fraction de seconde au chargement,
-      // avant meme la premiere ouverture de socket.
-      setHasConnected(true);
-      dispatch({ type: 'connection', text: 'connecté' });
-    });
-
-    socket.addEventListener('close', () => {
-      if (!isCurrent()) return;
-      setConnectionOpen(false);
-      dispatch({ type: 'connection', text: 'déconnecté' });
-    });
-
-    socket.addEventListener('error', () => {
-      if (!isCurrent()) return;
-      setConnectionOpen(false);
-    });
+    const connection = connectGameSocket(dispatch, setConnectionStatus);
+    connectionRef.current = connection;
 
     return () => {
-      socket.close();
-      socketRef.current = null;
+      connection.dispose();
+      connectionRef.current = null;
     };
   }, []);
 
@@ -475,9 +178,9 @@ export default function Game() {
 
   function handleSend() {
     const text = draft.trim();
-    const socket = socketRef.current;
+    const socket = connectionRef.current?.getSocket();
 
-    if (!text || !socket) {
+    if (!text || !socket || !inputState.enabled) {
       return;
     }
 
@@ -510,30 +213,30 @@ export default function Game() {
     && state.roundPhase === 'chatting';
 
   function handleVote(targetCharacter: string) {
-    if (socketRef.current && isVotingOpen && !state.hasVoted) {
-      sendVoteMessage(socketRef.current, targetCharacter);
+    const socket = connectionRef.current?.getSocket();
+    if (socket && isVotingOpen && !state.hasVoted) {
+      sendVoteMessage(socket, targetCharacter);
     }
   }
 
   function handleReady() {
-    if (socketRef.current && !state.isReady) {
-      sendReadyMessage(socketRef.current);
+    const socket = connectionRef.current?.getSocket();
+    if (socket && connectionOpen && !state.isReady) {
+      sendReadyMessage(socket);
     }
   }
 
   // Le serveur ne remet personne dans la file tout seul : sans ce clic, le
   // joueur reste sur l'ecran de resultats aussi longtemps qu'il le souhaite.
   function handleReplay() {
-    if (socketRef.current) {
-      sendReplayMessage(socketRef.current);
+    if (connectionRef.current) {
       dispatch({ type: 'reset' });
+      setDraft('');
+      connectionRef.current.replay();
     }
   }
 
-  // Aucune reconnexion n'est prevue (arbitrage A2 du plan) : une socket perdue
-  // est definitive. Autant le dire clairement plutot que d'afficher un
-  // « Connexion au serveur… » qui laisserait croire a une tentative en cours.
-  if (hasConnected && !connectionOpen) {
+  if (connectionStatus === 'reconnecting' && !state.closedCode) {
     return <ConnectionLost />;
   }
 
@@ -647,6 +350,10 @@ export default function Game() {
                       <span className="text-xs text-slate-500">parti</span>
                     )}
 
+                    {state.disconnectedCharacters.includes(character) && (
+                      <span className="text-xs text-amber-400">reconnexion…</span>
+                    )}
+
                     {character === state.myCharacter && (
                       <span className="you-badge">toi</span>
                     )}
@@ -749,31 +456,22 @@ export default function Game() {
 
       {/* Fermeture qui n'est pas une fin de partie normale : quorum non
           atteint, room desertee. Le classement n'existe pas dans ce cas. */}
-      {state.closedCode && state.closedCode !== 'game_finished' && (
+      {state.closedCode && (state.closedCode !== 'game_finished' || !state.gameRanking) && (
         <RoomClosedModal code={state.closedCode} onReplay={handleReplay} />
       )}
     </div> // Fin de <div className="game-page">
   );
 }
 
-// Ecran terminal : la partie est perdue pour ce joueur, il n'y a rien a
-// retenter depuis cette page. Recharger ouvre une nouvelle session.
 function ConnectionLost() {
   return (
     <div className="min-h-screen bg-slate-950 flex items-center justify-center p-6">
       <div className="w-full max-w-md rounded-xl border border-red-900/60 bg-slate-900 p-8 text-center">
-        <h2 className="text-2xl font-bold text-red-400 mb-3">Liaison rompue</h2>
-        <p className="text-slate-400 mb-6">
-          La connexion au serveur a été perdue. Ta place dans la séance en cours
-          est perdue : il faut rejoindre une nouvelle partie.
+        <h2 className="text-2xl font-bold text-amber-400 mb-3">Reconnexion en cours…</h2>
+        <p role="status" className="text-slate-400 mb-6">
+          Nous tentons de rétablir la connexion automatiquement. La manche continue :
+          si tu reviens avant sa fin, tu retrouveras ton personnage, tes messages et ton vote.
         </p>
-
-        <button
-          onClick={() => window.location.reload()}
-          className="w-full rounded-lg bg-emerald-500 px-6 py-3 font-semibold text-slate-950 hover:bg-emerald-400 transition"
-        >
-          Rejoindre une nouvelle partie
-        </button>
 
         <button
           onClick={() => { window.location.href = '/'; }}

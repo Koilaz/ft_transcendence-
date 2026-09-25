@@ -12,10 +12,10 @@ export const gameConfig = {
 	//Difficulte progressive : le bot garde son siege et son score toute la
 	//partie, seuls son agent et son prompt changent d'une manche a l'autre.
 	bots: [{ rounds: [
-		{ agent: 'mistral_big', prompt: 'prompt_advanced' }, // manche 1
-		{ agent: 'mistral_big', prompt: 'prompt_advanced' }, // manche 2
-		{ agent: 'mistral_big', prompt: 'prompt_advanced' }, // manche 3
-		{ agent: 'mistral_big', prompt: 'prompt_advanced' }, // manche 4
+		{ agent: 'local_agent', prompt: 'prompt_advanced' }, // manche 1
+		{ agent: 'local_agent', prompt: 'prompt_advanced' }, // manche 2
+		{ agent: 'local_agent', prompt: 'prompt_advanced' }, // manche 3
+		{ agent: 'local_agent', prompt: 'prompt_advanced' }, // manche 4
 	] }],
 	turnPerRound: 3,   // nombre de tours par manche
 	turnDuration: 15,   // secondes par tour

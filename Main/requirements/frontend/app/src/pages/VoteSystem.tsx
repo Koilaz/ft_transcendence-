@@ -1,4 +1,3 @@
-//@ts-nocheck
 import type { RoundResult, FinalRank } from '../services/gameSocket';
 import { useState } from 'react';
 
@@ -45,9 +44,8 @@ export function VoteMenu({ turnOrder, myCharacter, hasVoted, isVotingOpen, isLas
         {turnOrder.map((character) => {
           if (character === myCharacter) return null;
 
-          // Un joueur qui s'est deconnecte est forcement humain : le bot n'a
-          // pas de socket et ne part jamais. Voter pour lui serait une defaite
-          // certaine, on ne laisse donc pas le piege ouvert.
+          // Seul un depart definitif ferme cette option. Une absence
+          // temporaire ne doit pas modifier les possibilites de vote.
           const hasLeft = leftCharacters.includes(character);
           const isSelected = selected === character;
 
@@ -250,6 +248,9 @@ export function GameEndModal({ winnerId, ranking, history, onReplay }: GameEndMo
 // desertee. Il n'y a pas de classement a montrer dans ces cas-la.
 
 const MOTIFS: Record<string, string> = {
+  reconnect_expired: 'La manche est terminée : le délai pour retrouver ta place est dépassé. Tu peux rejoindre une nouvelle partie.',
+  session_replaced: 'Cette séance a été reprise dans une autre connexion. Tu peux rejoindre une nouvelle partie ici.',
+  game_finished: 'La partie est terminée. Tu peux rejoindre une nouvelle partie.',
   not_enough_players: "Trop de membres ont quitté la séance : le quorum n'est plus atteint.",
   empty_room: 'La séance a été levée, plus aucun membre n\'était présent.',
   agent_failure: 'La séance a été interrompue pour raison technique.',

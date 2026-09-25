@@ -19,11 +19,25 @@ export type GameRoomClosedMessage = {
   code: 'game_finished' | 'not_enough_players' | 'empty_room' | string;
 };
 
-// Un joueur a quitte la partie. Toujours par nom de personnage, jamais par
-// identifiant : le protocole ne diffuse aucun playerId en cours de partie.
+// Un joueur est absent temporairement ou a quitte la partie. Le protocole
+// n'utilise que son personnage et ne diffuse aucun playerId en cours de partie.
 export type GamePlayerDisconnectedMessage = {
   type: 'playerDisconnected';
   character: string;
+  temporary?: boolean;
+};
+
+export type GameReconnectedMessage = {
+  type: 'reconnected';
+  state: GameStateMessage;
+  character: string;
+  history: { sender: string; text: string }[];
+  turn: GameTurnMessage | null;
+  roundPhase: string;
+  hasVoted: boolean;
+  disconnectedCharacters: string[];
+  leftCharacters: string[];
+  debriefWaiting: boolean;
 };
 
 // Envoye des la connexion quand un agent de game/config.js n'a pas passe le
@@ -135,6 +149,9 @@ export type GameGameEndMessage = {
 
 export type GameMessage =
   | GameStateMessage
+  | { type: 'session'; token: string }
+  | GameReconnectedMessage
+  | { type: 'playerReconnected'; character: string }
   | GameAssignmentMessage
   | GameYourTurnMessage
   | GameTurnMessage
@@ -168,6 +185,18 @@ export function sendVoteMessage(socket: WebSocket, targetCharacter: string): voi
   socket.send(JSON.stringify(message));
 }
 
+const RESUME_TOKEN_KEY = 'gameResumeToken';
+const CLOSED_ROOM_KEY = 'gameClosedCode';
+
+export function getClosedGameCode(): string | null {
+  return sessionStorage.getItem(CLOSED_ROOM_KEY);
+}
+
+export function getInitialConnectionStatus(): GameConnectionStatus {
+  if (getClosedGameCode()) return 'closed';
+  return sessionStorage.getItem(RESUME_TOKEN_KEY) ? 'reconnecting' : 'connecting';
+}
+
 function getGameWebSocketUrl(): string {
   const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
   // Connecte : le serveur verifie le token et prend le pseudo du compte. Le
@@ -176,6 +205,9 @@ function getGameWebSocketUrl(): string {
   const token = localStorage.getItem('accessToken');
   const name = localStorage.getItem('guestName');
   const params = new URLSearchParams();
+  const resumeToken = sessionStorage.getItem(RESUME_TOKEN_KEY);
+
+  if (resumeToken) params.set('resumeToken', resumeToken);
 
   if (token) {
     params.set('token', token);
@@ -188,42 +220,184 @@ function getGameWebSocketUrl(): string {
   return `${protocol}://${window.location.host}/ws/game${query ? `?${query}` : ''}`;
 }
 
+export type GameConnectionStatus = 'connecting' | 'connected' | 'reconnecting' | 'closed';
+
+export type GameConnection = {
+  getSocket: () => WebSocket | null;
+  replay: () => void;
+  dispose: () => void;
+};
+
+// Le jeton reste propre a cet onglet. Une fermeture de salle est aussi gardee
+// en memoire : recharger les resultats ne doit jamais lancer une autre partie.
 export function connectGameSocket(
   onMessage: GameMessageHandler,
-): WebSocket {
-  const socket = new WebSocket(getGameWebSocketUrl());
+  onStatus: (status: GameConnectionStatus) => void,
+): GameConnection {
+  let socket: WebSocket | null = null;
+  let retryTimer: ReturnType<typeof setTimeout> | undefined;
+  let handshakeTimer: ReturnType<typeof setTimeout> | undefined;
+  let disposed = false;
+  let pageHidden = false;
+  let terminal = getClosedGameCode() !== null;
+  let failures = 0;
 
-  socket.addEventListener('message', (event) => {
-    try {
-      const message = JSON.parse(event.data) as GameMessage;
+  function clearTimers() {
+    clearTimeout(retryTimer);
+    clearTimeout(handshakeTimer);
+    retryTimer = undefined;
+    handshakeTimer = undefined;
+  }
 
-      if (
-        message.type !== 'state' &&
-        message.type !== 'assignment' &&
-        message.type !== 'yourTurn' &&
-        message.type !== 'turn' &&
-        message.type !== 'chat' &&
-        message.type !== 'roundState' &&
-        message.type !== 'silence' &&
-        message.type !== 'voteRegistered' && 
-        message.type !== 'roundEnd' &&
-        message.type !== 'gameEnd' &&
-        message.type !== 'roomClosed' &&
-        message.type !== 'playerDisconnected' &&
-        message.type !== 'roundTransition' &&
-        message.type !== 'debriefWait' &&
-        message.type !== 'agentsDown'
-      ) {
+  function closeRoom(code: string) {
+    terminal = true;
+    clearTimers();
+    sessionStorage.removeItem(RESUME_TOKEN_KEY);
+    sessionStorage.setItem(CLOSED_ROOM_KEY, code);
+  }
+
+  function scheduleRetry() {
+    if (disposed || terminal || pageHidden || retryTimer !== undefined) return;
+    onStatus('reconnecting');
+    const delay = Math.min(500 * 2 ** Math.min(failures++, 4), 5000);
+    retryTimer = setTimeout(connect, delay);
+  }
+
+  function waitForState(current: WebSocket) {
+    clearTimeout(handshakeTimer);
+    // Couvre une negotiation bloquee et un replay envoye sur une socket que
+    // le navigateur croit encore ouverte apres une coupure reseau.
+    handshakeTimer = setTimeout(() => {
+      if (disposed || socket !== current) return;
+      socket = null;
+      current.close();
+      scheduleRetry();
+    }, 10000);
+  }
+
+  function connect() {
+    retryTimer = undefined;
+    if (disposed || terminal || pageHidden) return;
+
+    const current = new WebSocket(getGameWebSocketUrl());
+    socket = current;
+    const isCurrent = () => !disposed && socket === current;
+    waitForState(current);
+
+    current.addEventListener('message', (event) => {
+      if (!isCurrent()) return;
+      let message: GameMessage;
+      try {
+        message = JSON.parse(event.data) as GameMessage;
+      } catch {
         return;
       }
+      if (!message || typeof message.type !== 'string') return;
 
+      if (message.type === 'session') {
+        if (!terminal && typeof message.token === 'string') {
+          sessionStorage.setItem(RESUME_TOKEN_KEY, message.token);
+        }
+        return;
+      }
+      if (message.type === 'gameEnd') closeRoom('game_finished');
+      if (message.type === 'roomClosed') closeRoom(message.code);
+      if (message.type === 'state' || message.type === 'reconnected' || message.type === 'roomClosed') {
+        clearTimeout(handshakeTimer);
+        handshakeTimer = undefined;
+        failures = 0;
+        onStatus('connected');
+      }
       onMessage(message);
-    } catch {
-      // Message invalide : on ignore.
-    }
-  });
+    });
 
-  return socket;
+    current.addEventListener('close', (event) => {
+      if (!isCurrent()) return;
+      socket = null;
+      clearTimeout(handshakeTimer);
+      handshakeTimer = undefined;
+      if (event.code === 4001) {
+        closeRoom('session_replaced');
+        onMessage({ type: 'roomClosed', code: 'session_replaced' });
+      }
+      if (terminal) onStatus('closed');
+      else scheduleRetry();
+    });
+
+    current.addEventListener('error', () => {
+      if (!isCurrent()) return;
+      // Le close suit normalement error. Detacher immediatement cette socket
+      // couvre aussi les navigateurs qui tardent a emettre cet evenement.
+      socket = null;
+      clearTimeout(handshakeTimer);
+      handshakeTimer = undefined;
+      current.close();
+      if (terminal) onStatus('closed');
+      else scheduleRetry();
+    });
+  }
+
+  function reconnectOnReturn() {
+    if (disposed || terminal || pageHidden || socket?.readyState === WebSocket.OPEN) return;
+    clearTimers();
+    const previous = socket;
+    socket = null;
+    previous?.close();
+    connect();
+  }
+
+  function pauseConnection(event: Event) {
+    if (disposed || terminal) return;
+    if (event.type === 'pagehide') pageHidden = true;
+    clearTimers();
+    const previous = socket;
+    socket = null;
+    previous?.close();
+    onStatus('reconnecting');
+    scheduleRetry();
+  }
+
+  function showPage() {
+    pageHidden = false;
+    reconnectOnReturn();
+  }
+
+  window.addEventListener('online', reconnectOnReturn);
+  window.addEventListener('pageshow', showPage);
+  window.addEventListener('offline', pauseConnection);
+  window.addEventListener('pagehide', pauseConnection);
+  // Reporter l'ouverture evite une connexion fantome pendant le double
+  // montage/cleanup de React StrictMode.
+  if (!terminal) retryTimer = setTimeout(connect, 0);
+
+  return {
+    getSocket: () => socket?.readyState === WebSocket.OPEN ? socket : null,
+    replay: () => {
+      const liveSocket = socket?.readyState === WebSocket.OPEN ? socket : null;
+      terminal = false;
+      failures = 0;
+      sessionStorage.removeItem(CLOSED_ROOM_KEY);
+      sessionStorage.removeItem(RESUME_TOKEN_KEY);
+      clearTimers();
+      onStatus('connecting');
+      if (liveSocket) {
+        waitForState(liveSocket);
+        sendReplayMessage(liveSocket);
+      }
+      else connect();
+    },
+    dispose: () => {
+      disposed = true;
+      clearTimers();
+      window.removeEventListener('online', reconnectOnReturn);
+      window.removeEventListener('pageshow', showPage);
+      window.removeEventListener('offline', pauseConnection);
+      window.removeEventListener('pagehide', pauseConnection);
+      const previous = socket;
+      socket = null;
+      previous?.close();
+    },
+  };
 }
 
 // Seul message que le client envoie au serveur : pas de "join"/"quickplay",

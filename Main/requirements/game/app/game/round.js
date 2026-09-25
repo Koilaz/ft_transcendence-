@@ -69,6 +69,8 @@ export class Round {
 
 	startTurn()
 	{
+		if (this.status !== 'chatting')
+			return;
 		const playerId = this.turnOrder[this.turnIndex];
 
 		//O4 : on saute le tour d'un joueur parti.
@@ -162,8 +164,10 @@ export class Round {
         player.send({ type: 'voteRegistered' });
     }
 
-	endRound()
+    endRound()
     {
+		if (this.status !== 'chatting')
+			return;
         this.status = 'resolution';
         if (this.turnTimerId)
         {
@@ -253,15 +257,19 @@ export class Round {
 
 	broadcastTurn()
 	{
-		this.broadcast(
-		{
+		this.broadcast(this.publicTurn());
+	}
+
+	publicTurn()
+	{
+		return {
 			type: 'turn',
 			character: this.caracterOf(this.currentPlayer.id),  // un nom, jamais d'id
 			countdown: this.countdown,
 			turnCycle: this.turnCycle,
 			turnOrder: this.publicTurnOrder(),
 			totalTurns: this.turnPerRound,
-		});
+		};
 	}
 
 	assignCaracters()

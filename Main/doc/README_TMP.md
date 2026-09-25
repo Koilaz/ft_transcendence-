@@ -7,6 +7,36 @@ Pour les conventions de branches et de commits, voir [GIT_WORKFLOW.md](GIT_WORKF
 
 ---
 
+## Reconnexion pendant une partie
+
+Une déconnexion conserve la place du joueur jusqu'à la fin de la manche en
+cours. La manche et les chronomètres continuent ; les tours manqués ne sont
+pas rejoués. Le navigateur tente automatiquement de rétablir la connexion.
+Actualiser la page ou revenir sur la page de jeu dans le même onglet permet
+aussi de reprendre sa place, pour les invités comme pour les comptes.
+
+La reprise restaure le personnage, l'historique de la manche, le tour et son
+temps restant, ainsi que le vote déjà enregistré. Le score reste conservé
+côté serveur. Un joueur temporairement déconnecté reste une cible de vote.
+
+À la fin de la manche, les joueurs toujours absents sont retirés. Si l'effectif
+restant est insuffisant, la salle ferme ; sinon, la partie continue. Une
+coupure entre deux manches laisse jusqu'au début de la suivante pour revenir.
+Une reprise trop tardive affiche un message et propose de rejouer.
+
+La reprise utilise un jeton conservé dans l'onglet, sans se fier au pseudo.
+Dupliquer cet onglet peut copier son jeton : la nouvelle connexion reprend
+alors la session et remplace l'ancienne. Les parties restent en mémoire :
+redémarrer le serveur ne permet pas de les restaurer.
+
+Pour vérifier dans le navigateur : lancer une partie, voter, puis actualiser
+la page ; le personnage et le vote doivent être conservés. Couper ensuite le
+réseau de cet onglet, le rétablir avant la fin de la manche, et vérifier que
+le tour a continué. Répéter en attendant la fin de la manche pour vérifier
+l'expiration de la place et le comportement des joueurs restants.
+
+---
+
 ## 1. Prerequis
 
 - `docker`, `docker compose`, `make`

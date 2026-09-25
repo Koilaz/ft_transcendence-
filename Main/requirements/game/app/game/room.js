@@ -55,6 +55,7 @@ class Room
 		this.maxPlayers = gameConfig.maxPlayers;
 		this.countdown = null;
 		this.timerId = null;
+		this.roundEndTimerId = null;
 		this.status = "waiting";//(waiting, chating, voting, shuffeling, endGame)
 		this.destroyed = false;
 		//La note que l'analyste ecrit entre deux manches : { summary, fixes }.
@@ -131,13 +132,93 @@ class Room
 		}
 	}
 
+	//Une coupure ne retire pas le joueur de la manche : ses tours gardent leur
+	//duree normale, son vote et son score restent attaches au meme Player.
+	disconnectPlayer(playerId)
+	{
+		const player = this.players.get(playerId);
+		if (this.destroyed || !player || !player.connected || player.agentName)
+			return false;
+		if (!this.currentRound || !['playing', 'transition'].includes(this.status))
+		{
+			player.send({ type: 'roomClosed', code: 'reconnect_expired' });
+			this.removePlayer(playerId);
+			return false;
+		}
+		player.connected = false;
+		const character = this.currentRound.caracterOf(playerId);
+		this.addSystemMessage(`${character} est déconnecté. Sa place reste réservée.`);
+		this.broadcast({ type: 'playerDisconnected', character, temporary: true });
+		return true;
+	}
+
+	reconnectPlayer(playerId, sendFn)
+	{
+		const player = this.players.get(playerId);
+		if (this.destroyed || !player || player.agentName || !this.currentRound)
+			return false;
+		const wasDisconnected = !player.connected;
+		player.connected = true;
+		player.sendFn = sendFn;
+		const round = this.currentRound;
+		const character = round.caracterOf(playerId);
+		if (wasDisconnected)
+			this.addSystemMessage(`${character} est de retour.`);
+		//Un seul instantane remplace l'etat du navigateur. Ne jamais transmettre
+		//history tel quel : ses indicateurs isAI reveleraient l'imposteur.
+		player.send({
+			type: 'reconnected',
+			state: this.publicState(),
+			character,
+			history: this.history.map(({ sender, text }) => ({ sender, text })),
+			turn: round.status === 'chatting' ? round.publicTurn() : null,
+			roundPhase: round.status,
+			hasVoted: round.votes.has(playerId),
+			disconnectedCharacters: [...this.players.values()]
+				.filter((p) => !p.connected).map((p) => round.caracterOf(p.id)),
+			leftCharacters: [...round.leftPlayers].map((id) => round.caracterOf(id)),
+			debriefWaiting: this.debriefWaits > 0,
+		});
+		if (wasDisconnected)
+		{
+			//Le revenant a deja cette ligne dans son historique restaure.
+			for (const other of this.players.values())
+				if (other.id !== playerId)
+					other.send({ type: 'playerReconnected', character });
+		}
+		return true;
+	}
+
+	//Fin de la fenetre de retour. On retire tous les absents ensemble pour
+	//decider correctement du quorum, notamment quand tous les humains sont partis.
+	expireDisconnectedPlayers()
+	{
+		const absent = [...this.players.values()].filter((p) => !p.connected);
+		for (const player of absent)
+			player.send({ type: 'roomClosed', code: 'reconnect_expired' });
+		if (absent.length)
+			this.removePlayers(absent.map((p) => p.id));
+		return !this.destroyed;
+	}
+
 	removePlayer(playerId)
 	{
+		this.removePlayers([playerId]);
+	}
+
+	removePlayers(playerIds)
+	{
+		if (this.destroyed)
+			return;
 		//Le personnage se lit avant tout nettoyage. assignments n'est jamais
 		//modifie, mais le partant doit sortir de players avant la diffusion :
 		//il n'a plus rien a recevoir.
-		const character = this.currentRound?.caracterOf(playerId) ?? null;
-		this.players.delete(playerId);
+		const departing = playerIds.filter((id) => this.players.has(id))
+			.map((id) => ({ id, character: this.currentRound?.caracterOf(id) ?? null }));
+		if (!departing.length)
+			return;
+		for (const { id } of departing)
+			this.players.delete(id);
 		//La fermeture se decide avant de prevenir la manche : retirer le joueur
 		//peut passer la parole au bot, et une room condamnee n'a pas a lancer
 		//d'appel a l'agent.
@@ -146,13 +227,16 @@ class Room
 		if ((this.status === 'playing' || this.status === 'transition')
 			&& this.players.size < gameConfig.minPlayersToContinue)
 			return this.destroy('not_enough_players');
-		if (this.currentRound)
-			this.currentRound.removePlayer(playerId);
-		//Le tour saute a pu clore la derniere manche, donc la partie et la room
-		if (this.destroyed)
-			return;
-		if (character)
-			this.broadcast({ type: 'playerDisconnected', character });
+		for (const { id, character } of departing)
+		{
+			if (this.currentRound)
+				this.currentRound.removePlayer(id);
+			//Le tour saute a pu clore la derniere manche, donc la partie et la room
+			if (this.destroyed)
+				return;
+			if (character)
+				this.broadcast({ type: 'playerDisconnected', character, temporary: false });
+		}
 		this.broadcastState();
 	}
 
@@ -172,6 +256,8 @@ class Room
 
 		const character = this.currentRound.caracterOf(sender);
 		const player = this.players.get(sender);
+		if (!player || !player.connected)
+			return;
 		const msgData = { sender: character, text: text, isAI: !!player.agentName };
 
 		this.history.push(msgData);
@@ -196,8 +282,12 @@ class Room
 
 	broadcastState() //Public
 	{
-		this.broadcast
-		({
+		this.broadcast(this.publicState());
+	}
+
+	publicState()
+	{
+		return {
 			type: 'state',
 			status: this.status,
 			players: this.players.size,
@@ -205,7 +295,7 @@ class Room
 			countdown: this.countdown,
 			current_manche: this.roundNumber,
 			max_manches: gameConfig.maxRounds
-		});
+		};
 	}
 
 	get numberOfPlayer()
@@ -225,6 +315,8 @@ class Room
 
 	startNewRound()
 	{
+		if (this.destroyed || !this.expireDisconnectedPlayers())
+			return;
 		//Les personnages sont retires au sort a chaque manche : un meme nom ne
 		//designe plus la meme personne. Le bot est le seul lecteur de history,
 		//et la conserver lui ferait attribuer des propos au mauvais joueur.
@@ -292,6 +384,8 @@ class Room
 
 	handleRoundEnd(results)
 	{
+		if (this.destroyed || this.roundEndTimerId || !this.expireDisconnectedPlayers())
+			return;
 	// 1. Ajouter les points des résultats aux scores globaux des joueurs
 	    for (const res of results) {
 	        const player = this.players.get(res.playerId);
@@ -309,7 +403,10 @@ class Room
 			this.debriefWaits = 0;
         }
 
-		setTimeout(() => {
+		this.roundEndTimerId = setTimeout(() => {
+			this.roundEndTimerId = null;
+			if (this.destroyed)
+				return;
             if (this.roundNumber >= maxRounds) {
                 this.endGame();
             } else {
@@ -328,6 +425,8 @@ class Room
 	//reellement lente declenche une prolongation, ce qui est sa raison d'etre.
 	onTransitionElapsed()
 	{
+		if (this.destroyed)
+			return;
 		if (this.debriefPending && this.debriefWaits < gameConfig.debriefMaxWaits)
 		{
 			this.debriefWaits++;
@@ -342,6 +441,8 @@ class Room
 
     endGame()
     {
+		if (this.destroyed)
+			return;
         this.setStatus('endGame');
 		const finalRanking = [...this.players.values()].map(p => ({
             playerId: p.id,
@@ -364,7 +465,7 @@ class Room
 
 	launchStartTimer(timer)
 	{
-		if (this.timerId)
+		if (this.destroyed || this.timerId)
 			return;
 		this.countdown = timer;
 		this.timerId = setInterval(() =>
@@ -386,7 +487,7 @@ class Room
 	/* Ajoute systeme de vote */
 	submitVote(playerId, targetCharacter)
 	{
-		if (this.currentRound && this.currentRound.status === 'chatting')
+		if (this.players.get(playerId)?.connected && this.currentRound?.status === 'chatting')
 		{
 			this.currentRound.onPlayerVote(playerId, targetCharacter);
 		}
@@ -400,6 +501,11 @@ class Room
 			return;
 		this.destroyed = true;
 		this.broadcast({ type: 'roomClosed', code: reason });
+		if (this.roundEndTimerId)
+		{
+			clearTimeout(this.roundEndTimerId);
+			this.roundEndTimerId = null;
+		}
 		if (this.timerId)
 		{
 			clearInterval(this.timerId);
