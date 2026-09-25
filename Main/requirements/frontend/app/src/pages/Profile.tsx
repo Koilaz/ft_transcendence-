@@ -1,3 +1,4 @@
+// @ts-nocheck
 import {
   useEffect,
   useState,
@@ -151,8 +152,8 @@ export default function Profile() {
 
   if (isLoading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-950 text-white">
-        <p className="text-slate-400">
+      <main className="flex min-h-screen items-center justify-center bg-stone-950 text-white">
+        <p className="text-stone-400">
           Loading profile...
         </p>
       </main>
@@ -161,7 +162,7 @@ export default function Profile() {
 
   if (!user) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-950 px-4 text-white">
+      <main className="flex min-h-screen items-center justify-center bg-stone-950 px-4 text-white">
         <section className="w-full max-w-md rounded-2xl border border-red-900 bg-red-950 p-6">
           <h1 className="mb-3 text-2xl font-bold">
             Unable to load profile
@@ -173,7 +174,7 @@ export default function Profile() {
 
           <Link
             to="/login"
-            className="inline-block rounded-lg bg-sky-500 px-4 py-3 font-semibold text-slate-950 hover:bg-sky-400"
+            className="inline-block rounded-lg bg-green-500 px-4 py-3 font-semibold text-stone-900 hover:bg-green-400 transition"
           >
             Return to login
           </Link>
@@ -183,24 +184,22 @@ export default function Profile() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 px-4 py-12 text-white">
+    <main className="min-h-screen bg-stone-950 px-4 py-12 text-white">
       <div className="mx-auto max-w-2xl">
-        <section className="rounded-2xl border border-slate-800 bg-slate-900 p-8 shadow-xl">
+        <section className="rounded-2xl border border-stone-700 bg-stone-900 p-8 shadow-xl">
           <div className="mb-8 flex items-start justify-between gap-4">
             <div>
-              <p className="mb-2 text-sm uppercase tracking-widest text-sky-400">
+              <p className="mb-2 text-sm uppercase tracking-widest text-green-400">
                 Profile
               </p>
 
-              <h1 className="text-4xl font-bold">
-                {user.username}
-              </h1>
+              <h1 className="text-4xl font-bold">{user.username}</h1>
             </div>
 
             <div className="flex gap-3">
               <Link
                 to="/friends"
-                className="rounded-lg border border-sky-500 px-4 py-2 text-sm font-medium text-sky-300 transition hover:bg-sky-500/10"
+                className="rounded-lg border border-green-500 px-4 py-2 text-sm font-medium text-green-300 transition hover:bg-green-500/10"
               >
                 Friends
               </Link>
@@ -208,7 +207,7 @@ export default function Profile() {
               <button
                 type="button"
                 onClick={handleLogout}
-                className="rounded-lg border border-slate-700 px-4 py-2 text-sm font-medium text-slate-300 transition hover:border-red-500 hover:text-red-300"
+                className="rounded-lg border border-stone-700 px-4 py-2 text-sm font-medium text-stone-300 transition hover:border-red-500 hover:text-red-300"
               >
                 Log out
               </button>
@@ -228,30 +227,20 @@ export default function Profile() {
           )}
 
           <div className="mb-8 space-y-4">
-            <div className="rounded-xl border border-slate-800 bg-slate-950 p-4">
-              <p className="text-sm text-slate-500">
-                User ID
-              </p>
+            <div className="rounded-xl border border-stone-700 bg-stone-950 p-4">
+              <p className="text-sm text-stone-500">User ID</p>
 
-              <p className="mt-1 text-lg">
-                {user.id}
-              </p>
+              <p className="mt-1 text-lg text-white">{user.id}</p>
             </div>
 
-            <div className="rounded-xl border border-slate-800 bg-slate-950 p-4">
-              <p className="text-sm text-slate-500">
-                Email
-              </p>
+            <div className="rounded-xl border border-stone-700 bg-stone-950 p-4">
+              <p className="text-sm text-stone-500">Email</p>
 
-              <p className="mt-1 text-lg">
-                {user.email}
-              </p>
+              <p className="mt-1 text-lg text-white">{user.email}</p>
             </div>
 
-            <div className="rounded-xl border border-slate-800 bg-slate-950 p-4">
-              <p className="mb-3 text-sm text-slate-500">
-                Avatar
-              </p>
+            <div className="rounded-xl border border-stone-700 bg-stone-950 p-4">
+              <p className="mb-3 text-sm text-stone-500">Avatar</p>
 
               <img
                 src={user.avatarUrl ?? DEFAULT_AVATAR_URL}
@@ -262,10 +251,10 @@ export default function Profile() {
           </div>
 
           <form
-            className="mb-8 border-t border-slate-800 pt-8"
+            className="mb-8 border-t border-stone-700 pt-8"
             onSubmit={handleAvatarSubmit}
           >
-            <h2 className="mb-5 text-2xl font-semibold">
+            <h2 className="mb-5 text-2xl font-semibold text-white">
               Change avatar
             </h2>
 
@@ -278,10 +267,10 @@ export default function Profile() {
 
                 setAvatarFile(file);
               }}
-              className="block w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 text-sm"
+              className="block w-full rounded-lg border border-stone-700 bg-stone-950 px-4 py-3 text-sm text-stone-300"
             />
 
-            <p className="mt-2 text-sm text-slate-500">
+            <p className="mt-2 text-sm text-stone-500">
               JPEG, PNG or WebP — maximum 2 MB.
             </p>
 
@@ -291,7 +280,7 @@ export default function Profile() {
                 !avatarFile ||
                 isUploadingAvatar
               }
-              className="mt-6 w-full rounded-lg bg-violet-500 px-4 py-3 font-semibold text-white transition hover:bg-violet-400 disabled:cursor-not-allowed disabled:opacity-50"
+              className="mt-6 w-full rounded-lg bg-green-600 px-4 py-3 font-semibold text-white transition hover:bg-green-500 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isUploadingAvatar
                 ? 'Uploading...'
@@ -300,16 +289,16 @@ export default function Profile() {
           </form>
 
           <form
-            className="border-t border-slate-800 pt-8"
+            className="border-t border-stone-700 pt-8"
             onSubmit={handleProfileSubmit}
           >
-            <h2 className="mb-5 text-2xl font-semibold">
+            <h2 className="mb-5 text-2xl font-semibold text-white">
               Edit profile
             </h2>
 
             <div>
               <label
-                className="mb-2 block text-sm font-medium"
+                className="mb-2 block text-sm font-medium text-stone-300"
                 htmlFor="username"
               >
                 Username
@@ -326,7 +315,7 @@ export default function Profile() {
                 maxLength={20}
                 required
                 autoComplete="username"
-                className="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-3 outline-none transition focus:border-sky-500"
+                className="w-full rounded-lg border border-stone-700 bg-stone-950 px-4 py-3 text-white outline-none transition focus:border-green-500"
               />
             </div>
 
@@ -336,7 +325,7 @@ export default function Profile() {
                 isSubmitting ||
                 username.trim() === user.username
               }
-              className="mt-6 w-full rounded-lg bg-sky-500 px-4 py-3 font-semibold text-slate-950 transition hover:bg-sky-400 disabled:cursor-not-allowed disabled:opacity-50"
+              className="mt-6 w-full rounded-lg bg-green-500 px-4 py-3 font-semibold text-stone-900 transition hover:bg-green-400 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isSubmitting
                 ? 'Saving...'

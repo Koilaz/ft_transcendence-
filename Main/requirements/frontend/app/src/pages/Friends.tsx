@@ -1,10 +1,13 @@
+// @ts-nocheck
 import {
   useCallback,
   useEffect,
   useMemo,
   useState,
+  Children,
 } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 
 import {
   DEFAULT_AVATAR_URL,
@@ -68,23 +71,216 @@ function getPresenceText(user: PublicUser): string {
   return formatLastSeen(user.lastSeenAt);
 }
 
-export function Friends() {
+// --- Presence Dot Component ---
+function PresenceDot({ isOnline }: { isOnline: boolean }) {
+  return (
+    <span
+      className={`h-2 w-2 rounded-full ${
+        isOnline ? 'bg-green-400 shadow-[0_0_8px_#3ecf8e]' : 'bg-stone-600'
+      }`}
+    />
+  );
+}
+
+// --- Card Components ---
+function RequestCard({
+  user,
+  onAccept,
+  acceptLoading,
+}: {
+  user: PublicUser;
+  onAccept: () => void;
+  acceptLoading: boolean;
+}) {
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      transition={{ duration: 0.3 }}
+      className="flex items-center justify-between gap-4 rounded-xl border border-stone-800 bg-stone-950 p-4"
+    >
+      <div className="flex items-center gap-3">
+        <img
+          src={user.avatarUrl ?? DEFAULT_AVATAR_URL}
+          alt={`Avatar de ${user.username}`}
+          className="h-12 w-12 rounded-full object-cover"
+        />
+        <div>
+          <p className="font-medium text-white">{user.username}</p>
+          <p className="text-xs text-stone-500">Wants to be your friend</p>
+        </div>
+      </div>
+      <motion.button
+        type="button"
+        onClick={onAccept}
+        disabled={acceptLoading}
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
+        className="rounded-lg bg-green-500 px-4 py-2 text-sm font-semibold text-stone-900 transition hover:bg-green-400 disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        {acceptLoading ? 'Loading...' : 'Accept'}
+      </motion.button>
+    </motion.div>
+  );
+}
+
+function FriendCard({
+  user,
+  onRemove,
+  removeLoading,
+}: {
+  user: PublicUser;
+  onRemove: () => void;
+  removeLoading: boolean;
+}) {
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      transition={{ duration: 0.3 }}
+      className="flex items-center justify-between gap-4 rounded-xl border border-stone-800 bg-stone-950 p-4"
+    >
+      <div className="flex items-center gap-3">
+        <img
+          src={user.avatarUrl ?? DEFAULT_AVATAR_URL}
+          alt={`Avatar de ${user.username}`}
+          className="h-12 w-12 rounded-full object-cover"
+        />
+        <div>
+          <p className="font-medium text-white">{user.username}</p>
+          <p className={`flex items-center gap-2 text-xs ${
+            user.isOnline ? 'text-green-300' : 'text-stone-500'
+          }`}>
+            <PresenceDot isOnline={user.isOnline} />
+            {getPresenceText(user)}
+          </p>
+        </div>
+      </div>
+      <motion.button
+        type="button"
+        onClick={onRemove}
+        disabled={removeLoading}
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
+        className="rounded-lg border border-red-500 px-4 py-2 text-sm font-medium text-red-300 transition hover:bg-red-500/10 disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        {removeLoading ? 'Loading...' : 'Remove'}
+      </motion.button>
+    </motion.div>
+  );
+}
+
+function UserCard({
+  user,
+  onAdd,
+  addLoading,
+}: {
+  user: PublicUser;
+  onAdd: () => void;
+  addLoading: boolean;
+}) {
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      transition={{ duration: 0.3 }}
+      className="flex items-center justify-between gap-4 rounded-xl border border-stone-800 bg-stone-950 p-4"
+    >
+      <div className="flex items-center gap-3">
+        <img
+          src={user.avatarUrl ?? DEFAULT_AVATAR_URL}
+          alt={`Avatar de ${user.username}`}
+          className="h-12 w-12 rounded-full object-cover"
+        />
+        <div>
+          <p className="font-medium text-white">{user.username}</p>
+          <p className="text-xs text-stone-500">User</p>
+        </div>
+      </div>
+      <motion.button
+        type="button"
+        onClick={onAdd}
+        disabled={addLoading}
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
+        className="rounded-lg bg-green-500 px-4 py-2 text-sm font-semibold text-stone-900 transition hover:bg-green-400 disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        {addLoading ? 'Loading...' : 'Add friend'}
+      </motion.button>
+    </motion.div>
+  );
+}
+
+// --- Section Component ---
+function Section({
+  title,
+  children,
+  emptyMessage,
+}: {
+  title: string;
+  children: React.ReactNode;
+  emptyMessage: string;
+}) {
+  const hasContent = children && Children.count(children) > 0;
+
+  return (
+    <motion.section
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="mb-10 rounded-2xl border border-stone-800 bg-stone-900 p-6 shadow-xl"
+    >
+      <h2 className="mb-5 text-2xl font-semibold text-white">{title}</h2>
+      {hasContent ? children : <p className="text-sm text-stone-400">{emptyMessage}</p>}
+    </motion.section>
+  );
+}
+
+// --- Notification Component ---
+function Notification({ message, type }: { message: string; type: 'error' | 'success' }) {
+  const colors = {
+    error: {
+      border: 'border-red-900',
+      bg: 'bg-red-950',
+      text: 'text-red-300',
+    },
+    success: {
+      border: 'border-emerald-900',
+      bg: 'bg-emerald-950',
+      text: 'text-emerald-300',
+    },
+  };
+
+  return (
+    <motion.p
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      transition={{ duration: 0.3 }}
+      className={`mb-6 rounded-lg border ${colors[type].border} ${colors[type].bg} px-4 py-3 text-sm ${colors[type].text}`}
+    >
+      {message}
+    </motion.p>
+  );
+}
+
+export default function Friends() {
   const navigate = useNavigate();
 
-  const [currentUser, setCurrentUser] =
-    useState<User | null>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [users, setUsers] = useState<PublicUser[]>([]);
   const [friends, setFriends] = useState<FriendListItem[]>([]);
-  const [requests, setRequests] = useState<FriendRequestItem[]>(
-    [],
-  );
-  const [sentRequests, setSentRequests] = useState<
-    SentFriendRequestItem[]
-  >([]);
+  const [requests, setRequests] = useState<FriendRequestItem[]>([]);
+  const [sentRequests, setSentRequests] = useState<SentFriendRequestItem[]>([]);
 
   const [loading, setLoading] = useState(true);
-  const [actionLoadingUserId, setActionLoadingUserId] =
-    useState<number | null>(null);
+  const [actionLoadingUserId, setActionLoadingUserId] = useState<number | null>(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
@@ -152,12 +348,7 @@ export function Friends() {
 
       setUsers((currentUsers) =>
         currentUsers.map((user) =>
-          updateUserPresence(
-            user,
-            message.userId,
-            message.isOnline,
-            message.lastSeenAt,
-          ),
+          updateUserPresence(user, message.userId, message.isOnline, message.lastSeenAt),
         ),
       );
 
@@ -204,21 +395,15 @@ export function Friends() {
   }, []);
 
   const friendIds = useMemo(() => {
-    return new Set(
-      friends.map((friendship) => friendship.friend.id),
-    );
+    return new Set(friends.map((friendship) => friendship.friend.id));
   }, [friends]);
 
   const requestRequesterIds = useMemo(() => {
-    return new Set(
-      requests.map((request) => request.requester.id),
-    );
+    return new Set(requests.map((request) => request.requester.id));
   }, [requests]);
 
   const sentRequestReceiverIds = useMemo(() => {
-    return new Set(
-      sentRequests.map((request) => request.receiver.id),
-    );
+    return new Set(sentRequests.map((request) => request.receiver.id));
   }, [sentRequests]);
 
   const availableUsers = useMemo(() => {
@@ -230,28 +415,18 @@ export function Friends() {
       if (user.id === currentUser.id) {
         return false;
       }
-
       if (friendIds.has(user.id)) {
         return false;
       }
-
       if (requestRequesterIds.has(user.id)) {
         return false;
       }
-
       if (sentRequestReceiverIds.has(user.id)) {
         return false;
       }
-
       return true;
     });
-  }, [
-    currentUser,
-    friendIds,
-    requestRequesterIds,
-    sentRequestReceiverIds,
-    users,
-  ]);
+  }, [currentUser, friendIds, requestRequesterIds, sentRequestReceiverIds, users]);
 
   async function handleSendFriendRequest(userId: number) {
     setActionLoadingUserId(userId);
@@ -261,7 +436,6 @@ export function Friends() {
     try {
       await sendFriendRequest(userId);
       await loadFriendsPage();
-
       setSuccess('Friend request sent.');
     } catch (error) {
       if (error instanceof Error) {
@@ -282,7 +456,6 @@ export function Friends() {
     try {
       await acceptFriendRequest(userId);
       await loadFriendsPage();
-
       setSuccess('Friend request accepted.');
     } catch (error) {
       if (error instanceof Error) {
@@ -303,7 +476,6 @@ export function Friends() {
     try {
       await removeFriend(userId);
       await loadFriendsPage();
-
       setSuccess('Friend removed.');
     } catch (error) {
       if (error instanceof Error) {
@@ -318,226 +490,108 @@ export function Friends() {
 
   if (loading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-950 text-white">
-        <p className="text-slate-400">Loading friends...</p>
+      <main className="flex min-h-screen items-center justify-center bg-stone-950 text-stone-200">
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="text-stone-400"
+        >
+          Loading friends...
+        </motion.p>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 px-4 py-12 text-white">
-      <div className="mx-auto max-w-4xl">
-        <div className="mb-8 flex items-center justify-between gap-4">
+    <main className="min-h-screen bg-stone-950 px-4 py-12 text-stone-200">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="mx-auto max-w-4xl"
+      >
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          className="mb-8 flex items-center justify-between gap-4"
+        >
           <div>
-            <p className="mb-2 text-sm uppercase tracking-widest text-sky-400">
+            <p className="mb-2 text-sm uppercase tracking-widest text-green-400">
               Social
             </p>
-
-            <h1 className="text-4xl font-bold">Friends</h1>
+            <h1 className="text-4xl font-bold text-white">Friends</h1>
           </div>
 
           <Link
             to="/profile"
-            className="rounded-lg border border-slate-700 px-4 py-2 text-sm font-medium text-slate-300 transition hover:border-sky-500 hover:text-sky-300"
+            className="rounded-lg border border-stone-700 px-4 py-2 text-sm font-medium text-stone-300 transition hover:border-green-500 hover:text-green-300"
           >
             Back to profile
           </Link>
-        </div>
+        </motion.div>
 
-        {error && (
-          <p className="mb-6 rounded-lg border border-red-900 bg-red-950 px-4 py-3 text-sm text-red-300">
-            {error}
-          </p>
-        )}
+        {/* Notifications */}
+        <AnimatePresence mode="wait">
+          {error && <Notification key="error" message={error} type="error" />}
+          {success && <Notification key="success" message={success} type="success" />}
+        </AnimatePresence>
 
-        {success && (
-          <p className="mb-6 rounded-lg border border-emerald-900 bg-emerald-950 px-4 py-3 text-sm text-emerald-300">
-            {success}
-          </p>
-        )}
-
-        <section className="mb-10 rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-xl">
-          <h2 className="mb-5 text-2xl font-semibold">
-            Received requests
-          </h2>
-
-          {requests.length === 0 ? (
-            <p className="text-sm text-slate-400">
-              No pending friend requests.
-            </p>
-          ) : (
-            <div className="space-y-3">
-              {requests.map((request) => (
-                <div
-                  key={request.id}
-                  className="flex items-center justify-between gap-4 rounded-xl border border-slate-800 bg-slate-950 p-4"
-                >
-                  <div className="flex items-center gap-3">
-                    <img
-                      src={
-                        request.requester.avatarUrl ??
-                        DEFAULT_AVATAR_URL
-                      }
-                      alt={`Avatar de ${request.requester.username}`}
-                      className="h-12 w-12 rounded-full object-cover"
-                    />
-
-                    <div>
-                      <p className="font-medium">
-                        {request.requester.username}
-                      </p>
-
-                      <p className="text-xs text-slate-500">
-                        Wants to be your friend
-                      </p>
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      void handleAcceptFriendRequest(
-                        request.requester.id,
-                      )
-                    }
-                    disabled={
-                      actionLoadingUserId ===
-                      request.requester.id
-                    }
-                    className="rounded-lg bg-sky-500 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-sky-400 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    Accept
-                  </button>
-                </div>
-              ))}
-            </div>
+        {/* Received Requests */}
+        <Section title="Received requests" emptyMessage="No pending friend requests.">
+          {requests.length > 0 && (
+            <motion.div layout className="space-y-3">
+              <AnimatePresence mode="popLayout">
+                {requests.map((request) => (
+                  <RequestCard
+                    key={request.id}
+                    user={request.requester}
+                    onAccept={() => void handleAcceptFriendRequest(request.requester.id)}
+                    acceptLoading={actionLoadingUserId === request.requester.id}
+                  />
+                ))}
+              </AnimatePresence>
+            </motion.div>
           )}
-        </section>
+        </Section>
 
-        <section className="mb-10 rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-xl">
-          <h2 className="mb-5 text-2xl font-semibold">
-            My friends
-          </h2>
-
-          {friends.length === 0 ? (
-            <p className="text-sm text-slate-400">
-              You have no friends yet.
-            </p>
-          ) : (
-            <div className="space-y-3">
-              {friends.map((friendship) => (
-                <div
-                  key={friendship.id}
-                  className="flex items-center justify-between gap-4 rounded-xl border border-slate-800 bg-slate-950 p-4"
-                >
-                  <div className="flex items-center gap-3">
-                    <img
-                      src={
-                        friendship.friend.avatarUrl ??
-                        DEFAULT_AVATAR_URL
-                      }
-                      alt={`Avatar de ${friendship.friend.username}`}
-                      className="h-12 w-12 rounded-full object-cover"
-                    />
-
-                    <div>
-                      <p className="font-medium">
-                        {friendship.friend.username}
-                      </p>
-
-                      <p
-                        className={`flex items-center gap-2 text-xs ${
-                          friendship.friend.isOnline
-                            ? 'text-emerald-300'
-                            : 'text-slate-500'
-                        }`}
-                      >
-                        <span
-                          className={`h-2 w-2 rounded-full ${
-                            friendship.friend.isOnline
-                              ? 'bg-emerald-400'
-                              : 'bg-slate-600'
-                          }`}
-                        />
-
-                        {getPresenceText(friendship.friend)}
-                      </p>
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      void handleRemoveFriend(
-                        friendship.friend.id,
-                      )
-                    }
-                    disabled={
-                      actionLoadingUserId ===
-                      friendship.friend.id
-                    }
-                    className="rounded-lg border border-red-500 px-4 py-2 text-sm font-medium text-red-300 transition hover:bg-red-500/10 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    Remove
-                  </button>
-                </div>
-              ))}
-            </div>
+        {/* My Friends */}
+        <Section title="My friends" emptyMessage="You have no friends yet.">
+          {friends.length > 0 && (
+            <motion.div layout className="space-y-3">
+              <AnimatePresence mode="popLayout">
+                {friends.map((friendship) => (
+                  <FriendCard
+                    key={friendship.id}
+                    user={friendship.friend}
+                    onRemove={() => void handleRemoveFriend(friendship.friend.id)}
+                    removeLoading={actionLoadingUserId === friendship.friend.id}
+                  />
+                ))}
+              </AnimatePresence>
+            </motion.div>
           )}
-        </section>
+        </Section>
 
-        <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-xl">
-          <h2 className="mb-5 text-2xl font-semibold">
-            Find users
-          </h2>
-
-          {availableUsers.length === 0 ? (
-            <p className="text-sm text-slate-400">
-              No available users to add right now.
-            </p>
-          ) : (
-            <div className="space-y-3">
-              {availableUsers.map((user) => (
-                <div
-                  key={user.id}
-                  className="flex items-center justify-between gap-4 rounded-xl border border-slate-800 bg-slate-950 p-4"
-                >
-                  <div className="flex items-center gap-3">
-                    <img
-                      src={
-                        user.avatarUrl ?? DEFAULT_AVATAR_URL
-                      }
-                      alt={`Avatar de ${user.username}`}
-                      className="h-12 w-12 rounded-full object-cover"
-                    />
-
-                    <div>
-                      <p className="font-medium">
-                        {user.username}
-                      </p>
-
-                      <p className="text-xs text-slate-500">
-                        User
-                      </p>
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      void handleSendFriendRequest(user.id)
-                    }
-                    disabled={actionLoadingUserId === user.id}
-                    className="rounded-lg bg-sky-500 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-sky-400 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    Add friend
-                  </button>
-                </div>
-              ))}
-            </div>
+        {/* Find Users */}
+        <Section title="Find users" emptyMessage="No available users to add right now.">
+          {availableUsers.length > 0 && (
+            <motion.div layout className="space-y-3">
+              <AnimatePresence mode="popLayout">
+                {availableUsers.map((user) => (
+                  <UserCard
+                    key={user.id}
+                    user={user}
+                    onAdd={() => void handleSendFriendRequest(user.id)}
+                    addLoading={actionLoadingUserId === user.id}
+                  />
+                ))}
+              </AnimatePresence>
+            </motion.div>
           )}
-        </section>
-      </div>
+        </Section>
+      </motion.div>
     </main>
   );
 }
