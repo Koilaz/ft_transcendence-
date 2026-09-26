@@ -1,7 +1,6 @@
 export type GameStateMessage = {
   type: 'state';
-  // null tant que le joueur patiente dans la file : aucune room n'existe encore
-  room_number: number | null;
+  room_number: number;
   status: string;
   countdown: number | null;
   players: number;
@@ -87,7 +86,6 @@ export type GameTurnMessage = {
   turnOrder: string[];
   turnCycle: number;
   countdown: number;
-  totalTurns: number;
 };
 
 export type GameChatMessage = {
@@ -106,47 +104,6 @@ export type GameSilenceMessage = {
   character: string;
 };
 
-export type GameVoteRegisteredMessage = {
-  type: 'voteRegistered';
-};
-
-export type RoundResult = {
-  playerId: string;
-  character: string;
-  target: string | null;
-  score: number;
-  isCorrect: boolean;
-  isAI: boolean;
-};
-
-export type GameRoundEndMessage = {
-  type: 'roundEnd';
-  aiCharacter: string;
-  results: RoundResult[];
-};
-
-export type FinalRank = {
-  playerId: string;
-  // Nom lisible : pseudo du joueur, ou « L'AImpostor » pour l'agent. La partie
-  // etant terminee, reveler qui est qui ne trahit plus rien.
-  name: string;
-  score: number;
-  isAI?: boolean;
-};
-
-export type ChatHistoryItem = {
-  sender: string;
-  text: string;
-  isAI: boolean;
-};
-
-export type GameGameEndMessage = {
-  type: 'gameEnd';
-  ranking: FinalRank[];
-  winnerId: string;
-  history: ChatHistoryItem[];
-};
-
 export type GameMessage =
   | GameStateMessage
   | { type: 'session'; token: string }
@@ -157,14 +114,6 @@ export type GameMessage =
   | GameTurnMessage
   | GameChatMessage
   | GameRoundStateMessage
-  | GameVoteRegisteredMessage // ajout
-  | GameRoundEndMessage
-  | GameGameEndMessage
-  | GameRoomClosedMessage
-  | GamePlayerDisconnectedMessage
-  | GameAgentsDownMessage
-  | GameRoundTransitionMessage
-  | GameDebriefWaitMessage
   | GameSilenceMessage;
 
 export type GameMessageHandler = (
@@ -411,11 +360,4 @@ export function sendChatMessage(socket: WebSocket, text: string): void {
   const message: GameChatOutgoingMessage = { type: 'chat', text };
 
   socket.send(JSON.stringify(message));
-}
-
-// Remet le joueur dans la file d'attente, a son initiative. Sans ce message il
-// reste sur l'ecran de resultats : le serveur ne relance jamais personne tout
-// seul, pour ne pas catapulter le joueur dans une partie qu'il n'a pas demandee.
-export function sendReplayMessage(socket: WebSocket): void {
-  socket.send(JSON.stringify({ type: 'replay' }));
 }

@@ -1,1 +1,15 @@
 @import "tailwindcss";
+
+/* Masquer la barre de scroll */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Style personnalisé pour la zone de dialogue */
+.dialogue-container {
+  scroll-behavior: smooth;
+}

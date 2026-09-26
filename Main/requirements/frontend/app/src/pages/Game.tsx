@@ -271,39 +271,12 @@ export default function Game() {
           <span className="tag">{formatRoundIndicator(state.turnCycle, state.totalTurns)}</span>
         </div>
 
-        <div className="header-right">
-          {isGuest && guestName && (
-            <span className="tag">Invité : {guestName}</span>
-          )}
-
-          {state.myCharacter && (
-            <span className="tag character-badge">
-              Tu incarnes : <strong>{state.myCharacter}</strong>
-            </span>
-          )}
-
-          <Link to="/" className="tag">
-            ← Accueil
-          </Link>
-
-          <div className={`conn ${connLabel}`}>
-            <span className="dot" />
-            <span>{connText}</span>
-          </div>
-        </div>
-      </header>
-
-      <div
-        className={`status-banner ${banner.variant ? `banner-${banner.variant}` : ''}`}
-      >
-        <span>{banner.text}</span>
-
-        {timerVisible && (
-          <div className="timer-box">
-            <div className="timer-value">{state.countdown}</div>
-            <div className="timer-label">{timerLabel}</div>
-          </div>
-        )}
+      {/* PARTIE 2 - Dialogue (prend l'espace disponible) */}
+      <div className="flex-1 overflow-hidden min-h-0">
+        <DialogueArea
+          messages={messages}
+          myCharacter={myCharacter}
+        />
       </div>
 
       <section className="game-area">

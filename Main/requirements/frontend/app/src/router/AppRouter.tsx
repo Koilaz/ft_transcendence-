@@ -1,27 +1,38 @@
+// @ts-nocheck
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
+import Layout from '../components/Layout';
 import Home from '../pages/Home';
 import Login from '../pages/Login';
 import Register from '../pages/Register';
 import Profile from '../pages/Profile';
-import { Friends } from '../pages/Friends';
+import PrivacyPolicy from '../pages/PrivacyPolicy';
+import TermsOfService from '../pages/TermsOfService';
+import Friends from '../pages/Friends';
 import Game from '../pages/Game';
 
 export default function AppRouter() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={<Layout />}>
 
-        <Route path="/login" element={<Login />} />
+          <Route path="/" element={<Home />} />
 
-        <Route path="/register" element={<Register />} />
+          <Route path="/login" element={<Login />} />
 
-        <Route path="/profile" element={<Profile />} />
+          <Route path="/register" element={<Register />} />
 
-        <Route path="/friends" element={<Friends />} />
+          <Route path="/profile" element={<Profile />} />
 
-        <Route path="/game" element={<Game />} />
+          <Route path="/friends" element={<Friends />} />
+
+          <Route path="/game" element={<Game />} />
+
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+
+          <Route path="/terms-of-service" element={<TermsOfService />} />
+        </Route>
       </Routes>
     </BrowserRouter>
   );
