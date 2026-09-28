@@ -61,6 +61,7 @@ export type GameMessage =
   | { type: 'turn'; character: string; turnOrder: string[]; turnCycle: number; countdown: number }
   | { type: 'chat'; sender: string; text: string }
   | { type: 'silence'; character: string }
+  | { type: 'voteRegistered' }
   | { type: 'roundTransition'; results: RoundResult[]; aiCharacter: string }
   | { type: 'gameEnd'; winnerId: string; ranking: FinalRank[]; history: { sender: string; text: string; isAI: boolean }[] }
   | { type: 'roomClosed'; code: string };
