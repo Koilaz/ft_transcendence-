@@ -4,7 +4,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useEffect, useState, useRef, type FormEvent } from 'react';
 
 import { register, login, getMe, updateMe, uploadAvatar, DEFAULT_AVATAR_URL, type User as ApiUser, getFriends, getFriendRequests, getSentFriendRequests, acceptFriendRequest, removeFriend, sendFriendRequest, type FriendListItem, type FriendRequestItem, type SentFriendRequestItem, type PublicUser } from '../services/api';
-import { connectPresenceSocket } from '../services/presenceSocket';
+import { subscribePresence } from '../services/presenceSocket';
+import { setAccessToken } from '../services/session';
 import { CharacterPortrait } from '../components/CharacterPortrait';
 import { MatrixRain } from '../components/MatrixRain';
 
@@ -301,16 +302,15 @@ export default function Home() {
   const [friendsError, setFriendsError] = useState('');
   const [friendsSuccess, setFriendsSuccess] = useState('');
   const [actionLoadingUserId, setActionLoadingUserId] = useState<number | null>(null);
-  const [presenceSocket, setPresenceSocket] = useState<WebSocket | null>(null);
+  const [presenceUnsubscribe, setPresenceUnsubscribe] = useState<(() => void) | null>(null);
 
-  // Cleanup presence socket when component unmounts or friends modal closes
+  // Desabonnement quand le composant part : la socket de presence appartient
+  // a App, ici on ne ferme jamais rien.
   useEffect(() => {
     return () => {
-      if (presenceSocket) {
-        presenceSocket.close(1000, 'Component unmounted');
-      }
+      presenceUnsubscribe?.();
     };
-  }, [presenceSocket]);
+  }, [presenceUnsubscribe]);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -349,7 +349,7 @@ export default function Home() {
     setIsLoginSubmitting(true);
     try {
       const response = await login({ email: loginEmail, password: loginPassword });
-      localStorage.setItem('accessToken', response.accessToken);
+      setAccessToken(response.accessToken);
       setActiveModal(null);
       setLoginEmail('');
       setLoginPassword('');
@@ -374,7 +374,7 @@ export default function Home() {
       setProfileUser(profile);
       setProfileUsername(profile.username);
     } catch (error) {
-      localStorage.removeItem('accessToken');
+      setAccessToken(null);
       setProfileError(error instanceof Error ? error.message : 'An unexpected error occurred');
     } finally {
       setIsProfileLoading(false);
@@ -523,14 +523,17 @@ export default function Home() {
       setFriendRequests(receivedRequests);
       setSentFriendRequests(sentFriendRequests);
 
-      // Initialize presence socket
-      const socket = connectPresenceSocket(accessToken, (message) => {
-        if (message.type !== 'presence:update') {
-          return;
-        }
-        updatePresenceEverywhere(message.userId, message.isOnline, message.lastSeenAt);
+      // Abonnement aux messages de presence : la socket vit dans App, on
+      // s'abonne ici sans jamais connecter ni fermer.
+      setPresenceUnsubscribe((previous) => {
+        previous?.();
+        return subscribePresence((message) => {
+          if (message.type !== 'presence:update') {
+            return;
+          }
+          updatePresenceEverywhere(message.userId, message.isOnline, message.lastSeenAt);
+        });
       });
-      setPresenceSocket(socket);
 
     } catch (error) {
       setFriendsError(error instanceof Error ? error.message : 'Failed to load friends');
@@ -612,10 +615,8 @@ export default function Home() {
   }
 
   function closeFriendsModal() {
-    if (presenceSocket) {
-      presenceSocket.close(1000, 'Leaving friends modal');
-      setPresenceSocket(null);
-    }
+    presenceUnsubscribe?.();
+    setPresenceUnsubscribe(null);
     setActiveModal('profile');
   }
 

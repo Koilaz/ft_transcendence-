@@ -25,7 +25,7 @@ import {
   type SentFriendRequestItem,
   type User,
 } from '../services/api';
-import { connectPresenceSocket } from '../services/presenceSocket';
+import { subscribePresence } from '../services/presenceSocket';
 
 function updateUserPresence(
   user: PublicUser,
@@ -335,13 +335,10 @@ export default function Friends() {
   }, [loadFriendsPage]);
 
   useEffect(() => {
-    const accessToken = localStorage.getItem('accessToken');
-
-    if (!accessToken) {
-      return;
-    }
-
-    const socket = connectPresenceSocket(accessToken, (message) => {
+    // La socket de presence appartient a App : on ne fait que s'abonner a
+    // ses messages, sans jamais connecter ni fermer. Quitter la page ne
+    // deconnecte plus personne.
+    return subscribePresence((message) => {
       if (message.type !== 'presence:update') {
         return;
       }
@@ -388,10 +385,6 @@ export default function Friends() {
         })),
       );
     });
-
-    return () => {
-      socket.close(1000, 'Leaving friends page');
-    };
   }, []);
 
   const friendIds = useMemo(() => {
