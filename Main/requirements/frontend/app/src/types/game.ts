@@ -1,6 +1,6 @@
 // Types pour la partie Game
 
-import type { RoundResult, FinalRank } from '../services/gameSocket';
+import type { RoundResult, FinalRank, AgentStatus } from '../services/gameSocket';
 
 export type FeedMessage =
   | { id: string; kind: 'chat'; sender: string; text: string }
@@ -15,6 +15,12 @@ export type GameUIState = {
   turnOrder: string[];
   turnCycle: number | null;
   countdown: number | null;
+  // File d'attente : peuples par le 'state' de la queue, remis a zero au reset.
+  waitingPlayers: number;
+  minPlayers: number;
+  readyPlayers: number;
+  isReady: boolean;
+  agentsDown: AgentStatus[];
   messages: FeedMessage[];
   roundResults: RoundResult[] | null;
   aiCharacter: string | null;
@@ -31,7 +37,8 @@ export type LocalConnectionAction =
   | { type: 'resetGame' };
 
 export type GameMessage = 
-  | { type: 'state'; status: string; room_number: number; countdown: number }
+  | { type: 'state'; status: string; room_number: number | null; countdown: number | null; players?: number; min_players?: number; ready_players?: number; ready?: boolean }
+  | { type: 'agentsDown'; agents: AgentStatus[] }
   | { type: 'assignment'; character: string }
   | { type: 'yourTurn'; countdown: number }
   | { type: 'turn'; character: string; turnOrder: string[]; turnCycle: number; countdown: number }

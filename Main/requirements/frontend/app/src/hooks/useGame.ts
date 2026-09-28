@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { useEffect, useReducer, useRef, useState } from 'react';
-import { connectGameSocket, sendChatMessage, sendVoteMessage, sendReplayMessage } from '../services/gameSocket';
+import { connectGameSocket, sendChatMessage, sendVoteMessage, sendReplayMessage, sendReadyMessage } from '../services/gameSocket';
 import type {
   GameUIState,
   GameAction,
@@ -18,6 +18,11 @@ const initialState: GameUIState = {
   turnOrder: [],
   turnCycle: null,
   countdown: null,
+  waitingPlayers: 0,
+  minPlayers: 0,
+  readyPlayers: 0,
+  isReady: false,
+  agentsDown: [],
   messages: [],
   roundResults: null,
   aiCharacter: null,
@@ -56,6 +61,12 @@ export function gameReducer(state: GameUIState, action: GameAction): GameUIState
         ...state,
         roomNumber: action.room_number,
         roomStatus: action.status,
+        // Les champs de la file ne sont presents que dans le 'state' de la
+        // queue : on garde les valeurs precedentes sinon.
+        waitingPlayers: action.players ?? state.waitingPlayers,
+        minPlayers: action.min_players ?? state.minPlayers,
+        readyPlayers: action.ready_players ?? state.readyPlayers,
+        isReady: action.ready ?? state.isReady,
         ...(playing ? {} : {
           currentTurnCharacter: null,
           turnOrder: [],
@@ -63,6 +74,8 @@ export function gameReducer(state: GameUIState, action: GameAction): GameUIState
         }),
       };
     }
+    case 'agentsDown':
+      return { ...state, agentsDown: action.agents };
     case 'assignment':
       return {
         ...state,
@@ -254,6 +267,12 @@ export function useGame() {
     sendReplayMessage(socket);
   }
 
+  function handleReady() {
+    const socket = socketRef.current;
+    if (!socket) return;
+    sendReadyMessage(socket);
+  }
+
   // Calculs dérivés
   const banner = getBanner(state, connectionOpen === true);
   const timerVisible = isTimerVisible(state, connectionOpen === true);
@@ -288,6 +307,7 @@ export function useGame() {
     handleSend,
     handleVote,
     handleReplay,
+    handleReady,
     banner,
     bannerStyle,
     timerVisible,
@@ -306,5 +326,11 @@ export function useGame() {
     myCharacter: state.myCharacter,
     countdown: state.countdown,
     messages: state.messages,
+    // File d'attente : compteurs et bouton « Pret »
+    waitingPlayers: state.waitingPlayers,
+    minPlayers: state.minPlayers,
+    readyPlayers: state.readyPlayers,
+    isReady: state.isReady,
+    agentsDown: state.agentsDown,
   };
 }

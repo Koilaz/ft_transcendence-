@@ -1,9 +1,27 @@
+// Un agent dont aucune manche n'est jouable : le serveur l'ecarte de la partie
+// et l'explique ici, pour l'ecran d'attente (voir agents/index_agent.js).
+export type AgentStatus = {
+  name: string;
+  reason: string;
+  detail?: string;
+};
+
 export type GameStateMessage = {
   type: 'state';
-  room_number: number;
+  room_number: number | null;
   status: string;
   countdown: number | null;
   players: number;
+  // Champs de la file d'attente uniquement (voir game/queue.js :
+  // broadcastQueue). La room diffuse le meme 'state' sans ces champs.
+  min_players?: number;
+  ready_players?: number;
+  ready?: boolean;
+};
+
+export type GameAgentsDownMessage = {
+  type: 'agentsDown';
+  agents: AgentStatus[];
 };
 
 export type GameAssignmentMessage = {
@@ -80,6 +98,7 @@ export type GameRoomClosedMessage = {
 
 export type GameMessage =
   | GameStateMessage
+  | GameAgentsDownMessage
   | GameAssignmentMessage
   | GameYourTurnMessage
   | GameTurnMessage
@@ -112,6 +131,7 @@ export function connectGameSocket(
 
       if (
         message.type !== 'state' &&
+        message.type !== 'agentsDown' &&
         message.type !== 'assignment' &&
         message.type !== 'yourTurn' &&
         message.type !== 'turn' &&
@@ -159,6 +179,13 @@ export function sendVoteMessage(socket: WebSocket, targetCharacter: string): voi
   const message: GameVoteOutgoingMessage = { type: 'vote', targetCharacter };
 
   socket.send(JSON.stringify(message));
+}
+
+// « Prêt » : confirme a la file d'attente que le joueur accepte de lancer la
+// partie. Sans ce message de chaque joueur present, aucune room ne s'ouvre
+// (voir game/queue.js : ready).
+export function sendReadyMessage(socket: WebSocket): void {
+  socket.send(JSON.stringify({ type: 'ready' }));
 }
 
 // « Rejouer » : remet le joueur dans la file d'attente. Le serveur ne

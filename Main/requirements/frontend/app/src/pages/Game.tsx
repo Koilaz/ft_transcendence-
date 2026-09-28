@@ -7,9 +7,11 @@ import {
   VoteArea,
 } from '../components/game';
 import { ScoreboardModal, GameEndModal, RoomClosedModal } from './VoteSystem';
+import { Lobby } from './Lobby';
 
 export default function Game() {
   const {
+    connectionOpen,
     roomNumber,
     roundPhase,
     turnOrder,
@@ -33,7 +35,35 @@ export default function Game() {
     aiCharacter,
     endGameData,
     roomClosedCode,
+    waitingPlayers,
+    minPlayers,
+    readyPlayers,
+    isReady,
+    agentsDown,
+    handleReady,
   } = useGame();
+
+  // File d'attente : tant que le serveur n'a pas ouvert de room ('waiting'),
+  // l'ecran montre le lore et le bouton « Pret ». Des que la partie demarre,
+  // le 'state' de la room passe le statut a 'playing'.
+  if (
+    (roomStatus === null || roomStatus === 'waiting') &&
+    !endGameData &&
+    !roomClosedCode
+  ) {
+    return (
+      <Lobby
+        waiting={waitingPlayers}
+        minPlayers={minPlayers}
+        readyPlayers={readyPlayers}
+        isReady={isReady}
+        countdown={countdown}
+        connected={connectionOpen === true}
+        agentsDown={agentsDown}
+        onReady={handleReady}
+      />
+    );
+  }
 
   return (
     <div className="fixed inset-0 bg-stone-950 text-stone-200 flex flex-col w-full overflow-hidden">

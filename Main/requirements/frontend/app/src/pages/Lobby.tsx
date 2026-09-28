@@ -18,10 +18,14 @@ import type { AgentStatus } from '../services/gameSocket';
 
 type LobbyProps = {
   waiting: number;
+  minPlayers: number;
+  readyPlayers: number;
+  isReady: boolean;
   countdown: number | null;
   connected: boolean;
   // Les bots qui ne repondront pas. Vide dans le cas normal.
   agentsDown: AgentStatus[];
+  onReady: () => void;
 };
 
 // Ecran d'attente. Il ne montre volontairement qu'un compteur : aucune
@@ -30,9 +34,13 @@ type LobbyProps = {
 // reveler.
 export function Lobby({
   waiting,
+  minPlayers,
+  readyPlayers,
+  isReady,
   countdown,
   connected,
   agentsDown,
+  onReady,
 }: LobbyProps) {
   return (
     <main className="min-h-screen bg-slate-950 text-slate-200 p-6 flex flex-col items-center">
@@ -139,6 +147,34 @@ export function Lobby({
           <p className="text-3xl font-bold text-slate-100 tabular-nums">
             {waiting}
           </p>
+          <p className="text-xs text-slate-500 tabular-nums">
+            {readyPlayers}/{waiting} prêts — {minPlayers} requis
+          </p>
+        </div>
+
+        {/* La partie ne s'ouvre que si chacun confirme sa presence (voir
+            game/queue.js : ready). Le bouton n'apparait qu'au seuil atteint. */}
+        <div className="flex flex-col items-center gap-2">
+          {isReady ? (
+            <p className="text-sm text-slate-400">
+              Présence confirmée — en attente des autres membres…
+            </p>
+          ) : (
+            <button
+              type="button"
+              className="px-8 py-3 rounded-lg bg-amber-600 hover:bg-amber-500
+                         disabled:opacity-40 disabled:cursor-not-allowed
+                         text-white text-sm font-bold uppercase tracking-[0.15em]
+                         transition-colors"
+              disabled={!connected || waiting < Math.max(minPlayers, 1)}
+              onClick={onReady}
+            >
+              Confirmer ma présence
+            </button>
+          )}
+          {!connected && (
+            <p className="text-xs text-red-400">Liaison interrompue…</p>
+          )}
         </div>
 
         <div className="text-right">
