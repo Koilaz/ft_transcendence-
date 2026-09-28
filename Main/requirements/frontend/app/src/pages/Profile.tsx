@@ -13,6 +13,7 @@ import {
   uploadAvatar,
   type User,
 } from '../services/api';
+import { PasswordChangeForm } from './PasswordChangeForm';
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -332,6 +333,8 @@ export default function Profile() {
                 : 'Save changes'}
             </button>
           </form>
+
+          <PasswordChangeForm />
         </section>
       </div>
     </main>

@@ -230,6 +230,52 @@ export async function uploadAvatar(
 
 
 
+// Verification de l'ancien mot de passe (etape 1 du changement) : le serveur
+// repond 204 si correct, 401 sinon. Le mot de passe ne quitte jamais le
+// formulaire une fois la reponse recue.
+export async function verifyCurrentPassword(
+  accessToken: string,
+  currentPassword: string,
+): Promise<void> {
+  const response = await fetch('/api/auth/me/password/verify', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({ currentPassword }),
+  });
+
+  if (!response.ok) {
+    throw new Error(await parseError(response));
+  }
+}
+
+// Enregistrement du nouveau mot de passe (etape 2). Le serveur reverifie
+// l'ancien a l'ecriture : les deux champs voyagent donc ensemble. Reponse 204,
+// jamais de hash ni de mot de passe en retour.
+export async function changePassword(
+  accessToken: string,
+  currentPassword: string,
+  newPassword: string,
+): Promise<void> {
+  const response = await fetch('/api/auth/me/password', {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({ currentPassword, newPassword }),
+  });
+
+  if (!response.ok) {
+    throw new Error(await parseError(response));
+  }
+}
+
+
+
+
 export type FriendListItem = {
   id: number;
   friend: PublicUser;

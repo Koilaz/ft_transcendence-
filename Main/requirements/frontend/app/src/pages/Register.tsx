@@ -10,6 +10,7 @@ export default function Register() {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
 
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -18,6 +19,14 @@ export default function Register() {
     event.preventDefault();
 
     setError('');
+
+    // La confirmation evite la faute de frappe qui verrouille le compte :
+    // verifiee ici, le serveur n'en veut pas.
+    if (password !== confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -103,6 +112,27 @@ export default function Register() {
                 type="password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
+                minLength={8}
+                maxLength={100}
+                required
+                autoComplete="new-password"
+                className="w-full rounded-lg border border-stone-700 bg-stone-950 px-4 py-3 text-white outline-none transition focus:border-green-500"
+              />
+            </div>
+
+            <div>
+              <label
+                className="mb-2 block text-sm font-medium text-stone-300"
+                htmlFor="confirm-password"
+              >
+                Confirm password
+              </label>
+
+              <input
+                id="confirm-password"
+                type="password"
+                value={confirmPassword}
+                onChange={(event) => setConfirmPassword(event.target.value)}
                 minLength={8}
                 maxLength={100}
                 required
