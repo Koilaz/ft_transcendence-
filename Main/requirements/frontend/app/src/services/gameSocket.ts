@@ -29,6 +29,55 @@ export type GameDebriefWaitMessage = {
   max: number;
 };
 
+// Jeton de reprise : envoye a chaque connexion. Le garder (sessionStorage,
+// par onglet) permet de reprendre sa place apres un refresh ou une coupure.
+export type GameSessionMessage = {
+  type: 'session';
+  token: string;
+};
+
+// L'instantane de reprise : remplace l'etat du navigateur en bloc (voir
+// room.js : reconnectPlayer). L'historique arrive sans isAI — le serveur le
+// retire exprès pour ne pas révéler l'imposteur.
+export type GameReconnectedMessage = {
+  type: 'reconnected';
+  state: {
+    status: string;
+    players: number;
+    room_number: number;
+    countdown: number | null;
+    current_manche?: number;
+    max_manches?: number;
+  };
+  character: string;
+  history: { sender: string; text: string }[];
+  turn: {
+    character: string;
+    turnOrder: string[];
+    turnCycle: number;
+    countdown: number;
+  } | null;
+  roundPhase: string;
+  hasVoted: boolean;
+  disconnectedCharacters: string[];
+  leftCharacters: string[];
+  debriefWaiting: boolean;
+};
+
+// Un joueur vient de perdre la liaison : sa place reste reserveee jusqu'a la
+// fin de la manche (temporary), il reste une cible de vote mais voter pour lui
+// est une defaite certaine puisque le bot, lui, ne part jamais.
+export type GamePlayerDisconnectedMessage = {
+  type: 'playerDisconnected';
+  character: string;
+  temporary: boolean;
+};
+
+export type GamePlayerReconnectedMessage = {
+  type: 'playerReconnected';
+  character: string;
+};
+
 export type GameAgentsDownMessage = {
   type: 'agentsDown';
   agents: AgentStatus[];
@@ -104,6 +153,10 @@ export type GameRoomClosedMessage = {
 export type GameMessage =
   | GameStateMessage
   | GameDebriefWaitMessage
+  | GameSessionMessage
+  | GameReconnectedMessage
+  | GamePlayerDisconnectedMessage
+  | GamePlayerReconnectedMessage
   | GameAgentsDownMessage
   | GameAssignmentMessage
   | GameYourTurnMessage
@@ -119,6 +172,8 @@ export type GameMessageHandler = (
   message: GameMessage,
 ) => void;
 
+export const RESUME_TOKEN_STORAGE_KEY = 'gameResumeToken';
+
 function getGameWebSocketUrl(): string {
   const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
 
@@ -132,6 +187,14 @@ function getGameWebSocketUrl(): string {
   const guestName = localStorage.getItem('guestName');
   if (guestName)
     params.set('name', guestName);
+
+  // Le jeton de reprise est conserve par onglet (sessionStorage) : une
+  // reconnexion rouvre la partie la ou elle en etait. Un onglet duplique le
+  // copie et prend la main — comportement documente par le serveur.
+  const resumeToken = sessionStorage.getItem(RESUME_TOKEN_STORAGE_KEY);
+  if (resumeToken)
+    params.set('resumeToken', resumeToken);
+
   const query = params.toString();
 
   return `${protocol}://${window.location.host}/ws/game${query ? `?${query}` : ''}`;
@@ -149,6 +212,10 @@ export function connectGameSocket(
       if (
         message.type !== 'state' &&
         message.type !== 'debriefWait' &&
+        message.type !== 'session' &&
+        message.type !== 'reconnected' &&
+        message.type !== 'playerDisconnected' &&
+        message.type !== 'playerReconnected' &&
         message.type !== 'agentsDown' &&
         message.type !== 'assignment' &&
         message.type !== 'yourTurn' &&

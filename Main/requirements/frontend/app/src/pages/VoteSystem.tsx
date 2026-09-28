@@ -250,6 +250,7 @@ const MOTIFS: Record<string, string> = {
   not_enough_players: "Trop de membres ont quitté la séance : le quorum n'est plus atteint.",
   empty_room: 'La séance a été levée, plus aucun membre n\'était présent.',
   agent_failure: 'La séance a été interrompue pour raison technique.',
+  reconnect_expired: "Ta place était réservée jusqu'à la fin de la manche : elle vient d'expirer.",
 };
 
 export function RoomClosedModal({ code, onReplay }: { code: string; onReplay: () => void }) {

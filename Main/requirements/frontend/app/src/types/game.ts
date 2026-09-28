@@ -27,6 +27,12 @@ export type GameUIState = {
   maxManches: number | null;
   // L'agent d'analyse tarde : le serveur prolonge le scoreboard (debriefWait).
   debriefWait: { attempt: number; max: number } | null;
+  // Vote deja depose cette manche : restaure par l'instantane de reprise.
+  hasVoted: boolean;
+  // Personnages momentanement debranches (place reserveee) ou definitivement
+  // partis : ni l'un ni l'autre ne sont des cibles de vote honnetes.
+  disconnectedCharacters: string[];
+  leftCharacters: string[];
   messages: FeedMessage[];
   roundResults: RoundResult[] | null;
   aiCharacter: string | null;
@@ -45,6 +51,10 @@ export type LocalConnectionAction =
 export type GameMessage = 
   | { type: 'state'; status: string; room_number: number | null; countdown: number | null; players?: number; min_players?: number; ready_players?: number; ready?: boolean; current_manche?: number; max_manches?: number }
   | { type: 'debriefWait'; attempt: number; max: number }
+  | { type: 'session'; token: string }
+  | { type: 'reconnected'; state: { status: string; players: number; room_number: number; countdown: number | null; current_manche?: number; max_manches?: number }; character: string; history: { sender: string; text: string }[]; turn: { character: string; turnOrder: string[]; turnCycle: number; countdown: number } | null; roundPhase: string; hasVoted: boolean; disconnectedCharacters: string[]; leftCharacters: string[]; debriefWaiting: boolean }
+  | { type: 'playerDisconnected'; character: string; temporary: boolean }
+  | { type: 'playerReconnected'; character: string }
   | { type: 'agentsDown'; agents: AgentStatus[] }
   | { type: 'assignment'; character: string }
   | { type: 'yourTurn'; countdown: number }

@@ -36,6 +36,9 @@ export default function Game() {
     endGameData,
     roomClosedCode,
     debriefWait,
+    hasVoted,
+    disconnectedCharacters,
+    leftCharacters,
     waitingPlayers,
     minPlayers,
     readyPlayers,
@@ -132,6 +135,9 @@ export default function Game() {
           currentTurnCharacter={currentTurnCharacter}
           myCharacter={myCharacter}
           roundPhase={roundPhase}
+          hasVoted={hasVoted}
+          disconnectedCharacters={disconnectedCharacters}
+          leftCharacters={leftCharacters}
           onVote={handleVote}
         />
       </div>

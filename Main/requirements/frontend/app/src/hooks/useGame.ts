@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { useEffect, useReducer, useRef, useState } from 'react';
-import { connectGameSocket, sendChatMessage, sendVoteMessage, sendReplayMessage, sendReadyMessage } from '../services/gameSocket';
+import { connectGameSocket, sendChatMessage, sendVoteMessage, sendReplayMessage, sendReadyMessage, RESUME_TOKEN_STORAGE_KEY } from '../services/gameSocket';
 import type {
   GameUIState,
   GameAction,
@@ -26,6 +26,9 @@ const initialState: GameUIState = {
   currentManche: null,
   maxManches: null,
   debriefWait: null,
+  hasVoted: false,
+  disconnectedCharacters: [],
+  leftCharacters: [],
   messages: [],
   roundResults: null,
   aiCharacter: null,
@@ -93,6 +96,9 @@ export function gameReducer(state: GameUIState, action: GameAction): GameUIState
         roundResults: null,
         aiCharacter: null,
         debriefWait: null,
+        hasVoted: false,
+        disconnectedCharacters: [],
+        leftCharacters: [],
         messages: [
           ...state.messages,
           { id: nextMessageId(), kind: 'system', text: `>>> nouvelle manche, tu incarnes ${action.character}` },
@@ -133,9 +139,62 @@ export function gameReducer(state: GameUIState, action: GameAction): GameUIState
     case 'voteRegistered':
       return {
         ...state,
+        hasVoted: true,
         messages: [
           ...state.messages,
           { id: nextMessageId(), kind: 'system', text: '>>> ton vote est enregistré' },
+        ],
+      };
+    case 'reconnected': {
+      // Un seul instantane remplace l'etat du navigateur (voir room.js :
+      // reconnectPlayer). L'historique arrive sans isAI — le serveur le
+      // retire pour ne pas révéler l'imposteur — les lignes « Systeme »
+      // redeviennent des messages systeme du fil.
+      const turn = action.turn;
+      return {
+        ...state,
+        myCharacter: action.character,
+        roomNumber: action.state.room_number,
+        roomStatus: action.state.status,
+        roundPhase: action.roundPhase,
+        currentTurnCharacter: turn ? turn.character : null,
+        turnOrder: turn ? turn.turnOrder : [],
+        turnCycle: turn ? turn.turnCycle : null,
+        countdown: turn ? turn.countdown : action.state.countdown,
+        currentManche: action.state.current_manche ?? state.currentManche,
+        maxManches: action.state.max_manches ?? state.maxManches,
+        waitingPlayers: action.state.players ?? state.waitingPlayers,
+        hasVoted: action.hasVoted,
+        disconnectedCharacters: action.disconnectedCharacters,
+        leftCharacters: action.leftCharacters,
+        roundResults: null,
+        aiCharacter: null,
+        endGameData: null,
+        roomClosedCode: null,
+        messages: action.history.map(({ sender, text }) => ({
+          id: nextMessageId(),
+          kind: sender === 'Systeme' ? 'system' : 'chat',
+          sender,
+          text,
+        })),
+      };
+    }
+    case 'playerDisconnected':
+      return {
+        ...state,
+        disconnectedCharacters: [...state.disconnectedCharacters, action.character],
+        messages: [
+          ...state.messages,
+          { id: nextMessageId(), kind: 'system', text: `${action.character} est déconnecté. Sa place reste réservée.` },
+        ],
+      };
+    case 'playerReconnected':
+      return {
+        ...state,
+        disconnectedCharacters: state.disconnectedCharacters.filter((c) => c !== action.character),
+        messages: [
+          ...state.messages,
+          { id: nextMessageId(), kind: 'system', text: `${action.character} est de retour.` },
         ],
       };
     case 'roundTransition':
@@ -169,7 +228,7 @@ function formatRoundIndicator(currentManche: number | null, maxManches: number |
 }
 
 export function getBanner(state: GameUIState, connectionOpen: boolean): Banner {
-  if (!connectionOpen) return { text: 'Connexion au serveur...', variant: 'waiting' };
+  if (!connectionOpen) return { text: 'Reconnexion en cours...', variant: 'waiting' };
   if (state.myCharacter && state.currentTurnCharacter === state.myCharacter && isChattingPhase(state.roomStatus, state.roundPhase)) {
     return { text: 'A TOI DE JOUER', variant: 'myturn' };
   }
@@ -225,21 +284,64 @@ export function useGame() {
   const feedRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
-  // Connexion WebSocket
+  // Connexion WebSocket avec reprise automatique. Le serveur garde la place
+  // jusqu'a la fin de la manche ; chaque nouvelle tentative rouvre la session
+  // via le jeton sessionStorage, et c'est lui qui decide de la suite :
+  // instantane 'reconnected', retour en file, ou 'reconnect_expired'.
   useEffect(() => {
-    const socket = connectGameSocket((message) => dispatch(message));
-    socketRef.current = socket;
-    socket.addEventListener('open', () => {
-      setConnectionOpen(true);
-      dispatch({ type: 'connection', text: 'connecte' });
-    });
-    socket.addEventListener('close', () => {
-      setConnectionOpen(false);
-      dispatch({ type: 'connection', text: 'deconnecte' });
-    });
-    socket.addEventListener('error', () => setConnectionOpen(false));
+    let disposed = false;
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+    let attempts = 0;
+
+    // Backoff geometrique plafonne : un serveur arrete ne doit pas se prendre
+    // un essai par seconde pendant une heure.
+    function scheduleReconnect() {
+      if (disposed)
+        return;
+      const delay = Math.min(1000 * 2 ** attempts, 8000);
+      attempts += 1;
+      reconnectTimer = setTimeout(connect, delay);
+    }
+
+    function connect() {
+      const socket = connectGameSocket((message) => {
+        // Le jeton de reprise est un effet de bord, pas un etat d'UI : il
+        // change a chaque connexion, on ecrase simplement l'ancien.
+        if (message.type === 'session') {
+          sessionStorage.setItem(RESUME_TOKEN_STORAGE_KEY, message.token);
+          return;
+        }
+        dispatch(message);
+      });
+      socketRef.current = socket;
+
+      socket.addEventListener('open', () => {
+        if (disposed)
+          return;
+        attempts = 0;
+        setConnectionOpen(true);
+        dispatch({ type: 'connection', text: 'connecte' });
+      });
+      socket.addEventListener('close', () => {
+        if (disposed)
+          return;
+        setConnectionOpen(false);
+        dispatch({ type: 'connection', text: 'deconnecte' });
+        scheduleReconnect();
+      });
+      socket.addEventListener('error', () => {
+        if (!disposed)
+          setConnectionOpen(false);
+      });
+    }
+
+    connect();
+
     return () => {
-      socket.close();
+      disposed = true;
+      if (reconnectTimer)
+        clearTimeout(reconnectTimer);
+      socketRef.current?.close();
       socketRef.current = null;
     };
   }, []);
@@ -345,5 +447,8 @@ export function useGame() {
     currentManche: state.currentManche,
     maxManches: state.maxManches,
     debriefWait: state.debriefWait,
+    hasVoted: state.hasVoted,
+    disconnectedCharacters: state.disconnectedCharacters,
+    leftCharacters: state.leftCharacters,
   };
 }

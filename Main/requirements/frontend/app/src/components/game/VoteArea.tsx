@@ -8,6 +8,10 @@ type VoteAreaProps = {
   currentTurnCharacter: string | null;
   myCharacter: string | null;
   roundPhase: string | null;
+  hasVoted: boolean;
+  // Cibles de vote deconnectees ou parties : jamais des cibles honnetes.
+  disconnectedCharacters: string[];
+  leftCharacters: string[];
   onVote?: (character: string) => void;
 };
 
@@ -16,15 +20,19 @@ export function VoteArea({
   currentTurnCharacter,
   myCharacter,
   roundPhase,
+  hasVoted,
+  disconnectedCharacters,
+  leftCharacters,
   onVote,
 }: VoteAreaProps) {
   const [selectedVote, setSelectedVote] = useState<string | null>(null);
-  
+
   const isVotingPhase = roundPhase === 'voting';
   // Le backend collecte les votes en temps reel pendant la phase de
   // discussion : il n'existe pas de phase 'voting' distincte, on peut voter
-  // des que la manche est en cours.
-  const canVote = roundPhase === 'voting' || roundPhase === 'chatting';
+  // des que la manche est en cours. Un vote deja depose (y compris restaure
+  // par l'instantane de reprise) verrouille la zone.
+  const canVote = (roundPhase === 'voting' || roundPhase === 'chatting') && !hasVoted;
 
   // Calcule la largeur relative pour chaque personnage
   function getCharacterWidth(numCharacters: number): string {
@@ -68,11 +76,17 @@ export function VoteArea({
             repeat: Infinity 
           }}
         >
-          <span className="text-xl font-bold text-amber-400">
-            {isVotingPhase 
-              ? 'PHASE DE VOTE - Cliquez pour éliminer' 
-              : `TOUR DE : ${currentTurnCharacter || 'Personne'}`}
-          </span>
+          {hasVoted ? (
+            <span className="text-xl font-bold text-emerald-400">
+              VOTE ENREGISTRÉ — en attente de la fin de manche
+            </span>
+          ) : (
+            <span className="text-xl font-bold text-amber-400">
+              {isVotingPhase
+                ? 'PHASE DE VOTE - Cliquez pour éliminer'
+                : `TOUR DE : ${currentTurnCharacter || 'Personne'}`}
+            </span>
+          )}
         </motion.div>
 
         {/* Personnages */}
@@ -81,7 +95,13 @@ export function VoteArea({
             const isMe = character === myCharacter;
             const isCurrent = character === currentTurnCharacter;
             const isSelected = selectedVote === character;
-            const isVotable = canVote && !isMe;
+            // Un joueur deconnecte ou parti est forcement humain : le bot
+            // n'a pas de socket et ne part jamais. Voter pour lui serait une
+            // defaite certaine, on ne laisse pas le piege ouvert.
+            const isAbsent =
+              disconnectedCharacters.includes(character) ||
+              leftCharacters.includes(character);
+            const isVotable = canVote && !isMe && !isAbsent;
             const bgColor = getCharacterFluoColor(character);
             const charWidth = getCharacterWidth(turnOrder.length);
 
@@ -89,12 +109,12 @@ export function VoteArea({
               <motion.button
                 key={character}
                 className={`relative flex flex-col items-center gap-2 p-3 rounded-xl transition-all ${bgColor} ${
-                  isMe 
-                    ? 'ring-2 ring-yellow-500' 
-                    : isVotable 
+                  isMe
+                    ? 'ring-2 ring-yellow-500'
+                    : isVotable
                       ? `cursor-pointer hover:brightness-150 hover:scale-105 ${isSelected ? 'ring-2 ring-white' : ''}`
                       : 'cursor-not-allowed'
-                }`}
+                } ${isAbsent ? 'grayscale opacity-40' : ''}`}
                 style={{ width: charWidth, minWidth: charWidth }}
                 onClick={() => handleVote(character)}
                 disabled={!isVotable}
