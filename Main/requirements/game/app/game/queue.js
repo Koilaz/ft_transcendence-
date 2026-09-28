@@ -30,37 +30,25 @@ function humansNeeded()
 	};
 }
 
-//On reutilise le message `state` existant plutot que d'en inventer un : le
-//front sait deja afficher ce lobby, aucune modification cote client n'est
-//necessaire. room_number vaut null tant qu'aucune room n'existe, ce que le
-//front rend deja par « Salle #— ». Un message `queue` dedie viendra avec
-//l'etape 8.
+//On reutilise le message `state` existant plutot que d'en inventer un. Le front
+//connait ainsi le seuil humain effectif, qui tient compte des bots disponibles.
 function broadcastQueue()
 {
+	const { min } = humansNeeded();
+	const readyPlayers = [...waiting.values()].filter((entry) => entry.ready).length;
 	for (const entry of waiting.values())
 	{
 		entry.sendFn({
 			type: 'state',
 			status: 'waiting',
 			players: waiting.size,
+			min_players: min,
+			ready_players: readyPlayers,
+			ready: entry.ready,
 			room_number: null,
 			countdown,
 		});
 	}
-}
-
-function startCountdown()
-{
-	if (timerId)
-		return;
-	countdown = gameConfig.startingTimer;
-	timerId = setInterval(() =>
-	{
-		countdown--;
-		if (countdown <= 0)
-			return launch();
-		broadcastQueue();
-	}, 1000);
 }
 
 function stopCountdown()
@@ -73,11 +61,25 @@ function stopCountdown()
 	countdown = null;
 }
 
+function startCountdown()
+{
+	if (timerId)
+		return;
+	countdown = gameConfig.startingTimer;
+	broadcastQueue();
+	timerId = setInterval(() =>
+	{
+		countdown--;
+		if (countdown <= 0)
+			return launch();
+		broadcastQueue();
+	}, 1000);
+}
+
 //Forme un groupe et lance la partie. Les joueurs retenus quittent la file.
 function launch()
 {
 	stopCountdown();
-
 	//Les premiers arrives, dans la limite du plafond. L'ordre d'insertion d'une
 	//Map est garanti par la specification : c'est ce qui rend ce point
 	//remplacable par une selection anti-affinite sans rien changer autour.
@@ -101,7 +103,9 @@ function launch()
 //server.js s'en sert pour raccrocher la room a la socket.
 export function enqueue(playerId, sendFn, onRoomJoined, displayName = null)
 {
-	waiting.set(playerId, { sendFn, onRoomJoined, displayName });
+	if (timerId)
+		stopCountdown();
+	waiting.set(playerId, { sendFn, onRoomJoined, displayName, ready: false });
 
 	//Tous les bots configures sont hors service : il n'y aurait personne a
 	//demasquer, la partie perdrait son mecanisme central. On garde les joueurs
@@ -113,11 +117,8 @@ export function enqueue(playerId, sendFn, onRoomJoined, displayName = null)
 		return;
 	}
 
-	const { min, max } = humansNeeded();
-	if (waiting.size >= max)
-		return launch();
-	if (waiting.size >= min)
-		startCountdown();
+	// Atteindre le seuil rend le bouton « Prêt » disponible ; un clic explicite
+	// est nécessaire pour lancer la partie, même si la room est pleine.
 	broadcastQueue();
 }
 
@@ -125,9 +126,22 @@ export function dequeue(playerId)
 {
 	if (!waiting.delete(playerId))
 		return;
-	if (waiting.size < humansNeeded().min)
+	if (waiting.size < humansNeeded().min || ![...waiting.values()].every((entry) => entry.ready))
 		stopCountdown();
 	broadcastQueue();
+}
+
+export function ready(playerId)
+{
+	const entry = waiting.get(playerId);
+	if (!entry || entry.ready)
+		return;
+	entry.ready = true;
+	const { min } = humansNeeded();
+	if (waiting.size >= min && [...waiting.values()].every((waitingEntry) => waitingEntry.ready))
+		startCountdown();
+	else
+		broadcastQueue();
 }
 
 export function queueSize()

@@ -6,8 +6,9 @@ import { gameConfig } from '../game/config.js';
 // config.js (ministral_big au lieu de ministral_14b ou mistral_big). L'agent
 // est absent du registre, unavailableBots le detecte sans aucun appel reseau.
 gameConfig.bots = ['ministral_big'];
+gameConfig.startingTimer = 1;
 
-const { enqueue, dequeue, queueSize } = await import('../game/queue.js');
+const { enqueue, dequeue, queueSize, ready } = await import('../game/queue.js');
 const { roomCount } = await import('../game/room.js');
 const { unavailableBots } = await import('../agents/index_agent.js');
 const { check, report } = await import('./check.mjs');
@@ -34,10 +35,17 @@ check('le lobby continue de diffuser son compteur',
 dequeue('h0');
 check('la file reste utilisable', queueSize() === joueurs.length - 1);
 
-// Avec un agent valide, la partie repart.
+// Avec un agent valide, la file reste en attente jusqu'a l'action « Prêt ».
 gameConfig.bots = ['mistral_medium'];
-enqueue('valide', () => {}, (r) => { joueurs.push({ msgs: [], room: r }); });
-check('une fois un agent valide configure, la partie demarre', roomCount() === 1);
+const valide = { msgs: [], room: null };
+enqueue('valide', (m) => valide.msgs.push(m), (r) => { valide.room = r; });
+check('un agent valide ne lance pas seul la partie', roomCount() === 0);
+for (const id of joueurs.map((_, index) => `h${index + 1}`))
+	ready(id);
+ready('valide');
+check('tous prets ne lancent pas immediatement', roomCount() === 0);
+await new Promise((resolve) => setTimeout(resolve, 1200));
+check('une fois le compte a rebours termine, la partie demarre', roomCount() === 1);
 
 // launch() sert les PREMIERS arrives : le dernier inscrit n'est pas forcement
 // du voyage, on cherche donc celui qui a effectivement recu une room.

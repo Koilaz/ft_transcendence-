@@ -10,6 +10,7 @@ import * as bcrypt from 'bcrypt';
 import { UsersService } from '../users/users.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 @Injectable()
 export class AuthService {
@@ -95,5 +96,29 @@ export class AuthService {
         avatarUrl: user.avatarUrl,
       },
     };
+  }
+
+  private async checkCurrentPassword(userId: number, currentPassword: string) {
+    const user = await this.usersService.findCredentialsById(userId);
+
+    if (!user || !(await bcrypt.compare(currentPassword, user.passwordHash))) {
+      throw new UnauthorizedException('Current password is incorrect');
+    }
+
+    return user;
+  }
+
+  async verifyCurrentPassword(userId: number, currentPassword: string): Promise<void> {
+    await this.checkCurrentPassword(userId, currentPassword);
+  }
+
+  async changePassword(userId: number, changePasswordDto: ChangePasswordDto): Promise<void> {
+    const user = await this.checkCurrentPassword(userId, changePasswordDto.currentPassword);
+    const passwordHash = await bcrypt.hash(changePasswordDto.newPassword, 12);
+
+    const updated = await this.usersService.updatePasswordHash(userId, user.passwordHash, passwordHash);
+    if (!updated) {
+      throw new UnauthorizedException('Current password is incorrect');
+    }
   }
 }

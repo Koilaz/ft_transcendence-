@@ -7,6 +7,8 @@ export class Player
 		//final, jamais pendant la partie ou il trahirait qui est qui.
 		this.displayName = displayName;
 		this.sendFn = sendFn;
+		//La place reste reservee pendant la manche, meme sans transport actif.
+		this.connected = true;
 		this.status = 'waiting';
 		this.currentCaractere;
 		this.isViewer = false;

@@ -4,6 +4,7 @@ import {
   ConflictException,
   Controller,
   Get,
+  HttpCode,
   NotFoundException,
   Patch,
   Post,
@@ -24,6 +25,7 @@ import { UsersService } from '../users/users.service';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { ChangePasswordDto, VerifyPasswordDto } from './dto/change-password.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
 
 type AuthenticatedRequest = {
@@ -97,6 +99,29 @@ export class AuthController {
 
       throw error;
     }
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('me/password/verify')
+  @HttpCode(204)
+  verifyPassword(
+    @Req() request: AuthenticatedRequest,
+    @Body() verifyPasswordDto: VerifyPasswordDto,
+  ) {
+    return this.authService.verifyCurrentPassword(
+      request.user.userId,
+      verifyPasswordDto.currentPassword,
+    );
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('me/password')
+  @HttpCode(204)
+  changePassword(
+    @Req() request: AuthenticatedRequest,
+    @Body() changePasswordDto: ChangePasswordDto,
+  ) {
+    return this.authService.changePassword(request.user.userId, changePasswordDto);
   }
 
   @UseGuards(JwtAuthGuard)

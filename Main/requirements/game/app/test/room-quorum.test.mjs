@@ -37,7 +37,7 @@ function roomAuSeuil(status)
 //               'transition' est le statut que pose handleRoundEnd.
 {
 	const { room, last } = roomAuSeuil('transition');
-	room.launchStartTimer(gameConfig.scoreboardDuration);
+	room.launchStartTimer(gameConfig.roundTransitionDelay);
 	check('B. transition en cours avec son timer',
 		room.status === 'transition' && room.timerId !== null);
 
