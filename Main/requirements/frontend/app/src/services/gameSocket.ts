@@ -17,6 +17,16 @@ export type GameStateMessage = {
   min_players?: number;
   ready_players?: number;
   ready?: boolean;
+  // Champs de la room uniquement : la manche en cours et le total, remplaces
+  // par le calcul local qu'on faisait avant avec un nombre de manches en dur.
+  current_manche?: number;
+  max_manches?: number;
+};
+
+export type GameDebriefWaitMessage = {
+  type: 'debriefWait';
+  attempt: number;
+  max: number;
 };
 
 export type GameAgentsDownMessage = {
@@ -46,11 +56,6 @@ export type GameChatMessage = {
   type: 'chat';
   sender: string;
   text: string;
-};
-
-export type GameRoundStateMessage = {
-  type: 'roundState';
-  status: string;
 };
 
 export type GameSilenceMessage = {
@@ -98,12 +103,12 @@ export type GameRoomClosedMessage = {
 
 export type GameMessage =
   | GameStateMessage
+  | GameDebriefWaitMessage
   | GameAgentsDownMessage
   | GameAssignmentMessage
   | GameYourTurnMessage
   | GameTurnMessage
   | GameChatMessage
-  | GameRoundStateMessage
   | GameSilenceMessage
   | GameVoteRegisteredMessage
   | GameRoundTransitionMessage
@@ -117,7 +122,19 @@ export type GameMessageHandler = (
 function getGameWebSocketUrl(): string {
   const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
 
-  return `${protocol}://${window.location.host}/ws/game`;
+  // Le serveur identifie le joueur a la connexion (voir gameConnections.js) :
+  // le JWT d'un compte donne displayName = username, sinon le pseudo d'invite.
+  // Sans rien, le classement final affiche « joueur-N ».
+  const params = new URLSearchParams();
+  const accessToken = localStorage.getItem('accessToken');
+  if (accessToken)
+    params.set('token', accessToken);
+  const guestName = localStorage.getItem('guestName');
+  if (guestName)
+    params.set('name', guestName);
+  const query = params.toString();
+
+  return `${protocol}://${window.location.host}/ws/game${query ? `?${query}` : ''}`;
 }
 
 export function connectGameSocket(
@@ -131,12 +148,12 @@ export function connectGameSocket(
 
       if (
         message.type !== 'state' &&
+        message.type !== 'debriefWait' &&
         message.type !== 'agentsDown' &&
         message.type !== 'assignment' &&
         message.type !== 'yourTurn' &&
         message.type !== 'turn' &&
         message.type !== 'chat' &&
-        message.type !== 'roundState' &&
         message.type !== 'silence' &&
         message.type !== 'voteRegistered' &&
         message.type !== 'roundTransition' &&

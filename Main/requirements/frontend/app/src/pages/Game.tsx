@@ -35,6 +35,7 @@ export default function Game() {
     aiCharacter,
     endGameData,
     roomClosedCode,
+    debriefWait,
     waitingPlayers,
     minPlayers,
     readyPlayers,
@@ -105,6 +106,7 @@ export default function Game() {
                 disabled={!inputState.enabled}
                 placeholder={inputState.placeholder}
                 autoComplete="off"
+                maxLength={500}
                 onChange={(e) => setDraft(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
               />
@@ -140,6 +142,7 @@ export default function Game() {
           aiCharacter={aiCharacter}
           results={roundResults}
           countdown={countdown}
+          debriefWait={debriefWait}
         />
       )}
 

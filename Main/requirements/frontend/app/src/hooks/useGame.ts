@@ -23,6 +23,9 @@ const initialState: GameUIState = {
   readyPlayers: 0,
   isReady: false,
   agentsDown: [],
+  currentManche: null,
+  maxManches: null,
+  debriefWait: null,
   messages: [],
   roundResults: null,
   aiCharacter: null,
@@ -67,6 +70,8 @@ export function gameReducer(state: GameUIState, action: GameAction): GameUIState
         minPlayers: action.min_players ?? state.minPlayers,
         readyPlayers: action.ready_players ?? state.readyPlayers,
         isReady: action.ready ?? state.isReady,
+        currentManche: action.current_manche ?? state.currentManche,
+        maxManches: action.max_manches ?? state.maxManches,
         ...(playing ? {} : {
           currentTurnCharacter: null,
           turnOrder: [],
@@ -76,12 +81,18 @@ export function gameReducer(state: GameUIState, action: GameAction): GameUIState
     }
     case 'agentsDown':
       return { ...state, agentsDown: action.agents };
+    case 'debriefWait':
+      return {
+        ...state,
+        debriefWait: { attempt: action.attempt, max: action.max },
+      };
     case 'assignment':
       return {
         ...state,
         myCharacter: action.character,
         roundResults: null,
         aiCharacter: null,
+        debriefWait: null,
         messages: [
           ...state.messages,
           { id: nextMessageId(), kind: 'system', text: `>>> nouvelle manche, tu incarnes ${action.character}` },
@@ -111,8 +122,6 @@ export function gameReducer(state: GameUIState, action: GameAction): GameUIState
           { id: nextMessageId(), kind: 'chat', sender: action.sender, text: action.text },
         ],
       };
-    case 'roundState':
-      return { ...state, roundPhase: action.status };
     case 'silence':
       return {
         ...state,
@@ -152,10 +161,11 @@ export function gameReducer(state: GameUIState, action: GameAction): GameUIState
   return state;
 }
 
-function formatRoundIndicator(turnCycle: number | null): string {
-  if (turnCycle === null || turnCycle === undefined) return 'Round -/5';
-  const round = 5 - turnCycle + 1;
-  return `Round ${round}/5`;
+// La manche en cours vient du serveur ('state' de la room : current_manche et
+// max_manches). Plus de total code en dur : la config serveur fait foi.
+function formatRoundIndicator(currentManche: number | null, maxManches: number | null): string {
+  if (currentManche === null || currentManche === undefined) return `Manche -/${maxManches ?? '-'}`;
+  return `Manche ${currentManche}/${maxManches ?? '-'}`;
 }
 
 export function getBanner(state: GameUIState, connectionOpen: boolean): Banner {
@@ -280,7 +290,7 @@ export function useGame() {
   const connStatus = getConnectionStatus(connectionOpen);
   const connText = getConnectionText(connStatus);
   const isGuest = !hasAccessToken;
-  const roundIndicator = formatRoundIndicator(state.turnCycle);
+  const roundIndicator = formatRoundIndicator(state.currentManche, state.maxManches);
 
   const bannerStyle = (() => {
     switch (banner.variant) {
@@ -332,5 +342,8 @@ export function useGame() {
     readyPlayers: state.readyPlayers,
     isReady: state.isReady,
     agentsDown: state.agentsDown,
+    currentManche: state.currentManche,
+    maxManches: state.maxManches,
+    debriefWait: state.debriefWait,
   };
 }

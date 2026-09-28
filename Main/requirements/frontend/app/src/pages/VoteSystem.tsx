@@ -88,9 +88,12 @@ type ScoreboardModalProps = {
   aiCharacter: string;
   results: RoundResult[];
   countdown: number | null;
+  // Prolongation demandee par le serveur : l'agent d'analyse n'a pas encore
+  // rendu sa note de service (voir room.js : debriefWait).
+  debriefWait: { attempt: number; max: number } | null;
 };
 
-export function ScoreboardModal({ aiCharacter, results, countdown }: ScoreboardModalProps) {
+export function ScoreboardModal({ aiCharacter, results, countdown, debriefWait }: ScoreboardModalProps) {
   // Le gagnant de la manche est le premier du tableau trié
   const roundWinner = results[0];
   const aiWon = roundWinner.isAI;
@@ -136,6 +139,12 @@ export function ScoreboardModal({ aiCharacter, results, countdown }: ScoreboardM
         </div>
 
         <div className="mt-6 text-center">
+          {debriefWait && (
+            <p className="mb-2 text-sm text-amber-400">
+              L'analyse de la manche traîne (tentative {debriefWait.attempt}/{debriefWait.max}) :
+              la pause est prolongée le temps que la note arrive.
+            </p>
+          )}
           <p className="text-sky-400 font-semibold animate-pulse">
             Prochaine manche dans {countdown ?? '-'} secondes...
           </p>

@@ -21,6 +21,12 @@ export type GameUIState = {
   readyPlayers: number;
   isReady: boolean;
   agentsDown: AgentStatus[];
+  // Manche en cours, depuis le 'state' de la room : la config serveur fait foi,
+  // plus de total de manches code en dur dans le front.
+  currentManche: number | null;
+  maxManches: number | null;
+  // L'agent d'analyse tarde : le serveur prolonge le scoreboard (debriefWait).
+  debriefWait: { attempt: number; max: number } | null;
   messages: FeedMessage[];
   roundResults: RoundResult[] | null;
   aiCharacter: string | null;
@@ -37,13 +43,13 @@ export type LocalConnectionAction =
   | { type: 'resetGame' };
 
 export type GameMessage = 
-  | { type: 'state'; status: string; room_number: number | null; countdown: number | null; players?: number; min_players?: number; ready_players?: number; ready?: boolean }
+  | { type: 'state'; status: string; room_number: number | null; countdown: number | null; players?: number; min_players?: number; ready_players?: number; ready?: boolean; current_manche?: number; max_manches?: number }
+  | { type: 'debriefWait'; attempt: number; max: number }
   | { type: 'agentsDown'; agents: AgentStatus[] }
   | { type: 'assignment'; character: string }
   | { type: 'yourTurn'; countdown: number }
   | { type: 'turn'; character: string; turnOrder: string[]; turnCycle: number; countdown: number }
   | { type: 'chat'; sender: string; text: string }
-  | { type: 'roundState'; status: string }
   | { type: 'silence'; character: string }
   | { type: 'roundTransition'; results: RoundResult[]; aiCharacter: string }
   | { type: 'gameEnd'; winnerId: string; ranking: FinalRank[]; history: { sender: string; text: string; isAI: boolean }[] }
