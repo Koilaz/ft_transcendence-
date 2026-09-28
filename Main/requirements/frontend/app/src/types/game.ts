@@ -1,6 +1,8 @@
 // Types pour la partie Game
 
-export type FeedMessage = 
+import type { RoundResult, FinalRank } from '../services/gameSocket';
+
+export type FeedMessage =
   | { id: string; kind: 'chat'; sender: string; text: string }
   | { id: string; kind: 'system'; text: string };
 
@@ -14,9 +16,19 @@ export type GameUIState = {
   turnCycle: number | null;
   countdown: number | null;
   messages: FeedMessage[];
+  roundResults: RoundResult[] | null;
+  aiCharacter: string | null;
+  endGameData: {
+    winnerId: string;
+    ranking: FinalRank[];
+    history: { sender: string; text: string; isAI: boolean }[];
+  } | null;
+  roomClosedCode: string | null;
 };
 
-export type LocalConnectionAction = { type: 'connection'; text: string };
+export type LocalConnectionAction =
+  | { type: 'connection'; text: string }
+  | { type: 'resetGame' };
 
 export type GameMessage = 
   | { type: 'state'; status: string; room_number: number; countdown: number }
@@ -25,7 +37,10 @@ export type GameMessage =
   | { type: 'turn'; character: string; turnOrder: string[]; turnCycle: number; countdown: number }
   | { type: 'chat'; sender: string; text: string }
   | { type: 'roundState'; status: string }
-  | { type: 'silence'; character: string };
+  | { type: 'silence'; character: string }
+  | { type: 'roundTransition'; results: RoundResult[]; aiCharacter: string }
+  | { type: 'gameEnd'; winnerId: string; ranking: FinalRank[]; history: { sender: string; text: string; isAI: boolean }[] }
+  | { type: 'roomClosed'; code: string };
 
 export type GameAction = GameMessage | LocalConnectionAction;
 

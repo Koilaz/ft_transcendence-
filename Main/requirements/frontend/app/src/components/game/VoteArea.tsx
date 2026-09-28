@@ -21,6 +21,10 @@ export function VoteArea({
   const [selectedVote, setSelectedVote] = useState<string | null>(null);
   
   const isVotingPhase = roundPhase === 'voting';
+  // Le backend collecte les votes en temps reel pendant la phase de
+  // discussion : il n'existe pas de phase 'voting' distincte, on peut voter
+  // des que la manche est en cours.
+  const canVote = roundPhase === 'voting' || roundPhase === 'chatting';
 
   // Calcule la largeur relative pour chaque personnage
   function getCharacterWidth(numCharacters: number): string {
@@ -28,7 +32,7 @@ export function VoteArea({
   }
 
   function handleVote(character: string) {
-    if (!isVotingPhase) return;
+    if (!canVote) return;
     if (character === myCharacter) return; // Ne peut pas voter pour soi
     
     if (selectedVote === character) {
@@ -77,7 +81,7 @@ export function VoteArea({
             const isMe = character === myCharacter;
             const isCurrent = character === currentTurnCharacter;
             const isSelected = selectedVote === character;
-            const isVotable = isVotingPhase && !isMe;
+            const isVotable = canVote && !isMe;
             const bgColor = getCharacterFluoColor(character);
             const charWidth = getCharacterWidth(turnOrder.length);
 
@@ -140,7 +144,7 @@ export function VoteArea({
 
         {/* Bouton de confirmation de vote */}
         <AnimatePresence>
-          {isVotingPhase && selectedVote && (
+          {canVote && selectedVote && (
             <motion.div
               className="flex justify-center"
               initial={{ opacity: 0, y: 10 }}

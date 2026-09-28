@@ -40,6 +40,44 @@ export type GameSilenceMessage = {
   character: string;
 };
 
+export type GameVoteRegisteredMessage = {
+  type: 'voteRegistered';
+};
+
+export type RoundResult = {
+  playerId: string;
+  character: string;
+  target: string | null;
+  score: number;
+  isCorrect: boolean;
+  isAI: boolean;
+};
+
+export type FinalRank = {
+  playerId: string;
+  name: string;
+  score: number;
+  isAI: boolean;
+};
+
+export type GameRoundTransitionMessage = {
+  type: 'roundTransition';
+  results: RoundResult[];
+  aiCharacter: string;
+};
+
+export type GameEndMessage = {
+  type: 'gameEnd';
+  winnerId: string;
+  ranking: FinalRank[];
+  history: { sender: string; text: string; isAI: boolean }[];
+};
+
+export type GameRoomClosedMessage = {
+  type: 'roomClosed';
+  code: string;
+};
+
 export type GameMessage =
   | GameStateMessage
   | GameAssignmentMessage
@@ -47,7 +85,11 @@ export type GameMessage =
   | GameTurnMessage
   | GameChatMessage
   | GameRoundStateMessage
-  | GameSilenceMessage;
+  | GameSilenceMessage
+  | GameVoteRegisteredMessage
+  | GameRoundTransitionMessage
+  | GameEndMessage
+  | GameRoomClosedMessage;
 
 export type GameMessageHandler = (
   message: GameMessage,
@@ -75,7 +117,11 @@ export function connectGameSocket(
         message.type !== 'turn' &&
         message.type !== 'chat' &&
         message.type !== 'roundState' &&
-        message.type !== 'silence'
+        message.type !== 'silence' &&
+        message.type !== 'voteRegistered' &&
+        message.type !== 'roundTransition' &&
+        message.type !== 'gameEnd' &&
+        message.type !== 'roomClosed'
       ) {
         return;
       }
@@ -89,7 +135,7 @@ export function connectGameSocket(
   return socket;
 }
 
-// Seul message que le client envoie au serveur : pas de "join"/"quickplay",
+// Seuls messages que le client envoie au serveur : pas de "join"/"quickplay",
 // le serveur assigne le joueur a une room des l'ouverture de la connexion.
 export type GameChatOutgoingMessage = {
   type: 'chat';
@@ -100,4 +146,23 @@ export function sendChatMessage(socket: WebSocket, text: string): void {
   const message: GameChatOutgoingMessage = { type: 'chat', text };
 
   socket.send(JSON.stringify(message));
+}
+
+// Le vote est collecte en temps reel pendant la phase de discussion (voir
+// round.js : onPlayerVote n'accepte que status === 'chatting').
+export type GameVoteOutgoingMessage = {
+  type: 'vote';
+  targetCharacter: string;
+};
+
+export function sendVoteMessage(socket: WebSocket, targetCharacter: string): void {
+  const message: GameVoteOutgoingMessage = { type: 'vote', targetCharacter };
+
+  socket.send(JSON.stringify(message));
+}
+
+// « Rejouer » : remet le joueur dans la file d'attente. Le serveur ne
+// l'accepte qu'une fois la room fermee (voir server.js).
+export function sendReplayMessage(socket: WebSocket): void {
+  socket.send(JSON.stringify({ type: 'replay' }));
 }

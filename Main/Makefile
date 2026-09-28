@@ -6,11 +6,15 @@ export
 # dossier courant. ?= laisse gagner la valeur du .env quand il existe.
 COMPOSE_PROJECT_NAME ?= ft_transcendence
 
+# Detection automatique : plugin v2 "docker compose" s'il est disponible,
+# sinon binaire autonome v1 "docker-compose". Overridable via l'environnement.
+COMPOSE_BIN ?= $(shell docker compose version >/dev/null 2>&1 && echo 'docker compose' || echo 'docker-compose')
+
 # -p explicite : le nom du projet ne depend plus ni du dossier depuis lequel on
 # lance make, ni d'un COMPOSE_PROJECT_NAME qui trainerait dans le shell. Sans
 # ca, Main_local et Main_local_ts_docker sont deux projets differents avec
 # chacun leur copie des volumes.
-COMPOSE = docker compose -p $(COMPOSE_PROJECT_NAME)
+COMPOSE = $(COMPOSE_BIN) -p $(COMPOSE_PROJECT_NAME)
 
 all: up
 

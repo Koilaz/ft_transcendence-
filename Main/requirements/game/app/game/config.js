@@ -19,7 +19,7 @@ export const gameConfig = {
 	] }],
 	turnPerRound: 3,   // nombre de tours par manche
 	turnDuration: 17,   // secondes par tour
-	maxPlayers: 8,
+	maxPlayers: 6,
 	minPlayers: 3,          // seuil pour DEMARRER une partie
 	minPlayersToContinue: 3, // seuil pour CONTINUER une partie deja lancee
 	startingTimer: 20,

@@ -6,6 +6,7 @@ import {
   DialogueArea,
   VoteArea,
 } from '../components/game';
+import { ScoreboardModal, GameEndModal, RoomClosedModal } from './VoteSystem';
 
 export default function Game() {
   const {
@@ -25,13 +26,14 @@ export default function Game() {
     feedRef,
     inputRef,
     handleSend,
+    handleVote,
+    handleReplay,
+    roomStatus,
+    roundResults,
+    aiCharacter,
+    endGameData,
+    roomClosedCode,
   } = useGame();
-
-  // Fonction pour gérer le vote (à connecter au backend plus tard)
-  function handleVote(character: string) {
-    console.log('Vote pour:', character);
-    // TODO: Envoyer le vote via WebSocket
-  }
 
   return (
     <div className="fixed inset-0 bg-stone-950 text-stone-200 flex flex-col w-full overflow-hidden">
@@ -101,6 +103,30 @@ export default function Game() {
           onVote={handleVote}
         />
       </div>
+
+      {/* Scoreboard entre les manches */}
+      {roundResults && roomStatus === 'transition' && !endGameData && (
+        <ScoreboardModal
+          aiCharacter={aiCharacter}
+          results={roundResults}
+          countdown={countdown}
+        />
+      )}
+
+      {/* Fin de partie normale : classement + debriefing */}
+      {endGameData && (
+        <GameEndModal
+          winnerId={endGameData.winnerId}
+          ranking={endGameData.ranking}
+          history={endGameData.history}
+          onReplay={handleReplay}
+        />
+      )}
+
+      {/* Fermeture anormale de la room (quorum perdu, room vide...) */}
+      {!endGameData && roomClosedCode && (
+        <RoomClosedModal code={roomClosedCode} onReplay={handleReplay} />
+      )}
     </div>
   );
 }

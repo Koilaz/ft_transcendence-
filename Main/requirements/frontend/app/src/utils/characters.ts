@@ -37,10 +37,10 @@ export const CHARACTERS = {
     fluoColor: 'bg-cyan-400',
     colorClass: 'ring-blue-500',
   },
-  lieutenantmajo: {
+  lieutenantmayo: {
     originalNames: ['Lieutenant Mayo', 'Lieutenant Majo', 'LieutenantMayo', 'LieutenantMajo'],
-    headImage: '/headLieutenantMajo.png',
-    bodyImage: '/bodyLieutenantMajo.png',
+    headImage: '/headLieutenantMayo.png',
+    bodyImage: '/bodyLieutenantMayo.png',
     color: 'bg-white/20 border-2 border-white/50',
     fluoColor: 'bg-white',
     colorClass: 'ring-white',

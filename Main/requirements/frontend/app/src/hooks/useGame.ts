@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { useEffect, useReducer, useRef, useState } from 'react';
-import { connectGameSocket, sendChatMessage } from '../services/gameSocket';
+import { connectGameSocket, sendChatMessage, sendVoteMessage, sendReplayMessage } from '../services/gameSocket';
 import type {
   GameUIState,
   GameAction,
@@ -19,6 +19,10 @@ const initialState: GameUIState = {
   turnCycle: null,
   countdown: null,
   messages: [],
+  roundResults: null,
+  aiCharacter: null,
+  endGameData: null,
+  roomClosedCode: null,
 };
 
 let messageIdCounter = 0;
@@ -63,6 +67,8 @@ export function gameReducer(state: GameUIState, action: GameAction): GameUIState
       return {
         ...state,
         myCharacter: action.character,
+        roundResults: null,
+        aiCharacter: null,
         messages: [
           ...state.messages,
           { id: nextMessageId(), kind: 'system', text: `>>> nouvelle manche, tu incarnes ${action.character}` },
@@ -102,6 +108,33 @@ export function gameReducer(state: GameUIState, action: GameAction): GameUIState
           { id: nextMessageId(), kind: 'system', text: `${action.character} est resté muet ce tour...` },
         ],
       };
+    case 'voteRegistered':
+      return {
+        ...state,
+        messages: [
+          ...state.messages,
+          { id: nextMessageId(), kind: 'system', text: '>>> ton vote est enregistré' },
+        ],
+      };
+    case 'roundTransition':
+      return {
+        ...state,
+        roundResults: action.results,
+        aiCharacter: action.aiCharacter,
+      };
+    case 'gameEnd':
+      return {
+        ...state,
+        endGameData: {
+          winnerId: action.winnerId,
+          ranking: action.ranking,
+          history: action.history,
+        },
+      };
+    case 'roomClosed':
+      return { ...state, roomClosedCode: action.code };
+    case 'resetGame':
+      return initialState;
   }
   return state;
 }
@@ -208,6 +241,19 @@ export function useGame() {
     setDraft('');
   }
 
+  function handleVote(character: string) {
+    const socket = socketRef.current;
+    if (!socket) return;
+    sendVoteMessage(socket, character);
+  }
+
+  function handleReplay() {
+    const socket = socketRef.current;
+    if (!socket) return;
+    dispatch({ type: 'resetGame' });
+    sendReplayMessage(socket);
+  }
+
   // Calculs dérivés
   const banner = getBanner(state, connectionOpen === true);
   const timerVisible = isTimerVisible(state, connectionOpen === true);
@@ -240,6 +286,8 @@ export function useGame() {
     feedRef,
     inputRef,
     handleSend,
+    handleVote,
+    handleReplay,
     banner,
     bannerStyle,
     timerVisible,
@@ -247,7 +295,12 @@ export function useGame() {
     roundIndicator,
     // Nouveaux exports pour la nouvelle UI
     roomNumber: state.roomNumber,
+    roomStatus: state.roomStatus,
     roundPhase: state.roundPhase,
+    roundResults: state.roundResults,
+    aiCharacter: state.aiCharacter,
+    endGameData: state.endGameData,
+    roomClosedCode: state.roomClosedCode,
     turnOrder: state.turnOrder,
     currentTurnCharacter: state.currentTurnCharacter,
     myCharacter: state.myCharacter,

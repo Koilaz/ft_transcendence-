@@ -8,8 +8,8 @@ import { requestDebrief } from '../agents/prompt/debrief.js';
 
 //Il en faut au moins gameConfig.maxPlayers : Round.assignCaracters se sert dans
 //cette liste, et les joueurs en trop repartiraient sans personnage.
-export const CARACTERS = ['Colonel Moutarde', 'Major Wasabi', 'Caporal Mayo', 'Lieutenant Samourai',
-						  'General Ketchup', 'Marechal Cocktail', 'Sergent Barbecue', 'Capitaine Tartare'];
+export const CARACTERS = ['Colonel Moutarde', 'Major Wasabi', 'Caporal Poivre', 'Lieutenant Mayo',
+						  'General Ketchup', 'Marechal Cocktail'];
 
 const rooms = new Map(); //id -> room
 let nextRoomId = 1;

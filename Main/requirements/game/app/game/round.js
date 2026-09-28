@@ -218,7 +218,9 @@ export class Round {
 
         // Diffuser les résultats à tous les joueurs
         this.broadcast({
-			type: 'roundTransition'
+			type: 'roundTransition',
+			results,
+			aiCharacter,
         });
 		if (this.onRoundEnded)
 		{
