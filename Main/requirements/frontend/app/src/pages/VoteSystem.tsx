@@ -251,6 +251,7 @@ const MOTIFS: Record<string, string> = {
   empty_room: 'La séance a été levée, plus aucun membre n\'était présent.',
   agent_failure: 'La séance a été interrompue pour raison technique.',
   reconnect_expired: "Ta place était réservée jusqu'à la fin de la manche : elle vient d'expirer.",
+  session_replaced: "Cette session a été reprise dans un autre onglet : celui-ci s'est mis en retrait pour éviter le ping-pong. « Rejouer » repart proprement.",
 };
 
 export function RoomClosedModal({ code, onReplay }: { code: string; onReplay: () => void }) {

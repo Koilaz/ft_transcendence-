@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { useEffect, useReducer, useRef, useState } from 'react';
-import { connectGameSocket, sendChatMessage, sendVoteMessage, sendReplayMessage, sendReadyMessage, RESUME_TOKEN_STORAGE_KEY } from '../services/gameSocket';
+import { connectGameSocket, sendChatMessage, sendVoteMessage, sendReplayMessage, sendReadyMessage, RESUME_TOKEN_STORAGE_KEY, discardResumeToken } from '../services/gameSocket';
 import type {
   GameUIState,
   GameAction,
@@ -279,10 +279,14 @@ export function useGame() {
   const [draft, setDraft] = useState('');
   const [hasAccessToken] = useState(() => Boolean(localStorage.getItem('accessToken')));
   const [guestName] = useState(() => localStorage.getItem('guestName'));
-  
+
   const socketRef = useRef<WebSocket | null>(null);
   const feedRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  // Fin definitive pour cette session (room fermee, onglet remplace) : la
+  // boucle de reconnexion s'arrete, seul « Rejouer » la relance.
+  const terminalRef = useRef(false);
+  const reconnectRef = useRef<(() => void) | null>(null);
 
   // Connexion WebSocket avec reprise automatique. Le serveur garde la place
   // jusqu'a la fin de la manche ; chaque nouvelle tentative rouvre la session
@@ -291,12 +295,15 @@ export function useGame() {
   useEffect(() => {
     let disposed = false;
     let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+    let handshakeTimer: ReturnType<typeof setTimeout> | null = null;
     let attempts = 0;
+    let currentSocket: WebSocket | null = null;
 
     // Backoff geometrique plafonne : un serveur arrete ne doit pas se prendre
-    // un essai par seconde pendant une heure.
+    // un essai par seconde pendant une heure. Trois cas coupent net la boucle :
+    // unmount, fin definitive (terminalRef), onglet masque (reprise au retour).
     function scheduleReconnect() {
-      if (disposed)
+      if (disposed || terminalRef.current || document.hidden)
         return;
       const delay = Math.min(1000 * 2 ** attempts, 8000);
       attempts += 1;
@@ -305,14 +312,22 @@ export function useGame() {
 
     function connect() {
       const socket = connectGameSocket((message) => {
+        clearTimeout(handshakeTimer);
         // Le jeton de reprise est un effet de bord, pas un etat d'UI : il
         // change a chaque connexion, on ecrase simplement l'ancien.
         if (message.type === 'session') {
           sessionStorage.setItem(RESUME_TOKEN_STORAGE_KEY, message.token);
           return;
         }
+        if (message.type === 'roomClosed') {
+          // Fin definitive pour cette session : plus aucune tentative, et le
+          // jeton ne sert plus a rien (sa room est morte).
+          terminalRef.current = true;
+          discardResumeToken();
+        }
         dispatch(message);
       });
+      currentSocket = socket;
       socketRef.current = socket;
 
       socket.addEventListener('open', () => {
@@ -322,10 +337,19 @@ export function useGame() {
         setConnectionOpen(true);
         dispatch({ type: 'connection', text: 'connecte' });
       });
-      socket.addEventListener('close', () => {
-        if (disposed)
+      socket.addEventListener('close', (event) => {
+        if (socket !== currentSocket || disposed)
           return;
+        currentSocket = null;
         setConnectionOpen(false);
+        // Un autre onglet a pris la session (socket remplacee) : la reprendre
+        // la volerait en retour, ping-pong infini entre onglets. On s'arrete.
+        if (event.code === 4001) {
+          terminalRef.current = true;
+          discardResumeToken();
+          dispatch({ type: 'roomClosed', code: 'session_replaced' });
+          return;
+        }
         dispatch({ type: 'connection', text: 'deconnecte' });
         scheduleReconnect();
       });
@@ -333,14 +357,34 @@ export function useGame() {
         if (!disposed)
           setConnectionOpen(false);
       });
+
+      // Poignee de main muette : une socket ouverte mais silencieuse depuis
+      // 10 s est consideree cassee — on la coupe, le close planifie la suite.
+      // Le serveur parle des l'ouverture (message 'session').
+      handshakeTimer = setTimeout(() => {
+        if (!disposed && socket === currentSocket)
+          socket.close();
+      }, 10000);
     }
 
+    // Onglet masque : aucune tentative tant que le joueur ne regarde pas ;
+    // des qu'il revient, on reprend ou l'on etait.
+    function onVisibility() {
+      if (!document.hidden && !currentSocket && !disposed)
+        scheduleReconnect();
+    }
+    document.addEventListener('visibilitychange', onVisibility);
+
     connect();
+    reconnectRef.current = connect;
 
     return () => {
       disposed = true;
+      document.removeEventListener('visibilitychange', onVisibility);
       if (reconnectTimer)
         clearTimeout(reconnectTimer);
+      if (handshakeTimer)
+        clearTimeout(handshakeTimer);
       socketRef.current?.close();
       socketRef.current = null;
     };
@@ -373,10 +417,16 @@ export function useGame() {
   }
 
   function handleReplay() {
-    const socket = socketRef.current;
-    if (!socket) return;
+    // Une fin definitive (room fermee, onglet remplace) avait coupe la boucle
+    // de reconnexion : « Rejouer » est le seul retour en piste autorise.
+    terminalRef.current = false;
     dispatch({ type: 'resetGame' });
-    sendReplayMessage(socket);
+    const socket = socketRef.current;
+    if (socket && socket.readyState === WebSocket.OPEN) {
+      sendReplayMessage(socket);
+      return;
+    }
+    reconnectRef.current?.();
   }
 
   function handleReady() {

@@ -174,6 +174,13 @@ export type GameMessageHandler = (
 
 export const RESUME_TOKEN_STORAGE_KEY = 'gameResumeToken';
 
+// Une room fermee rend le jeton de reprise inutile — sa room est morte. Le
+// conserver ferait « voler » la session d'un autre onglet au prochain essai :
+// apres un remplacement d'onglet, chaque reprise chasserait l'autre en boucle.
+export function discardResumeToken(): void {
+  sessionStorage.removeItem(RESUME_TOKEN_STORAGE_KEY);
+}
+
 function getGameWebSocketUrl(): string {
   const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
 
