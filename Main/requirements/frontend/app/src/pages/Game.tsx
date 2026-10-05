@@ -15,6 +15,7 @@ export default function Game() {
     roomNumber,
     roundPhase,
     turnOrder,
+    turnCycle,
     currentTurnCharacter,
     myCharacter,
     countdown,
@@ -70,39 +71,41 @@ export default function Game() {
   }
 
   return (
-    <div className="fixed inset-0 bg-stone-950 text-stone-200 flex flex-col w-full overflow-hidden">
-      {/* PARTIE 1 - Header (fixe en haut) */}
-      <div className="flex-shrink-0">
+    <div className="fixed inset-0 bg-stone-950 flex flex-col w-full overflow-hidden">
+      {/* PARTIE 1 - Header (10%) */}
+      <div className="h-[10%] flex-shrink-0">
         <GameHeaderNew
           roomNumber={roomNumber}
           roundIndicator={roundIndicator}
+          turnCycle={turnCycle}
           countdown={countdown}
           timerLabel={timerLabel}
           timerVisible={timerVisible}
+          characters={turnOrder}
         />
       </div>
 
-      {/* PARTIE 2 - Dialogue (prend l'espace disponible) */}
-      <div className="flex-1 overflow-hidden min-h-0">
+      {/* PARTIE 2 - Dialogue (62.5%) */}
+      <div className="h-[62.5%] overflow-hidden min-h-0 text-black">
         <DialogueArea
           messages={messages}
           myCharacter={myCharacter}
         />
       </div>
 
-      {/* PARTIE 2.5 - Input de chat (fixe au-dessus de VoteArea) */}
-      {inputState.enabled && (
-        <div className="flex-shrink-0 p-4">
+      {/* PARTIE 3 - Input de chat (6.25%) */}
+      <div className="h-[6.25%] flex-shrink-0">
+        {inputState.enabled && (
           <motion.div
-            className="w-[90%] max-w-4xl mx-auto"
+            className="w-[95%] max-w-[90vw] mx-auto h-full p-2"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <div className="flex gap-3 bg-stone-800/90 backdrop-blur-sm border border-stone-700 rounded-xl p-3">
+            <div className="flex gap-3 bg-stone-800/90 backdrop-blur-sm border border-stone-700 rounded-xl p-3 h-full">
               <input
                 ref={inputRef}
-                className={`flex-1 bg-stone-900/50 border rounded-lg px-5 py-3 text-stone-200 text-lg transition-colors focus:outline-none ${
+                className={`flex-1 bg-stone-900/50 border rounded-lg px-5 py-2 text-stone-200 text-lg transition-colors focus:outline-none ${
                   inputState.myTurn ? 'border-green-500 ring-2 ring-green-500' : 'border-stone-700'
                 }`}
                 value={draft}
@@ -115,7 +118,7 @@ export default function Game() {
               />
               <motion.button
                 type="button"
-                className="bg-green-500 hover:bg-green-600 text-white rounded-lg px-6 py-3 font-semibold text-lg disabled:opacity-40 disabled:cursor-not-allowed"
+                className="bg-green-500 hover:bg-green-600 text-white rounded-lg px-4 py-2 font-semibold text-lg disabled:opacity-40 disabled:cursor-not-allowed"
                 disabled={!inputState.enabled || !draft.trim()}
                 onClick={handleSend}
                 whileHover={{ scale: inputState.enabled ? 1.02 : 1 }}
@@ -125,11 +128,11 @@ export default function Game() {
               </motion.button>
             </div>
           </motion.div>
-        </div>
-      )}
+        )}
+      </div>
 
-      {/* PARTIE 3 - Vote (fixe en bas) */}
-      <div className="flex-shrink-0">
+      {/* PARTIE 4 - Vote (21.25%) */}
+      <div className="h-[21.25%] flex-shrink-0">
         <VoteArea
           turnOrder={turnOrder}
           currentTurnCharacter={currentTurnCharacter}

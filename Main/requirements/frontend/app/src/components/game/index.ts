@@ -1,4 +1,3 @@
-export { GameHeader } from './GameHeader';
 export { GameBanner } from './GameBanner';
 export { PlayerList } from './PlayerList';
 export { ChatFeed } from './ChatFeed';

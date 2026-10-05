@@ -19,9 +19,9 @@ export function GameBanner({ banner, bannerStyle, timerVisible, countdown, timer
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
     >
-      <span className="text-lg font-semibold">{banner.text}</span>
+      <span className="text-lg font-semibold text-stone-200">{banner.text}</span>
       {timerVisible && countdown !== null && (
-        <div className="flex flex-col items-center flex-shrink-0 gap-1">
+        <div className="flex flex-col items-center flex-shrink-0 gap-1 text-stone-200">
           <TimerBunny countdown={countdown} size={48} />
           <div className="text-[0.65rem] uppercase tracking-wider opacity-70">{timerLabel}</div>
         </div>

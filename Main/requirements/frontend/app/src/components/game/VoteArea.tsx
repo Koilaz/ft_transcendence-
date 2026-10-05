@@ -36,7 +36,7 @@ export function VoteArea({
 
   // Calcule la largeur relative pour chaque personnage
   function getCharacterWidth(numCharacters: number): string {
-    return `${100 / numCharacters}%`;
+    return `${80 / numCharacters}%`;
   }
 
   function handleVote(character: string) {
@@ -59,15 +59,15 @@ export function VoteArea({
 
   return (
     <motion.footer
-      className="flex-shrink-0 p-6 bg-stone-900 border-t border-stone-700"
+      className="h-full w-full bg-stone-900 border-t border-stone-700"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: 0.2 }}
     >
-      <div className="max-w-5xl mx-auto w-full">
+      <div className="h-full w-full flex flex-col">
         {/* Indication du tour */}
         <motion.div
-          className="mb-4 text-center"
+          className="h-[10%] flex items-center justify-center text-center text-stone-200"
           animate={{
             opacity: [1, 0.7, 1] 
           }}
@@ -77,11 +77,11 @@ export function VoteArea({
           }}
         >
           {hasVoted ? (
-            <span className="text-xl font-bold text-emerald-400">
+            <span className="text-[clamp(1rem,2vw,1.5rem)] font-bold text-emerald-400">
               VOTE ENREGISTRÉ — en attente de la fin de manche
             </span>
           ) : (
-            <span className="text-xl font-bold text-amber-400">
+            <span className="text-[clamp(1rem,2vw,1.5rem)] font-bold text-amber-400">
               {isVotingPhase
                 ? 'PHASE DE VOTE - Cliquez pour éliminer'
                 : `TOUR DE : ${currentTurnCharacter || 'Personne'}`}
@@ -90,7 +90,7 @@ export function VoteArea({
         </motion.div>
 
         {/* Personnages */}
-        <div className="flex justify-center items-center gap-6 mb-6">
+        <div className="flex-1 flex justify-center items-center overflow-hidden">
           {turnOrder.map((character) => {
             const isMe = character === myCharacter;
             const isCurrent = character === currentTurnCharacter;
@@ -108,7 +108,7 @@ export function VoteArea({
             return (
               <motion.button
                 key={character}
-                className={`relative flex flex-col items-center gap-2 p-3 rounded-xl transition-all ${bgColor} ${
+                className={`relative flex flex-col items-center justify-start rounded-xl transition-all ${bgColor} overflow-hidden max-h-full ${
                   isMe
                     ? 'ring-2 ring-yellow-500'
                     : isVotable
@@ -130,8 +130,8 @@ export function VoteArea({
                   repeat: Infinity 
                 }}
               >
-                {/* Image du personnage - par dessus la couleur */}
-                <div className="w-full h-auto aspect-square relative">
+                {/* Image du personnage - conteneur carré avec overflow */}
+                <div className="w-full max-h-[80%] aspect-square overflow-hidden relative">
                   <img
                     src={getBodyImagePath(character)}
                     alt={character}
@@ -140,15 +140,15 @@ export function VoteArea({
                 </div>
                 
                 {/* Nom */}
-                <div className={`text-sm font-semibold ${
-                  isMe ? 'text-yellow-400' : 'text-stone-300'
+                <div className={`text-[clamp(0.75rem,1.5vw,1rem)] font-semibold ${
+                  isMe ? 'text-stone-900' : 'text-black'
                 }`}>
                   {character}
                 </div>
                 
                 {/* Indicateur "TOI" */}
                 {isMe && (
-                  <div className="absolute -top-3 -right-3 bg-yellow-500 text-yellow-900 text-[11px] font-bold px-2 py-1 rounded-full">
+                  <div className="absolute top-0 right-0 bg-yellow-500 text-yellow-900 text-[clamp(0.625rem,1vw,0.875rem)] font-bold rounded-full">
                     TOI
                   </div>
                 )}
@@ -172,7 +172,7 @@ export function VoteArea({
               exit={{ opacity: 0, y: 10 }}
             >
               <motion.button
-                className="bg-red-500 hover:bg-red-600 text-white font-bold px-8 py-4 rounded-lg text-lg transition-colors"
+                className="bg-red-500 hover:bg-red-600 text-white font-bold rounded-lg text-[clamp(0.875rem,1.75vw,1.125rem)] transition-colors"
                 onClick={confirmVote}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}

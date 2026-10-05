@@ -24,15 +24,12 @@ type TimerBunnyProps = {
   size?: number;
 };
 
-export function TimerBunny({ countdown, size = 60 }: TimerBunnyProps) {
+export function TimerBunny({ countdown, size }: TimerBunnyProps) {
   const phase = getBunnyPhase(countdown);
   const imgSrc = bunnyImages[phase];
 
   return (
-    <div
-      className="relative flex items-center justify-center w-full h-full"
-      style={size ? { width: size, height: size } : {}}
-    >
+    <div className="relative flex items-center justify-center w-full h-full">
       {/* Image du bunny */}
       <img
         src={imgSrc}

@@ -18,7 +18,7 @@ export const gameConfig = {
 		{ agent: 'local_agent', prompt: 'prompt_advanced' }, // manche 4
 	] }],
 	turnPerRound: 3,   // nombre de tours par manche
-	turnDuration: 15,   // secondes par tour
+	turnDuration: 150,   // secondes par tour
 	maxPlayers: 6,
 	minPlayers: 3,          // seuil pour DEMARRER une partie
 	minPlayersToContinue: 3, // seuil pour CONTINUER une partie deja lancee

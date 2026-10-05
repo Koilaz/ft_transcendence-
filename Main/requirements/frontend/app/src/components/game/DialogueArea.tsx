@@ -15,12 +15,12 @@ function DialogueBubble({ sender, text, isSystem, align, index }: DialogueBubble
   if (isSystem) {
     return (
       <motion.div
-        className="flex justify-center my-3"
+        className="flex justify-center my-2"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, delay: index * 0.1 }}
       >
-        <div className="text-base text-stone-500 italic bg-stone-800 border border-stone-700 rounded-lg px-6 py-3 max-w-[80%]">
+        <div className="text-base text-stone-400 italic bg-stone-800 border border-stone-700 rounded-lg px-4 py-2 max-w-[85%]">
           {text}
         </div>
       </motion.div>
@@ -32,7 +32,7 @@ function DialogueBubble({ sender, text, isSystem, align, index }: DialogueBubble
   
   return (
     <motion.div
-      className={`flex items-start gap-4 my-3 ${isLeft ? 'flex-row' : 'flex-row-reverse'} p-2 rounded-2xl ${fluoColor}`}
+      className={`flex items-start gap-3 my-2 ${isLeft ? 'flex-row' : 'flex-row-reverse'} p-2 rounded-2xl ${fluoColor}`}
       initial={{ opacity: 0, x: isLeft ? -30 : 30 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.3, delay: index * 0.1 }}
@@ -40,7 +40,7 @@ function DialogueBubble({ sender, text, isSystem, align, index }: DialogueBubble
       {/* Portrait - carré 30% de largeur */}
       <motion.div
         className="flex-shrink-0 aspect-square"
-        style={{ width: '30%', maxWidth: '200px' }}
+        style={{ width: 'clamp(80px, 25%, 200px)' }}
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.4, delay: index * 0.1 }}
@@ -54,7 +54,7 @@ function DialogueBubble({ sender, text, isSystem, align, index }: DialogueBubble
       
       {/* Bulle - avec couleur fluo du personnage mais plus terne */}
       <div
-        className={`max-w-[70%] rounded-xl px-5 py-4 relative ${fluoColor}/50 ${
+        className={`max-w-[75%] rounded-xl px-4 py-3 relative ${fluoColor}/50 ${
           isLeft 
             ? 'rounded-bl-sm' 
             : 'rounded-br-sm'
@@ -68,8 +68,8 @@ function DialogueBubble({ sender, text, isSystem, align, index }: DialogueBubble
         />
         
         {/* Contenu */}
-        <div className="text-sm font-bold text-green-400 mb-2">{sender}</div>
-        <div className="text-base text-stone-200 leading-[1.5]">{text}</div>
+        <div className="text-sm font-bold text-black mb-2">{sender}</div>
+        <div className="text-base text-black leading-[1.5]">{text}</div>
       </div>
     </motion.div>
   );
@@ -83,39 +83,28 @@ type DialogueAreaProps = {
 export function DialogueArea({ messages, myCharacter }: DialogueAreaProps) {
   return (
     <motion.main
-      className="h-full overflow-hidden p-6 bg-stone-950"
+      className="h-full w-full overflow-hidden p-4 bg-stone-950"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3, delay: 0.1 }}
     >
-      <div className="max-w-5xl mx-auto h-full flex flex-col justify-end overflow-hidden">
-        {messages.map((message, index) => {
-          // Alterner gauche/droite pour les messages chat
-          const align = index % 2 === 0 ? 'left' : 'right';
-          
-          if (message.kind === 'system') {
+      <div className="w-full h-full flex flex-col justify-end overflow-hidden">
+        {messages
+          .filter(message => message.kind === 'chat')  // ← Garder que les chats
+          .map((message, index) => {
+            // Alterner gauche/droite pour les messages chat
+            const align = index % 2 === 0 ? 'left' : 'right';
+            
             return (
               <DialogueBubble
                 key={message.id}
-                sender=""
+                sender={message.sender}
                 text={message.text}
-                isSystem={true}
-                align="left"
+                align={align}
                 index={index}
               />
             );
-          }
-          
-          return (
-            <DialogueBubble
-              key={message.id}
-              sender={message.sender}
-              text={message.text}
-              align={align}
-              index={index}
-            />
-          );
-        })}
+          })}
       </div>
     </motion.main>
   );

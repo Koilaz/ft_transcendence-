@@ -16,8 +16,8 @@ export function ChatMessage({ sender, text }: ChatMessageProps) {
       transition={{ duration: 0.2 }}
     >
       <CharacterPortrait character={sender} size="sm" />
-      <div className="bg-stone-800 border border-stone-700 rounded-lg px-3 py-2 max-w-[80%]">
-        <div className="text-xs font-bold text-green-400 mb-0.5">{sender}</div>
+      <div className="bg-stone-800 border border-stone-700 rounded-lg px-3 py-1.5 max-w-[85%] text-black">
+        <div className="text-xs font-bold text-black mb-0.5">{sender}</div>
         <div className="text-sm leading-[1.35] break-words">{text}</div>
       </div>
     </motion.div>
