@@ -1,12 +1,10 @@
 export { GameBanner } from './GameBanner';
 export { PlayerList } from './PlayerList';
-export { ChatFeed } from './ChatFeed';
 export { ChatInput } from './ChatInput';
 export { TurnBadge } from './TurnBadge';
 export { CharacterBadge } from './CharacterBadge';
 export { Tag } from './Tag';
 export { ConnBadge } from './ConnBadge';
-export { ChatMessage } from './ChatMessage';
 export { SystemMessage } from './SystemMessage';
 export { GameHeaderNew } from './GameHeaderNew';
 export { DialogueArea } from './DialogueArea';

@@ -150,10 +150,12 @@ export function GameHeaderNew({
               <span className="text-black text-sm font-semibold">Tour</span>
               <div className="flex items-center gap-1">
                 {[1, 2, 3].map((i) => (
-                  <div
+                  <span
                     key={i}
-                    className="w-4 h-4 rounded-full bg-black"
-                  />
+                    className="text-xl text-black"
+                  >
+                    {i <= currentTour ? '●' : '○'}
+                  </span>
                 ))}
               </div>
             </motion.div>
