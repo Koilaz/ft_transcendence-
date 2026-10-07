@@ -13,27 +13,23 @@ type ChatInputProps = {
 export const ChatInput = forwardRef<HTMLInputElement, ChatInputProps>(
   ({ draft, setDraft, inputState, onSend }, ref) => {
     return (
-      <motion.div
-        className="flex gap-2"
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: 0.2 }}
-      >
+      <div className="flex gap-3 backdrop-blur-sm border border-stone-700 rounded-xl p-3 h-full">
         <input
           ref={ref}
-          className={`flex-1 bg-stone-800 border rounded-lg px-4 py-2 text-stone-200 transition-colors focus:outline-none ${
-            inputState.myTurn ? 'border-green-500 ring-1 ring-green-500' : 'border-stone-700'
+          className={`flex-1 bg-stone-900/50 border rounded-lg px-5 py-2 text-stone-200 text-lg transition-colors focus:outline-none ${
+            inputState.myTurn ? 'border-green-500 ring-2 ring-green-500' : 'border-stone-700'
           }`}
           value={draft}
           disabled={!inputState.enabled}
           placeholder={inputState.placeholder}
           autoComplete="off"
+          maxLength={500}
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && onSend()}
         />
         <motion.button
           type="button"
-          className="bg-green-500 text-white rounded-lg px-4 py-2 font-semibold disabled:opacity-40 disabled:cursor-not-allowed"
+          className="bg-green-500 hover:bg-green-600 text-white rounded-lg px-4 py-2 font-semibold text-lg disabled:opacity-40 disabled:cursor-not-allowed"
           disabled={!inputState.enabled || !draft.trim()}
           onClick={onSend}
           whileHover={{ scale: inputState.enabled ? 1.02 : 1 }}
@@ -41,7 +37,7 @@ export const ChatInput = forwardRef<HTMLInputElement, ChatInputProps>(
         >
           Envoyer
         </motion.button>
-      </motion.div>
+      </div>
     );
   }
 );

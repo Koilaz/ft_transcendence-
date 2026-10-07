@@ -15,8 +15,8 @@ const bunnyImages = {
 function getBunnyPhase(countdown: number): keyof typeof bunnyImages {
   if (countdown >= 20) return 'normal';
   if (countdown >= 10) return 'neutral';
-  if (countdown >= 5) return 'nervous';
-  return 'stress';
+  if (countdown >= 5) return 'stress';
+  return 'nervous';
 }
 
 type TimerBunnyProps = {
