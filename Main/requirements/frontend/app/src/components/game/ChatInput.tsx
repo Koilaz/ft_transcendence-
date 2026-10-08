@@ -13,7 +13,7 @@ type ChatInputProps = {
 export const ChatInput = forwardRef<HTMLInputElement, ChatInputProps>(
   ({ draft, setDraft, inputState, onSend }, ref) => {
     return (
-      <div className="flex gap-3 backdrop-blur-sm border border-stone-700 rounded-xl p-3 h-full">
+      <div className="flex gap-3 backdrop-blur-sm rounded-xl px-3 pb-3 h-full">
         <input
           ref={ref}
           className={`flex-1 bg-stone-900/50 border rounded-lg px-5 py-2 text-stone-200 text-lg transition-colors focus:outline-none ${

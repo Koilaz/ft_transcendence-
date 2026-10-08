@@ -94,8 +94,8 @@ export default function Game() {
         />
       </div>
 
-      {/* PARTIE 3 - Input de chat (6.25%) */}
-      <div className="h-[6.25%] flex-shrink-0 bg-orange-300">
+      {/* PARTIE 3 - Input de chat (4%) */}
+      <div className="h-[4%] flex-shrink-0 bg-orange-300">
         {inputState.enabled && (
           <motion.div
             className="w-[95%] max-w-[90vw] mx-auto h-full p-2"
@@ -114,8 +114,8 @@ export default function Game() {
         )}
       </div>
 
-      {/* PARTIE 4 - Vote (21.25%) */}
-      <div className="h-[21.25%] flex-shrink-0 bg-orange-300">
+      {/* PARTIE 4 - Vote (23.50%) */}
+      <div className="h-[23.50%] flex-shrink-0 bg-orange-300">
         <VoteArea
           turnOrder={turnOrder}
           currentTurnCharacter={currentTurnCharacter}

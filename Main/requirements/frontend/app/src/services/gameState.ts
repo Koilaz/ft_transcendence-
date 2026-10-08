@@ -134,7 +134,7 @@ export function gameReducer(state: GameUIState, action: GameAction): GameUIState
         ...state,
         messages: [
           ...state.messages,
-          { id: nextMessageId(), kind: 'system', text: `${action.character} est resté muet ce tour...` },
+          { id: nextMessageId(), kind: 'chat', sender: action.character, text: '...' },
         ],
       };
     case 'voteRegistered':

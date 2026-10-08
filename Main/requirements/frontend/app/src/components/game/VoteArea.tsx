@@ -70,7 +70,7 @@ export function VoteArea({
   return (
     // Conteneur principal - prendre toute la hauteur disponible
     <motion.footer
-      className="h-full w-full border-t border-stone-700"
+      className="h-full w-full"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: 0.2 }}
@@ -81,15 +81,29 @@ export function VoteArea({
              SECTION 1 : NOMS DES PERSONNAGES
              Affiche le nom de chaque personnage au-dessus de son bouton
         ========================================== */}
-        <div className="h-[10%] flex justify-evenly items-end text-center text-black pb-2">
-          {turnOrder.map((character) => (
-            <span
-              key={character}
-              className="font-bold text-[clamp(0.875rem,1.5vw,1.125rem)] truncate w-full"
-            >
-              {character}
-            </span>
-          ))}
+        <div className="h-[10%] flex justify-evenly items-end text-center pb-2">
+          {turnOrder.map((character) => {
+            const isMe = character === myCharacter;
+            return (
+              <div
+                key={character}
+                className="flex-1 flex justify-center"
+                style={{ maxWidth: `calc(100% / ${turnOrder.length})` }}
+              >
+                <div
+                  className={`rounded-lg px-3 py-1 ${
+                    isMe
+                      ? 'bg-yellow-500/90 text-yellow-900 font-bold border-2 border-yellow-600'
+                      : 'bg-white/70 text-black font-bold'
+                  }`}
+                >
+                  <span className="text-[clamp(0.875rem,1.5vw,1.125rem)]">
+                    {character}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
         </div>
 
         {/* ==========================================
@@ -135,13 +149,6 @@ export function VoteArea({
                     className="max-w-full max-h-full object-contain drop-shadow-lg"
                   />
                 </div>
-                
-                {/* Badge "TOI" pour identifier mon personnage */}
-                {isMe && (
-                  <div className="absolute top-2 right-2 bg-yellow-500 text-yellow-900 text-[clamp(0.75rem,1.25vw,1rem)] font-bold rounded-full px-2 py-1">
-                    TOI
-                  </div>
-                )}
                 
                 {/* Texte indicateur de tour - effet manga sur le personnage actuel */}
                 {isCurrent && (

@@ -78,10 +78,17 @@ export function GameHeader({
         }
       `}</style>
           {/* Salle - 10% */}
-          <div className="w-[10%] h-full flex items-center justify-start px-2">
-            <span className="bg-stone-800 border border-stone-600 rounded-xl px-3 py-1 text-2xl font-bold text-amber-400 truncate">
-              Salle #{roomNumber ?? '—'}
-            </span>
+          <div className="w-[10%] h-full flex flex-col items-center justify-center px-2 gap-1">
+            <div>
+              <span className="bg-stone-800 border border-stone-600 rounded-xl px-3 py-1 text-lg md:text-xl lg:text-2xl font-bold text-amber-400 truncate">
+                Salle
+              </span>
+            </div>
+            <div>
+              <span className="bg-stone-800 border border-stone-600 rounded-xl px-3 py-1 text-lg md:text-xl lg:text-2xl font-bold text-amber-400 truncate">
+                #{roomNumber ?? '—'}
+              </span>
+            </div>
           </div>
 
           {/* Manche - 15% */}
@@ -165,9 +172,9 @@ export function GameHeader({
           <div className="w-[10%] h-full flex items-center justify-end pr-2">
             <Link
               to="/"
-              className="bg-stone-800 border border-stone-600 rounded-lg px-4 py-2 text-lg font-semibold text-red-400 transition-colors truncate"
+              className="bg-stone-800 border border-stone-600 rounded-lg p-2 text-xl font-semibold text-red-400 transition-colors"
             >
-              ❌ Quitter
+              ❌
             </Link>
           </div>
     </motion.header>

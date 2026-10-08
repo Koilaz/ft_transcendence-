@@ -98,7 +98,7 @@ function DialogueBubble({ sender, text, isSystem, align, index }: DialogueBubble
       ================================== */}
       <motion.div
         className="flex-shrink-0 aspect-square rounded-lg overflow-hidden relative"
-        style={{ width: 'clamp(80px, 25%, 200px)' }}
+        style={{ width: 'clamp(60px, 20%, 150px)' }}
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.4, delay: index * 0.1 }}
@@ -125,7 +125,7 @@ function DialogueBubble({ sender, text, isSystem, align, index }: DialogueBubble
         className={`max-w-[75%] rounded-xl px-4 py-3 relative ${fluoColor}/50 ${
           isLeft 
             ? 'rounded-bl-sm' 
-            : 'rounded-br-sm'
+            : 'rounded-br-sm text-right'
         }`}
       >
         {/* Pointe de la bulle (triangle) */}
@@ -136,14 +136,14 @@ function DialogueBubble({ sender, text, isSystem, align, index }: DialogueBubble
         />
         
         {/* NOM DU PERSONNAGE */}
-        <div className="text-sm font-bold text-black mb-2">
+        <div className={`text-sm font-bold text-black mb-2 ${!isLeft ? 'text-right' : ''}`}>
           <span className={`${fluoColor}/30 px-2 py-1 rounded`}>
             {sender}
           </span>
         </div>
         
         {/* TEXTE DU MESSAGE */}
-        <div className="text-base text-black leading-[1.5] backdrop-blur-sm bg-white/20 rounded-full px-3 py-1 inline-block">
+        <div className="text-base text-black leading-[1.5] backdrop-blur-sm bg-white/20 rounded-full px-4 py-1 inline-block">
           {text}
         </div>
       </div>
@@ -230,7 +230,7 @@ export function DialogueArea({ messages, myCharacter }: DialogueAreaProps) {
   return (
     /* Conteneur principal - PARTIE 2 du jeu */
     <motion.main
-      className="h-full w-full overflow-hidden p-4 relative bg-orange-300"  // 👇 FOND : Modifier ici pour changer la couleur
+      className="h-full w-full overflow-hidden px-4 pt-4 pb-0 relative bg-orange-300"  // 👇 FOND : Modifier ici pour changer la couleur
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3, delay: 0.1 }}
