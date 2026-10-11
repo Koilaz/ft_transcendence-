@@ -1,7 +1,7 @@
 // @ts-nocheck
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState } from 'react';
-import { getBodyImagePath, getCharacterFluoColor } from '../../utils/characters';
+import { useState, useEffect, useRef } from 'react';
+import { getBodyImagePath, getCharacterColor } from '../../utils/characters';
 
 // ============================================
 // TYPES
@@ -123,13 +123,13 @@ export function VoteArea({
               disconnectedCharacters.includes(character) ||
               leftCharacters.includes(character);
             const isVotable = canVote && !isMe && !isAbsent;  // Peut-on voter pour ce personnage ?
-            const bgColor = getCharacterFluoColor(character);  // Couleur fluo du personnage
+            const bgColor = getCharacterColor(character);  // Couleur normale du personnage
 
             return (
               // Bouton personnage
               <motion.button
                 key={character}
-                // Styles : fond fluo, bordure selon l'état, ratio 1:2 pour les images body
+                // Styles : fond normal, bordure selon l'état, ratio 1:2 pour les images body
                 className={`relative flex flex-col items-center justify-start rounded-xl transition-all ${bgColor} overflow-hidden max-h-full aspect-[1/2] pb-2 flex-1 ${
                   isMe
                     ? 'ring-2 ring-yellow-500'          // Moi = bordure jaune
@@ -156,7 +156,7 @@ export function VoteArea({
                     {Array.from({ length: 6 }).map((_, i) => {
                       const angle = (i / 6) * Math.PI * 2;
                       const startRadius = 0;
-                      const endRadius = 150;
+                      const endRadius = 180;
                       const startX = Math.cos(angle) * startRadius;
                       const startY = Math.sin(angle) * startRadius;
                       const endX = Math.cos(angle) * endRadius;
@@ -164,15 +164,16 @@ export function VoteArea({
                       return (
                         <motion.div
                           key={i}
-                          className="absolute text-red-500 text-[clamp(1rem,2vw,1.5rem)] font-bold pointer-events-none"
-                          style={{ left: '50%', top: '50%', transform: 'translate(-50%, -50%)' }}
-                          initial={{ x: startX, y: startY, opacity: 1, scale: 1.2 }}
-                          animate={{ x: endX, y: endY, opacity: 0, scale: 0.8 }}
-                          transition={{ 
-                            duration: 1.5, 
+                          className="absolute text-red-500 text-[clamp(0.75rem,1.2vw,1rem)] font-bold pointer-events-none font-bla-bla"
+                          style={{ left: '50%', top: '50%', transform: 'translate(-50%, -50%)', WebkitTextStroke: '1px rgba(0,0,0,0.5)', textStroke: '1px rgba(0,0,0,0.5)' }}
+                          initial={{ x: startX, y: startY, opacity: 0, scale: 1.2 }}
+                          animate={{ x: endX, y: endY, opacity: [0, 1, 1, 0], scale: [1.2, 3.8, 3.8, 1.2] }}
+                          transition={{
+                            duration: 1.8, 
                             repeat: Infinity, 
                             delay: i * 0.2,
-                            ease: "easeOut" 
+                            ease: "easeOut",
+                            times: [0, 0.1, 0.7, 1]
                           }}
                         >
                           bla

@@ -5,7 +5,30 @@
 import { motion } from 'framer-motion';
 import { useState, useEffect, useMemo } from 'react';
 import type { FeedMessage } from '../../types/game';
-import { getHeadImagePath, getCharacterFluoColor } from '../../utils/characters';
+import { getHeadImagePath, getCharacterFluoColor, getCharacterDialogueColor } from '../../utils/characters';
+import { getCharacterFont } from '../../utils/fonts';
+// import { ParticlesEffect } from '../ParticlesEffect';
+// import { ChainExplosionEffect } from '../ChainExplosionEffect';
+// import { GravityParticlesEffect } from '../GravityParticlesEffect';
+// import { ShootingStarsEffect } from '../ShootingStarsEffect';
+
+// ============================================
+// FORCE TAILWIND A GÉNÉRER LES CLASSES DE POLICES
+// (Nécessaire car les classes sont appliquées dynamiquement)
+// ============================================
+// Ce composant caché force Tailwind à inclure les classes de polices
+function FontClassesSafelist() {
+  return (
+    <div className="hidden">
+      <span className="font-wasabi">Wasabi</span>
+      <span className="font-ketchup">Ketchup</span>
+      <span className="font-moutarde">Moutarde</span>
+      <span className="font-cocktail">Cocktail</span>
+      <span className="font-mayo">Mayo</span>
+      <span className="font-poivre">Poivre</span>
+    </div>
+  );
+}
 
 // ============================================
 // HOOK : Détecte la taille d'écran (responsive)
@@ -57,7 +80,8 @@ function DialogueBubble({ sender, text, isSystem, align, index }: DialogueBubble
 
   // --- MESSAGES DES PERSONNAGES ---
   const isLeft = align === 'left';
-  const fluoColor = getCharacterFluoColor(sender);  // Couleur fluo associée au personnage
+  const fluoColor = getCharacterFluoColor(sender);
+  const dialogueColor = getCharacterDialogueColor(sender);
   
   // Mapping des couleurs Tailwind vers hex pour le gradient soleil
   const getFluoHex = (colorClass: string) => {
@@ -87,11 +111,20 @@ function DialogueBubble({ sender, text, isSystem, align, index }: DialogueBubble
   
   return (
     <motion.div
-      className={`flex items-start gap-3 my-2 ${isLeft ? 'flex-row' : 'flex-row-reverse'} p-2 rounded-2xl ${fluoColor}`}
+      className={`flex items-start gap-3 my-2 ${isLeft ? 'flex-row' : 'flex-row-reverse'} p-2 rounded-2xl ${dialogueColor} relative`}
       initial={{ opacity: 0, x: isLeft ? -30 : 30 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.3, delay: index * 0.1 }}
     >
+      {/* Arrière-plan Particules */}
+      {/* <ParticlesEffect 
+        particleCount={200} 
+        maxSize={8} 
+        followSpeed={0.2}
+        visibleFromStart={true}
+        backgroundColor="transparent"
+      /> */}
+      
       {/* ==================================
            PORTRAIT - EFFET SOLEIL OPTION 3
            8 rayons épais avec dégradé de couleur
@@ -135,15 +168,15 @@ function DialogueBubble({ sender, text, isSystem, align, index }: DialogueBubble
           } ${fluoColor.replace(/^bg-/, 'border-b-')}/50`}
         />
         
-        {/* NOM DU PERSONNAGE */}
+        {/* NOM DU PERSONNAGE - Police par personnage */}
         <div className={`text-sm font-bold text-black mb-2 ${!isLeft ? 'text-right' : ''}`}>
-          <span className={`${fluoColor}/30 px-2 py-1 rounded`}>
+          <span className={`${fluoColor}/30 px-2 py-1 rounded ${getCharacterFont(sender)}`}>
             {sender}
           </span>
         </div>
         
-        {/* TEXTE DU MESSAGE */}
-        <div className="text-base text-black leading-[1.5] backdrop-blur-sm bg-white/20 rounded-full px-4 py-1 inline-block">
+        {/* TEXTE DU MESSAGE - Police par personnage */}
+        <div className={`text-base text-black leading-[1.5] backdrop-blur-sm bg-white/20 rounded-full px-4 py-1 inline-block ${getCharacterFont(sender)}`}>
           {text}
         </div>
       </div>
@@ -235,6 +268,8 @@ export function DialogueArea({ messages, myCharacter }: DialogueAreaProps) {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3, delay: 0.1 }}
     >
+      {/* Force Tailwind à générer les classes de polices */}
+      <FontClassesSafelist />
       {/* ============================================
            ARRIERE-PLAN : Mots en blanc (20% opacité)
            A MODIFIER : 

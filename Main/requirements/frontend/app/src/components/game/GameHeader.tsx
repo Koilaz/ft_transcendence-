@@ -78,14 +78,12 @@ export function GameHeader({
         }
       `}</style>
           {/* Salle - 10% */}
-          <div className="w-[10%] h-full flex flex-col items-center justify-center px-2 gap-1">
-            <div>
-              <span className="bg-stone-800 border border-stone-600 rounded-xl px-3 py-1 text-lg md:text-xl lg:text-2xl font-bold text-amber-400 truncate">
+          <div className="w-[10%] h-full flex items-center justify-center px-2">
+            <div className="bg-stone-800 border border-stone-600 rounded-xl px-3 py-1 flex flex-col items-center gap-1">
+              <span className="text-lg md:text-xl lg:text-2xl font-bold text-amber-400 truncate">
                 Salle
               </span>
-            </div>
-            <div>
-              <span className="bg-stone-800 border border-stone-600 rounded-xl px-3 py-1 text-lg md:text-xl lg:text-2xl font-bold text-amber-400 truncate">
+              <span className="text-lg md:text-xl lg:text-2xl font-bold text-amber-400 truncate">
                 #{roomNumber ?? '—'}
               </span>
             </div>
