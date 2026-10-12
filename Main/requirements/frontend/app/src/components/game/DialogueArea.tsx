@@ -31,6 +31,113 @@ function FontClassesSafelist() {
 }
 
 // ============================================
+// COMPOSANT : AnimatedMayoPortrait (pour les dialogues)
+// Affiche Lieutenant Mayo avec animation : normal → yeux fermés → clin d'œil → sourire
+// ============================================
+function AnimatedMayoPortrait({ className }: { className?: string }) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const images = [
+    '/headLieutenantMayo.webp',
+    '/headLieutenantMayoClosedEyes.webp',
+    '/headLieutenantMayo.webp',
+    '/headLieutenantMayoWink.webp',
+    '/headLieutenantMayo.webp',
+    '/headLieutenantMayoSmile.webp',
+  ];
+
+  // Séquence avec timings personnalisés (en ms)
+  useEffect(() => {
+    const sequence = [
+      { delay: 0, index: 0 },        // Normal (0s)
+      { delay: 2000, index: 1 },     // Yeux fermés (2s)
+      { delay: 2200, index: 2 },     // Normal (2.2s)
+      { delay: 3200, index: 3 },     // Clin d'œil (3.2s)
+      { delay: 3700, index: 4 },     // Normal (3.7s)
+      { delay: 4700, index: 5 },     // Sourire (4.7s)
+    ];
+
+    // Démarre la séquence
+    sequence.forEach((step) => {
+      setTimeout(() => {
+        setCurrentIndex(step.index);
+      }, step.delay);
+    });
+
+    // Boucle la séquence
+    const totalDuration = 4700 + 2500; // 4.7s + 2.5s (sourire) = 7.2s
+    const loopInterval = setInterval(() => {
+      setCurrentIndex(0); // Réinitialise à normal
+      sequence.forEach((step) => {
+        setTimeout(() => {
+          setCurrentIndex(step.index);
+        }, step.delay);
+      });
+    }, totalDuration);
+
+    return () => clearInterval(loopInterval);
+  }, []);
+
+  return (
+    <img
+      src={images[currentIndex]}
+      alt="Lieutenant Mayo"
+      className={className}
+    />
+  );
+}
+
+// ============================================
+// COMPOSANT : AnimatedWasabiPortrait (pour les dialogues)
+// Animation de pleurs : petites larmes → fontaine de pleurs → petites larmes
+// ============================================
+function AnimatedWasabiPortrait({ className }: { className?: string }) {
+  const [currentIndex, setCurrentIndex] = useState(1); // Commence par petites larmes
+  const images = [
+    '/headMajorWasabi.webp',        // Normal (transition discrète)
+    '/headMajorWasabiTears.webp',   // Petites larmes (état principal)
+    '/headMajorWasabiCrying.webp',  // Fontaine de pleurs (pic émotionnel)
+  ];
+
+  // Séquence : petites larmes → fontaine → petites larmes → fontaine
+  useEffect(() => {
+    const sequence = [
+      { delay: 0, index: 1 },       // Petites larmes (départ)
+      { delay: 3500, index: 2 },     // Fontaine après 3.5s
+      { delay: 4000, index: 1 },     // Retour petites larmes après 0.5s
+      { delay: 6500, index: 2 },     // Nouvelle fontaine après 2.5s
+      { delay: 6800, index: 1 },     // Retour petites larmes après 0.3s
+    ];
+
+    // Démarre la séquence
+    sequence.forEach((step) => {
+      setTimeout(() => {
+        setCurrentIndex(step.index);
+      }, step.delay);
+    });
+
+    // Boucle (6.8s total)
+    const loopInterval = setInterval(() => {
+      setCurrentIndex(1); // Recommence par petites larmes
+      sequence.forEach((step) => {
+        setTimeout(() => {
+          setCurrentIndex(step.index);
+        }, step.delay);
+      });
+    }, 6800);
+
+    return () => clearInterval(loopInterval);
+  }, []);
+
+  return (
+    <img
+      src={images[currentIndex]}
+      alt="Major Wasabi"
+      className={className}
+    />
+  );
+}
+
+// ============================================
 // HOOK : Détecte la taille d'écran (responsive)
 // ============================================
 function useMediaQuery(query: string): boolean {
@@ -144,11 +251,17 @@ function DialogueBubble({ sender, text, isSystem, align, index }: DialogueBubble
             opacity: 0.6,
           }}
         />
-        <img
-          src={getHeadImagePath(sender)}
-          alt={sender}
-          className="relative w-full h-full object-cover rounded-lg border-2 border-white/50"
-        />
+        {sender === 'Lieutenant Mayo' ? (
+          <AnimatedMayoPortrait className="relative w-full h-full object-cover rounded-lg border-2 border-white/50" />
+        ) : sender === 'Major Wasabi' ? (
+          <AnimatedWasabiPortrait className="relative w-full h-full object-cover rounded-lg border-2 border-white/50" />
+        ) : (
+          <img
+            src={getHeadImagePath(sender)}
+            alt={sender}
+            className="relative w-full h-full object-cover rounded-lg border-2 border-white/50"
+          />
+        )}
       </motion.div>
       
       {/* ==================================
