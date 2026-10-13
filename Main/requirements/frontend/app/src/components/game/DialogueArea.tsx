@@ -91,21 +91,22 @@ function AnimatedMayoPortrait({ className }: { className?: string }) {
 // Animation de pleurs : petites larmes → fontaine de pleurs → petites larmes
 // ============================================
 function AnimatedWasabiPortrait({ className }: { className?: string }) {
-  const [currentIndex, setCurrentIndex] = useState(1); // Commence par petites larmes
+  const [currentIndex, setCurrentIndex] = useState(0); // Commence par petites larmes
   const images = [
-    '/headMajorWasabi.webp',        // Normal (transition discrète)
     '/headMajorWasabiTears.webp',   // Petites larmes (état principal)
     '/headMajorWasabiCrying.webp',  // Fontaine de pleurs (pic émotionnel)
+    '/headMajorWasabiCryingEnd.webp', // Fin de la fontaine (transition discrète)
+    '/headMajorWasabi.webp',        // Normal (transition discrète)
   ];
 
   // Séquence : petites larmes → fontaine → petites larmes → fontaine
   useEffect(() => {
     const sequence = [
-      { delay: 0, index: 1 },       // Petites larmes (départ)
-      { delay: 3500, index: 2 },     // Fontaine après 3.5s
-      { delay: 4000, index: 1 },     // Retour petites larmes après 0.5s
-      { delay: 6500, index: 2 },     // Nouvelle fontaine après 2.5s
-      { delay: 6800, index: 1 },     // Retour petites larmes après 0.3s
+      { delay: 0, index: 0 },       // Petites larmes (départ)
+      { delay: 3000, index: 1 },     // Fontaine après 4s
+      { delay: 5000, index: 2 },     // Fin de la fontaine après 1.5s
+      { delay: 5100, index: 3 },     // Normal après 0.5s
+      { delay: 5200, index: 0 },     // Nouvelle fontaine après 2.5s
     ];
 
     // Démarre la séquence
@@ -117,13 +118,13 @@ function AnimatedWasabiPortrait({ className }: { className?: string }) {
 
     // Boucle (6.8s total)
     const loopInterval = setInterval(() => {
-      setCurrentIndex(1); // Recommence par petites larmes
+      setCurrentIndex(0); // Recommence par petites larmes
       sequence.forEach((step) => {
         setTimeout(() => {
           setCurrentIndex(step.index);
         }, step.delay);
       });
-    }, 6800);
+    }, 5200);
 
     return () => clearInterval(loopInterval);
   }, []);
@@ -135,6 +136,157 @@ function AnimatedWasabiPortrait({ className }: { className?: string }) {
       className={className}
     />
   );
+}
+
+// ============================================
+// COMPOSANT : AnimatedKetchupPortrait (STYLE MANGA)
+// ============================================
+function AnimatedKetchupPortrait({ className }: { className?: string }) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [showAngerLines, setShowAngerLines] = useState(false);
+
+  const images = [
+    '/headGeneralKetchup.webp',
+    '/headGeneralKetchupSlightAngry.webp',
+    '/headGeneralKetchupAngry.webp',
+  ];
+
+  useEffect(() => {
+    const sequence = [
+      { delay: 0, index: 0, anger: false },
+      { delay: 2000, index: 1, anger: false },
+      { delay: 3000, index: 2, anger: true },
+      { delay: 4500, index: 1, anger: false },
+      { delay: 5000, index: 0, anger: false },
+    ];
+
+    sequence.forEach((step) => {
+      setTimeout(() => {
+        setCurrentIndex(step.index);
+        setShowAngerLines(step.anger);
+      }, step.delay);
+    });
+
+    const loopInterval = setInterval(() => {
+      setCurrentIndex(0);
+      setShowAngerLines(false);
+      sequence.forEach((step) => {
+        setTimeout(() => {
+          setCurrentIndex(step.index);
+          setShowAngerLines(step.anger);
+        }, step.delay);
+      });
+    }, 6000);
+
+    return () => clearInterval(loopInterval);
+  }, []);
+
+  return (
+    <motion.div
+      className="relative"
+      animate={
+        showAngerLines
+          ? {
+              x: [-2, 2, -2, 2, 0],
+              y: [0, -1, 0, 1, 0],
+            }
+          : {}
+      }
+      transition={{ duration: 0.3, repeat: Infinity }}
+    >
+      {showAngerLines && (
+        <>
+          <div className="absolute -top-1 -left-1 w-4 h-0 border-t-2 border-l-2 border-transparent border-t-red-600 border-l-red-600 transform -rotate-45" />
+          <div className="absolute -top-1 -right-1 w-4 h-0 border-t-2 border-r-2 border-transparent border-t-red-600 border-r-red-600 transform rotate-45" />
+          <div className="absolute -bottom-1 -left-1 w-4 h-0 border-b-2 border-l-2 border-transparent border-b-red-600 border-l-red-600 transform rotate-45" />
+          <div className="absolute -bottom-1 -right-1 w-4 h-0 border-b-2 border-r-2 border-transparent border-b-red-600 border-r-red-600 transform -rotate-45" />
+          <div className="absolute -left-2 top-1/4 w-0 h-6 border-l-2 border-transparent border-l-red-600 transform -rotate-12" />
+          <div className="absolute -right-2 top-1/4 w-0 h-6 border-r-2 border-transparent border-r-red-600 transform rotate-12" />
+        </>
+      )}
+      <img
+        src={images[currentIndex]}
+        alt="General Ketchup"
+        className={className}
+      />
+    </motion.div>
+  );
+}
+
+// ============================================
+// COMPOSANT : AnimatedMoutardePortrait
+// ============================================
+function AnimatedMoutardePortrait({ className }: { className?: string }) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const images = [
+    '/headColonelMoutardeThinking.webp', // 0: Réflexion
+    '/headColonelMoutarde.webp',          // 1: Normal (transition)
+    '/headColonelMoutardeSweating.webp',  // 2: Transpiration
+  ];
+
+  useEffect(() => {
+    const sequence = [
+      { delay: 0, index: 0 },    // Thinking (3s)
+      { delay: 3000, index: 1 },  // Normal (0.5s) → transition
+      { delay: 3500, index: 2 },  // Sweating (2s)
+      { delay: 5500, index: 1 },  // Normal (0.5s) → transition
+      { delay: 6000, index: 0 },  // Thinking (1s) → boucle
+    ];
+
+    sequence.forEach((step) => {
+      setTimeout(() => setCurrentIndex(step.index), step.delay);
+    });
+
+    const loopInterval = setInterval(() => {
+      setCurrentIndex(0);
+      sequence.forEach((step) => {
+        setTimeout(() => setCurrentIndex(step.index), step.delay);
+      });
+    }, 6000);
+
+    return () => clearInterval(loopInterval);
+  }, []);
+
+  return <img src={images[currentIndex]} alt="Colonel Moutarde" className={className} />;
+}
+
+// ============================================
+// COMPOSANT : AnimatedPoivrePortrait (moustache qui bouge)
+// ============================================
+function AnimatedPoivrePortrait({ className }: { className?: string }) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const images = [
+    '/headCaporalPoivre.webp',             // 0: Normal
+    '/headCaporalPoivreMustacheStraight.webp',    // 1: Straight (transition)
+    '/headCaporalPoivreMustacheUp.webp',  // 2: Moustache levée
+    '/headCaporalPoivreMustacheDown.webp',// 3: Moustache baissée
+  ];
+
+  useEffect(() => {
+    const sequence = [
+      { delay: 0, index: 0 },    // Normal (2s)
+      { delay: 2000, index: 1 },  // Straight (0.2s)
+      { delay: 2200, index: 2 },  // MustacheUp (0.15s)
+      { delay: 2350, index: 3 },  // MustacheDown (0.15s)
+      { delay: 2500, index: 1 },  // Straight (0.2s)
+      { delay: 2700, index: 0 },  // Normal (1.3s)
+    ];
+
+    sequence.forEach((step) => {
+      setTimeout(() => setCurrentIndex(step.index), step.delay);
+    });
+
+    const loopInterval = setInterval(() => {
+      setCurrentIndex(0);
+      sequence.forEach((step) => {
+        setTimeout(() => setCurrentIndex(step.index), step.delay);
+      });
+    }, 4000);
+
+    return () => clearInterval(loopInterval);
+  }, []);
+
+  return <img src={images[currentIndex]} alt="Caporal Poivre" className={className} />;
 }
 
 // ============================================
@@ -255,6 +407,12 @@ function DialogueBubble({ sender, text, isSystem, align, index }: DialogueBubble
           <AnimatedMayoPortrait className="relative w-full h-full object-cover rounded-lg border-2 border-white/50" />
         ) : sender === 'Major Wasabi' ? (
           <AnimatedWasabiPortrait className="relative w-full h-full object-cover rounded-lg border-2 border-white/50" />
+        ) : sender === 'General Ketchup' ? (
+          <AnimatedKetchupPortrait className="relative w-full h-full object-cover rounded-lg border-2 border-white/50" />
+        ) : sender === 'Colonel Moutarde' ? (
+          <AnimatedMoutardePortrait className="relative w-full h-full object-cover rounded-lg border-2 border-white/50" />
+        ) : sender === 'Caporal Poivre' ? (
+          <AnimatedPoivrePortrait className="relative w-full h-full object-cover rounded-lg border-2 border-white/50" />
         ) : (
           <img
             src={getHeadImagePath(sender)}
