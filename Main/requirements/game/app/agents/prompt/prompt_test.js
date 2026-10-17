@@ -113,5 +113,11 @@ export const prompt_test =
 	//C'est cette ligne qui fait travailler l'analyste a la fin de chaque manche.
 	//Sans elle, les deux blocs de contexte ci-dessus n'auraient jamais rien a
 	//afficher.
+		sampling:
+	{
+		temperature: 1,
+		maxTokens: 50,
+		ollama: { repeat_penalty: 1, repeat_last_n: 256 },
+	},
 	debrief: true,
 };

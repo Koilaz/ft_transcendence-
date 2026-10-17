@@ -14,11 +14,13 @@ const KEYBOARD_ROWS = [
 const TYPO_RATE = 0.003;         // probabilite qu'une lettre donnee soit ratee
 const MAX_SWAPS_PER_MESSAGE = 2; // au dela ce n'est plus une faute de frappe
 
-const DOUBLE_RATE = 0.002;          // probabilite de rester appuye sur une touche
-const MAX_DOUBLES_PER_MESSAGE = 1;
-
 const MISS_RATE = 0.002;            // probabilite de ne pas enfoncer une touche
 const MAX_MISSES_PER_MESSAGE = 1;
+
+// Lettres qui se doublent en francais (ou dans les emprunts courants) :
+// abbe, accord, addition, meeting, effet, aggraver, aller, comme, donner,
+// zoo, appel, terre, assez, attendre, pizza.
+const FRENCH_DOUBLES = new Set('bcdefglmnoprstz');
 
 // Table des voisins : { f: ['d','d','d','g','g','g','r','t','c','v'], ... }
 // Les voisins de la meme rangee sont repetes 3 fois : le doigt derape a cote
@@ -31,8 +33,9 @@ export function postTreatment(reply)
 {
 	if (typeof reply !== 'string')
 		return reply;
-	let text = randomSwap(reply);
-	text = randomDouble(text);
+	let text = normalizeCase(reply);
+	text = trimRepeats(text);
+	text = randomSwap(text);
 	text = randomMiss(text);
 	return text;
 }
@@ -64,6 +67,23 @@ function buildNeighbors()
 	return neighbors;
 }
 
+// Tout en minuscules et sans accents : personne ne tape "Évidemment" dans un
+// chat, et ca ouvre toutes les lettres aux fautes de frappe qui suivent.
+export function normalizeCase(text)
+{
+	return text.toLowerCase().normalize('NFD').replace(/\p{M}/gu, '');
+}
+
+// Ecrase les caracteres repetes ("mdrrrr", "ouiiii", doubles espaces) : un bot
+// n'ecrit jamais comme ca et ca le trahit. Un double qui existe en francais
+// ("ss", "ll"...) est garde, au dela de deux on revient toujours a un seul.
+// Les chiffres (100, 2000) et les points de suspension ne sont pas touches.
+export function trimRepeats(text)
+{
+	return text.replace(/([^\d.])\1+/gu, (run, char) =>
+		run.length === 2 && FRENCH_DOUBLES.has(char) ? run : char);
+}
+
 // Remplace de temps en temps une lettre par une touche voisine du clavier.
 // Seules les minuscules sont touchees.
 export function randomSwap(text, rate = TYPO_RATE, maxSwaps = MAX_SWAPS_PER_MESSAGE)
@@ -80,25 +100,6 @@ export function randomSwap(text, rate = TYPO_RATE, maxSwaps = MAX_SWAPS_PER_MESS
 		swaps++;
 	}
 	return chars.join('');
-}
-
-// Double de temps en temps une lettre : on est reste appuye sur la touche.
-export function randomDouble(text, rate = DOUBLE_RATE, maxDoubles = MAX_DOUBLES_PER_MESSAGE)
-{
-	const out = [];
-	let doubles = 0;
-
-	for (const char of text)
-	{
-		out.push(char);
-		if (doubles >= maxDoubles || !KEYBOARD_NEIGHBORS[char])
-			continue;
-		if (Math.random() >= rate)
-			continue;
-		out.push(char);
-		doubles++;
-	}
-	return out.join('');
 }
 
 // Enleve de temps en temps une lettre : la touche n'a pas ete enfoncee assez fort.
