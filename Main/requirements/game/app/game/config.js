@@ -13,8 +13,8 @@ export const gameConfig = {
 	//partie, seuls son agent et son prompt changent d'une manche a l'autre.
 	bots: [{
 		rounds: [
-			{ agent: 'mistral_medium', prompt: 'prompt_test' },, // manche 1
-			{ agent: 'mistral_medium', prompt: 'prompt_test_advanced' },, // manche 2
+			{ agent: 'mistral_medium', prompt: 'prompt_test' }, // manche 1
+			{ agent: 'mistral_medium', prompt: 'prompt_test_advanced' }, // manche 2
 			{ agent: 'mistral_medium', prompt: 'prompt_test_advanced' }, // manche 3
 			//{ agent: 'mistral_big', prompt: 'prompt_test' }, // manche 4
 		]
