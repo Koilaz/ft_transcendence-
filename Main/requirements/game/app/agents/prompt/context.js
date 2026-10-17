@@ -206,7 +206,13 @@ export function composeContext(parts)
 			(block.scope === 'perBot' ? perBot : shared).push(text);
 		}
 
-		return { shared: shared.join('\n'), perBot: perBot.join('\n') };
+		//Le nom du personnage voyage aussi brut, hors des blocs : c'est une
+		//donnee et non un texte, pour un prompt dont la consigne finale le cite.
+		return {
+			shared: shared.join('\n'),
+			perBot: perBot.join('\n'),
+			character: room.currentRound.caracterOf(botId),
+		};
 	};
 }
 

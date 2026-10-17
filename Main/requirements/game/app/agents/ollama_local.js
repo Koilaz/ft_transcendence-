@@ -116,10 +116,10 @@ export const local_agent =
 	//agent qui a besoin de glisser le contexte entre les deux.
 	async generate(history, additionalContext = {}, prompt)
 	{
-		const { shared = '', perBot = '' } = additionalContext;
+		const { shared = '', perBot = '', character } = additionalContext;
 
 		const systemPrompt = prompt.buildSystemPrompt();
-		const userMessage = [shared, perBot, prompt.buildTranscript(history), prompt.buildInstruction(history)]
+		const userMessage = [shared, perBot, prompt.buildTranscript(history), prompt.buildInstruction(history, character)]
 			.filter(Boolean)
 			.join('\n\n');
 

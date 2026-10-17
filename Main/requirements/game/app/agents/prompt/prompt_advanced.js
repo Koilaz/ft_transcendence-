@@ -59,10 +59,6 @@ tu es conscient de ton personnage si on s'adresse a toi mais n'y accorde pas tro
 on te donne parfois des correctifs tires de la manche precedente : ils priment sur toutes les tactiques ci-dessus.
 `;
 
-const CAMPUS =
-`
-`;
-
 const SYSTEM_PROMPT =
 `reponds par un seul message court de 10 mots maximum, jamais plus, souvent moin.
 evite les majuscules, ponctuation minimale, pas de markdown, pas de guillemets, pas de prefixe de nom.`;

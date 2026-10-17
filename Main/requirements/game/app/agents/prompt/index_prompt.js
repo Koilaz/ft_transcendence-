@@ -8,6 +8,8 @@
 //
 //Contrat d'un prompt : { name, buildSystemPrompt, buildInstruction,
 //buildUserPrompt, buildTranscript, buildContextPrompt, sampling }.
+//buildInstruction et buildUserPrompt recoivent (history, character) : le nom du
+//personnage du bot pour cette manche, libre a chaque prompt de s'en servir.
 //
 //Tout est fourni par prompt/context.js, et un prompt ne redefinit que ce qui
 //le distingue :

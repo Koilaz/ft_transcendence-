@@ -22,26 +22,28 @@ ne met aucun accent ni ponctuation, pas de majuscule, pas de nom de personnage, 
 const OPENING =
 `La conversation n'a pas encore commence. Envoie le premier message pour lancer la discussion, sans le nom du personnage`;
 
-const NEXT_REPLY =
-`c'est ton tour de parler. Donne uniquement la prochaine reponse la plus probable de ton personnage.`;
+const NEXT_REPLY = (character) =>
+`"a ton tour de parler"
+${character}:`;
+
 
 function buildSystemPrompt()
 {
 	return SYSTEM_PROMPT;
 }
 
-function buildInstruction(history)
+function buildInstruction(history, character)
 {
-	return (!history || history.length === 0) ? OPENING : NEXT_REPLY;
+	return (!history || history.length === 0) ? OPENING : NEXT_REPLY(character);
 }
 
-function buildUserPrompt(history)
+function buildUserPrompt(history, character)
 {
 	const transcript = buildRawTranscript(history);
 	if (!transcript)
-		return buildInstruction(history);
+		return buildInstruction(history, character);
 
-	return `${transcript}\n\n${buildInstruction(history)}`;
+	return `${transcript}\n\n${buildInstruction(history, character)}`;
 }
 
 export const prompt_basic =
