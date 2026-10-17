@@ -11,7 +11,7 @@ const HEALTHCHECK_TIMEOUT_MS = 5000;
 //Valeurs par defaut, qu'un prompt peut redefinir par son champ `sampling`.
 const MISTRAL_DEFAULTS =
 {
-	temperature: 0.80,
+	temperature: 0.85,
 	max_tokens: 70,
 };
 

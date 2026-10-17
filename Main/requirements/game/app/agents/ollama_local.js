@@ -13,7 +13,7 @@ const PREFILL_TIMEOUT_MS = 120000;
 //exactement les memes options, sinon le prechargement est perdu au premier tour.
 const OLLAMA_OPTIONS =
 {
-	temperature: 0.80,
+	temperature: 0.85,
 	//Marge sur les 10 mots demandes dans le prompt : le francais tokenise a
 	//environ 2 tokens par mot. 24 laisse le modele finir sa phrase, et c'est
 	//aussi le pire cas du budget d'un tour — sur CPU il decode environ 4 tokens

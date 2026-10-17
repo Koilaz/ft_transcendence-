@@ -95,8 +95,8 @@ export const prompt_easy =
 	buildContextPrompt,
 	sampling:
 	{
-		temperature: 0.8,
-		maxTokens: 24,
+		temperature: 0.7,
+		maxTokens: 50,
 		ollama: { repeat_penalty: 1.15, repeat_last_n: 256 },
 	},
 };
