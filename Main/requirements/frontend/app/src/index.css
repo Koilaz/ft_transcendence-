@@ -1,5 +1,61 @@
 @import "tailwindcss";
 
+/* ============================================
+   CONFIGURATION DES POLICES PAR PERSONNAGE
+   ============================================ */
+/* Major Wasabi - Style manga */
+.font-wasabi {
+  font-family: "Mochiy Pop P One", cursive;
+  font-weight: 500;
+  font-size: 1rem;
+  line-height: 1.2;
+}
+
+/* General Ketchup - Style militaire autoritaire (Black Ops One) */
+.font-ketchup {
+  font-family: "Black Ops One", cursive;
+  font-weight: 700;
+  font-size: 1rem;
+  line-height: 1.2;
+}
+
+/* Colonel Moutarde - Style ancien/vieux (Cinzel) */
+.font-moutarde {
+  font-family: "Cinzel", serif;
+  font-weight: 700;
+  font-size: 1.1rem;
+  line-height: 1.2;
+}
+
+/* Marechal Cocktail - Style militaire techno (Orbitron) */
+.font-cocktail {
+  font-family: "Orbitron", sans-serif;
+  font-weight: 700;
+  font-size: 1.1rem;
+  line-height: 1.2;
+}
+
+/* Lieutenant Mayo - Style calligraphique doux (Parisienne) */
+.font-mayo {
+  font-family: "Parisienne", cursive;
+  font-weight: 700;
+  font-size: 1.3rem;
+  line-height: 1.2;
+}
+
+/* Caporal Poivre / Sergeant Poivre (Nain) - Style fantasy runique */
+.font-poivre {
+  font-family: "MedievalSharp", cursive;
+  font-weight: 700;
+  font-size: 1.1rem;
+  line-height: 1.2;
+}
+
+/* Bangers - Style BD/onomatopée pour animation "bla bla bla" */
+.font-bla-bla {
+  font-family: "Bangers", cursive;
+}
+
 /* Masquer la barre de scroll */
 .scrollbar-hide::-webkit-scrollbar {
   display: none;

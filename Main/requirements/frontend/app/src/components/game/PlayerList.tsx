@@ -24,7 +24,7 @@ function PlayerItem({ character, isCurrentTurn, isMe }: PlayerItemProps) {
     >
       <div className="flex items-center gap-2 min-w-0">
         <CharacterPortrait character={character} isMe={isMe} isCurrentTurn={isCurrentTurn} size="sm" />
-        <span className="overflow-hidden text-ellipsis whitespace-nowrap">{character}</span>
+        <span className="overflow-hidden text-ellipsis whitespace-nowrap text-stone-200">{character}</span>
       </div>
       <div className="flex items-center gap-1.5 flex-shrink-0">
         {isCurrentTurn && <TurnBadge />}
