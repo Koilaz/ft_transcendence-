@@ -59,7 +59,9 @@ function clockOf(round)
 //d'apres.
 const roundDebrief = new WeakMap();
 
-function debriefOf(room)
+//Exportee pour les prompts qui reformulent un bloc du debrief sur place : ils
+//lisent la meme note, gelee de la meme facon.
+export function debriefOf(room)
 {
 	let debrief = roundDebrief.get(room.currentRound);
 	if (!debrief)

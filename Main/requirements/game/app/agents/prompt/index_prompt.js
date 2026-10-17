@@ -31,6 +31,7 @@ import { prompt_easy } from './prompt_easy.js';
 import { prompt_basic } from './prompt_basic.js';
 import { prompt_advanced } from './prompt_advanced.js';
 import { prompt_test } from './prompt_test.js';
+import { prompt_test_advanced } from './prompt_test_advanced.js';
 
 const prompts =
 {
@@ -39,6 +40,7 @@ const prompts =
 	[prompt_basic.name]: prompt_basic,
 	[prompt_advanced.name]: prompt_advanced,
 	[prompt_test.name]: prompt_test,
+	[prompt_test_advanced.name]: prompt_test_advanced,
 };
 
 //Les cles du registre, c'est-a-dire les seules valeurs acceptees dans le champ

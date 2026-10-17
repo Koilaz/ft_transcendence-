@@ -57,6 +57,9 @@ const ANALYSIS_RULES =
   incapacite a rebondir sur une blague ou une reference locale.
 - si une tactique humaine a fonctionne (une question piege, un test, une
   accusation frontale), dis comment y repondre la prochaine fois.
+- dans le resume comme dans les correctifs, ne designe jamais le joueur
+  conseille comme l'IA, un bot ou un modele : parle-lui a la deuxieme personne,
+  comme a un joueur que les autres ont soupconne.
 
 reponds exactement dans ce format, sans rien avant ni apres :
 <resume>
@@ -64,7 +67,7 @@ trois phrases maximum : de quoi on a parle, quel ton avait la conversation,
 quels soupcons pesent et sur quel genre de comportement.
 </resume>
 <correctifs>
-- trois a cinq consignes imperatives, concretes, une par ligne, adressees a l'IA
+- trois a cinq consignes imperatives, concretes, une par ligne, adressees au joueur
 </correctifs>`;
 
 //Le declencheur, appele par Room.handleRoundEnd. Ne rend jamais la main sur une
