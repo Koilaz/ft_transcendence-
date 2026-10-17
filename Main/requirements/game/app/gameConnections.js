@@ -1,6 +1,5 @@
 import { randomBytes } from 'node:crypto';
-
-const MAX_CHAT_LENGTH = 500;
+import { gameConfig } from './game/config.js';
 
 function cleanDisplayName(raw)
 {
@@ -145,7 +144,7 @@ export function attachGameConnections(wss, {
 			{
 				if (typeof msg.text !== 'string')
 					return;
-				const text = msg.text.trim().slice(0, MAX_CHAT_LENGTH);
+				const text = msg.text.trim().slice(0, gameConfig.maxMessageLength);
 				if (text)
 					session.room.addMessage(session.playerId, text);
 			}

@@ -33,11 +33,17 @@ export function postTreatment(reply)
 {
 	if (typeof reply !== 'string')
 		return reply;
-	let text = normalizeCase(reply);
-	text = trimRepeats(text);
-	text = randomSwap(text);
+	let text = randomSwap(reply);
 	text = randomMiss(text);
 	return text;
+}
+
+// Mise en forme commune a tous les messages du chat, humains comme bots (voir
+// Room.addMessage) : si seul le bot etait normalise, un "AAAAH" ou un accent
+// suffirait a reconnaitre un humain.
+export function normalizeMessage(text)
+{
+	return trimRepeats(keepPlainChars(normalizeCase(text))).trim();
 }
 
 function buildNeighbors()
@@ -68,10 +74,23 @@ function buildNeighbors()
 }
 
 // Tout en minuscules et sans accents : personne ne tape "Évidemment" dans un
-// chat, et ca ouvre toutes les lettres aux fautes de frappe qui suivent.
+// chat.
 export function normalizeCase(text)
 {
 	return text.toLowerCase().normalize('NFD').replace(/\p{M}/gu, '');
+}
+
+// Ne garde que ce qui se tape sans chercher sur un clavier : lettres minuscules,
+// chiffres, ponctuation courante et + - * / ( ) = %. Emojis et symboles
+// disparaissent, un retour a la ligne devient un espace. L'apostrophe courbe et
+// le œ des LLM sont ramenes a leur version clavier plutot que supprimes.
+export function keepPlainChars(text)
+{
+	return text
+		.replace(/\s/g, ' ')
+		.replace(/’/g, "'")
+		.replace(/œ/g, 'oe')
+		.replace(/[^a-z0-9 .,;:!?'"+\-*/()=%]/g, '');
 }
 
 // Ecrase les caracteres repetes ("mdrrrr", "ouiiii", doubles espaces) : un bot

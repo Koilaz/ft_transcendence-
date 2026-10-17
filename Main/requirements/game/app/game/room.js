@@ -1,6 +1,7 @@
 import { Player } from './player.js';
 import { Round } from './round.js';
 import { createBotSendFn } from './bot.js';
+import { normalizeMessage } from './typos.js';
 import { gameConfig, botEntries } from './config.js';
 import { preheatAgent } from '../agents/index_agent.js';
 import { getPrompt } from '../agents/prompt/index_prompt.js';
@@ -258,6 +259,9 @@ class Room
 		const player = this.players.get(sender);
 		if (!player || !player.connected)
 			return;
+		text = normalizeMessage(text);
+		if (!text)
+			return;// que des emojis ou des symboles : il ne reste rien a envoyer
 		const msgData = { sender: character, text: text, isAI: !!player.agentName };
 
 		this.history.push(msgData);
