@@ -13,14 +13,14 @@ export const gameConfig = {
 	//partie, seuls son agent et son prompt changent d'une manche a l'autre.
 	bots: [{
 		rounds: [
-			{ agent: 'mistral_medium', prompt: 'prompt_test' }, // manche 1
+			{ agent: 'mistral_small', prompt: 'prompt_test' }, // manche 1
 			{ agent: 'mistral_medium', prompt: 'prompt_test_advanced' }, // manche 2
-			{ agent: 'mistral_medium', prompt: 'prompt_test_advanced' }, // manche 3
+			{ agent: 'mistral_big', prompt: 'prompt_test_advanced' }, // manche 3
 			//{ agent: 'mistral_big', prompt: 'prompt_test' }, // manche 4
 		]
 	}],
-	turnPerRound: 4,   // nombre de tours par manche
-	turnDuration: 15,   // secondes par tour
+	turnPerRound: 5,   // nombre de tours par manche
+	turnDuration: 17,   // secondes par tour
 	maxMessageLength: 120, // caracteres par message de chat, au-dela le serveur tronque
 	maxPlayers: 6,
 	minPlayers: 3,          // seuil pour DEMARRER une partie
