@@ -188,7 +188,7 @@ function resolvePart(part)
 }
 
 //Rend une fonction (room, botId) => { shared, perBot } : la signature attendue
-//par game/bot.js et game/room.js, quelle que soit la selection.
+//par agents/bot.js et game/room.js, quelle que soit la selection.
 //La resolution est immediate, au chargement du module : une cle mal orthographiee
 //devient une erreur d'import et non un bot muet en pleine partie.
 export function composeContext(parts)

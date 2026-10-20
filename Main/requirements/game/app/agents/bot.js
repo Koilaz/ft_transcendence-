@@ -1,7 +1,7 @@
-import { generateReply } from '../agents/index_agent.js';
-import { requirePrompt } from '../agents/prompt/index_prompt.js';
+import { generateReply } from './index_agent.js';
+import { requirePrompt } from './prompt/index_prompt.js';
 import { postTreatment } from './typos.js';
-import { gameConfig } from './config.js';
+import { gameConfig } from '../game/config.js';
 
 const BOT_MIN_DELAY = 2000; // delais minimal de reponse du bot
 const BOT_REACTION_MS = { min: 1000, max: 3000 }; // lecture du message precedent avant de taper
