@@ -1,7 +1,6 @@
 // ============================================
 // IMPORTS
 // ============================================
-import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { getHeadImagePath, getCharacterFluoColor, getCharacterDialogueColor } from '../../utils/characters';
 import { getCharacterFont } from '../../utils/fonts';
@@ -158,17 +157,8 @@ function AnimatedKetchupPortrait({ className }: { className?: string }) {
   }, []);
 
   return (
-    <motion.div
+    <div
       className="relative"
-      animate={
-        showAngerLines
-          ? {
-              x: [-2, 2, -2, 2, 0],
-              y: [0, -1, 0, 1, 0],
-            }
-          : {}
-      }
-      transition={{ duration: 0.3, repeat: Infinity }}
     >
       {showAngerLines && (
         <>
@@ -185,7 +175,7 @@ function AnimatedKetchupPortrait({ className }: { className?: string }) {
         alt="General Ketchup"
         className={className}
       />
-    </motion.div>
+    </div>
   );
 }
 
@@ -284,17 +274,14 @@ function DialogueBubble({ sender, text, isSystem, align, index }: DialogueBubble
   // --- MESSAGES SYSTEME (centrés, style différent) ---
   if (isSystem) {
     return (
-      <motion.div
+      <div
         className="flex justify-center my-2"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: index * 0.1 }}
       >
         {/* Style des messages système : fond stone-800, texte stone-400 */}
         <div className="text-base text-stone-400 italic bg-stone-800 border border-stone-700 rounded-lg px-4 py-2 max-w-[85%]">
           {text}
         </div>
-      </motion.div>
+      </div>
     );
   }
 
@@ -331,11 +318,8 @@ function DialogueBubble({ sender, text, isSystem, align, index }: DialogueBubble
   )`;
   
   return (
-    <motion.div
+    <div
       className={`flex items-start gap-3 my-2 pointer-events-auto ${isLeft ? 'flex-row' : 'flex-row-reverse'} p-2 rounded-2xl ${dialogueColor} relative`}
-      initial={{ opacity: 0, x: isLeft ? -30 : 30 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.3, delay: index * 0.1 }}
     >
       {/* Arrière-plan Particules */}
       {/* <ParticlesEffect 
@@ -350,12 +334,9 @@ function DialogueBubble({ sender, text, isSystem, align, index }: DialogueBubble
            PORTRAIT - EFFET SOLEIL OPTION 3
            8 rayons épais avec dégradé de couleur
       ================================== */}
-      <motion.div
+      <div
         className="flex-shrink-0 aspect-square rounded-lg overflow-hidden relative"
         style={{ width: 'clamp(60px, 20%, 150px)' }}
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.4, delay: index * 0.1 }}
       >
         {/* Rayons BLANC + ORANGE - 180° partant du BAS */}
         <div
@@ -382,7 +363,7 @@ function DialogueBubble({ sender, text, isSystem, align, index }: DialogueBubble
             className="relative w-full h-full object-cover rounded-lg border-2 border-white/50"
           />
         )}
-      </motion.div>
+      </div>
       
       {/* ==================================
            BULLE DE TEXTE
@@ -413,7 +394,7 @@ function DialogueBubble({ sender, text, isSystem, align, index }: DialogueBubble
           {text}
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }
 
@@ -436,14 +417,11 @@ type DialogueAreaProps = {
 // ============================================
 export function DialogueArea({ messages, myCharacter }: DialogueAreaProps) {
   return (
-    <motion.main
+    <main
       className="h-full w-full overflow-hidden px-4 pt-4 pb-0 relative pointer-events-none"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.3, delay: 0.1 }}
     >
       {/* Conteneur des messages (fond transparent pour voir MatrixRain parent) */}
-      <div className="relative w-full h-full flex flex-col justify-end overflow-y-auto pointer-events-none">
+      <div className="relative w-full h-full flex flex-col justify-end overflow-y-auto pointer-events-auto">
         {messages
           .filter(message => message.kind === 'chat')
           .map((message, index) => (
@@ -456,6 +434,6 @@ export function DialogueArea({ messages, myCharacter }: DialogueAreaProps) {
             />
           ))}
       </div>
-    </motion.main>
+    </main>
   );
 }
