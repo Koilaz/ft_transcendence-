@@ -44,6 +44,9 @@ tu ne parles pas a l'IA de son score, tu lui dis quoi changer.`;
 //    mieux inutile, au pire elle fait accuser un innocent ;
 //  - la note precedente est reecrite et non recopiee, c'est ce qui rend le
 //    debrief cumulatif sans qu'il grossisse d'une manche a l'autre.
+//Les deux dernieres tiennent la note sous maxTokens : livre a lui-meme,
+//ministral met du gras, des exemples de repliques, et se fait couper avant la
+//fin des correctifs.
 const ANALYSIS_RULES =
 `consignes de redaction :
 - ne cite jamais un nom de personnage dans ta reponse. ils sont retires au sort
@@ -60,6 +63,8 @@ const ANALYSIS_RULES =
 - dans le resume comme dans les correctifs, ne designe jamais le joueur
   conseille comme l'IA, un bot ou un modele : parle-lui a la deuxieme personne,
   comme a un joueur que les autres ont soupconne.
+- ecris en texte brut : ni gras, ni italique, ni separateur, ni exemple de replique.
+- chaque consigne tient sur une ligne de quinze mots maximum.
 
 reponds exactement dans ce format, sans rien avant ni apres :
 <resume>
@@ -96,8 +101,9 @@ export function requestDebrief(room, results)
 		{
 			//Une analyse vide ou ratee garde la note precedente : perdre la
 			//memoire accumulee serait pire que de ne pas l'avoir mise a jour.
-			room.debrief = parseDebrief(text) ?? room.debrief;
-			logDebrief(room);
+			const debrief = parseDebrief(text);
+			logDebrief(room, debrief, text);
+			room.debrief = debrief ?? room.debrief;
 		})
 		.catch((err) => console.error(`[debrief] room ${room.id} : analyse echouee :`, err.message))
 		.finally(() => { room.debriefPending = false; });
@@ -132,7 +138,7 @@ async function askAnalyst(analyst, room, results)
 		name: 'debrief',
 		buildSystemPrompt: () => ANALYSIS_SYSTEM,
 		buildUserPrompt: () => body,
-		sampling: { temperature: 0.4, maxTokens: 400 },
+		sampling: { temperature: 0.4, maxTokens: 600 },
 	});
 }
 
@@ -184,30 +190,40 @@ function buildPreviousNote(room)
 
 //Deux sections balisees plutot qu'un bloc libre : chacune part dans un bloc de
 //contexte different, et un prompt peut prendre les correctifs sans le resume.
-//Une section absente donne une chaine vide, que composeContext saute deja.
+//Une section absente donne une chaine vide, que composeContext saute deja. Les
+//deux absentes, la reponse est illisible : null, et la note precedente reste.
 function parseDebrief(text)
 {
 	if (!text)
 		return null;
 
-	return {
+	const debrief =
+	{
 		summary: section(text, 'resume'),
 		fixes: section(text, 'correctifs'),
 	};
+	return (debrief.summary || debrief.fixes) ? debrief : null;
 }
 
+//ministral ouvre ses balises mais ne les ferme presque jamais : une section
+//s'arrete a sa balise fermante, a la balise ouvrante suivante ou a la fin.
 function section(text, tag)
 {
-	return text.match(new RegExp(`<${tag}>([\\s\\S]*?)</${tag}>`))?.[1].trim() ?? '';
+	return text.match(new RegExp(`<${tag}>([\\s\\S]*?)(?:</${tag}>|(?=<\\w+>)|$)`))?.[1].trim() ?? '';
 }
 
 //#TMP a supprimer : la note produite par l'analyste. C'est la seule facon de
 //voir ce que le bot recevra a la manche suivante — le prompt envoye est deja
 //loggue par mistral_common, la reponse ne l'est pas.
-function logDebrief(room)
+function logDebrief(room, debrief, text)
 {
 	console.log(`----- [debrief] room ${room.id} apres la manche ${room.roundNumber} -----`);
-	console.log(`--- resume ---\n${room.debrief.summary || '(vide)'}`);
-	console.log(`--- correctifs ---\n${room.debrief.fixes || '(vide)'}`);
+	if (!debrief)
+		console.log(`--- reponse illisible, note precedente gardee ---\n${text || '(vide)'}`);
+	else
+	{
+		console.log(`--- resume ---\n${debrief.summary || '(vide)'}`);
+		console.log(`--- correctifs ---\n${debrief.fixes || '(vide)'}`);
+	}
 	console.log('--------------------------------------------------');
 }
