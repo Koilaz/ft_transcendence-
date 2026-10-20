@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useEffect, useRef, useState } from 'react';
 
 const CHARACTERS = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -12,9 +11,9 @@ export function MatrixRain() {
     if (!canvas) return;
 
     const resize = () => {
-      const rect = canvas.getBoundingClientRect();
-      canvas.width = rect.width;
-      canvas.height = rect.height;
+      const rect = canvas!.getBoundingClientRect();
+      canvas!.width = rect.width;
+      canvas!.height = rect.height;
       setColumns(Math.floor(rect.width / 20));
     };
 
@@ -35,12 +34,12 @@ export function MatrixRain() {
 
     function draw() {
       // Fond semi-transparent pour l'effet de traînées
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx!.fillStyle = 'rgba(0, 0, 0, 0.05)';
+      ctx!.fillRect(0, 0, canvas!.width, canvas!.height);
 
       // Couleur des caractères (vert Matrix)
-      ctx.fillStyle = '#3ecf8e';
-      ctx.font = '15px monospace';
+      ctx!.fillStyle = '#3ecf8e';
+      ctx!.font = '15px monospace';
 
       for (let i = 0; i < drops.length; i++) {
         // Caractère aléatoire
@@ -53,10 +52,10 @@ export function MatrixRain() {
         const y = drops[i] * 20;
 
         // Dessiner le caractère
-        ctx.fillText(char, x, y);
+        ctx!.fillText(char, x, y);
 
         // Réinitialiser la goutte si elle dépasse la hauteur
-        if (y > canvas.height && Math.random() > 0.975) {
+        if (y > canvas!.height && Math.random() > 0.975) {
           drops[i] = 0;
         }
 
@@ -73,7 +72,6 @@ export function MatrixRain() {
     <canvas
       ref={canvasRef}
       className="absolute inset-0 w-full h-full object-cover opacity-20 md:opacity-30"
-      style={{ zIndex: 1 }}
     />
   );
 }

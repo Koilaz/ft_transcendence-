@@ -1,4 +1,3 @@
-// @ts-nocheck
 import {
   useEffect,
   useState,
@@ -147,10 +146,7 @@ export default function Profile() {
     }
   }
 
-  function handleLogout() {
-    setAccessToken(null);
-    navigate('/login');
-  }
+
 
   if (isLoading) {
     return (
@@ -176,7 +172,7 @@ export default function Profile() {
 
           <Link
             to="/login"
-            className="inline-block rounded-lg bg-green-500 px-4 py-3 font-semibold text-stone-900 hover:bg-green-400 transition"
+            className="inline-block rounded-lg bg-blue-500 px-4 py-3 font-semibold text-stone-900 hover:bg-blue-400 transition"
           >
             Return to login
           </Link>
@@ -191,7 +187,7 @@ export default function Profile() {
         <section className="rounded-2xl border border-stone-700 bg-stone-900 p-8 shadow-xl">
           <div className="mb-8 flex items-start justify-between gap-4">
             <div>
-              <p className="mb-2 text-sm uppercase tracking-widest text-green-400">
+              <p className="mb-2 text-sm uppercase tracking-widest text-blue-400">
                 Profile
               </p>
 
@@ -199,20 +195,19 @@ export default function Profile() {
             </div>
 
             <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => navigate('/')}
+                className="rounded-lg border border-stone-700 px-4 py-2 text-sm font-medium text-stone-300 transition hover:bg-stone-800/50"
+              >
+                Back
+              </button>
               <Link
                 to="/friends"
-                className="rounded-lg border border-green-500 px-4 py-2 text-sm font-medium text-green-300 transition hover:bg-green-500/10"
+                className="rounded-lg border border-blue-500 px-4 py-2 text-sm font-medium text-blue-300 transition hover:bg-blue-500/10"
               >
                 Friends
               </Link>
-
-              <button
-                type="button"
-                onClick={handleLogout}
-                className="rounded-lg border border-stone-700 px-4 py-2 text-sm font-medium text-stone-300 transition hover:border-red-500 hover:text-red-300"
-              >
-                Log out
-              </button>
             </div>
           </div>
 
@@ -223,7 +218,7 @@ export default function Profile() {
           )}
 
           {successMessage && (
-            <p className="mb-6 rounded-lg border border-emerald-900 bg-emerald-950 px-4 py-3 text-sm text-emerald-300">
+            <p className="mb-6 rounded-lg border border-blue-900 bg-blue-950 px-4 py-3 text-sm text-blue-300">
               {successMessage}
             </p>
           )}
@@ -282,7 +277,7 @@ export default function Profile() {
                 !avatarFile ||
                 isUploadingAvatar
               }
-              className="mt-6 w-full rounded-lg bg-green-600 px-4 py-3 font-semibold text-white transition hover:bg-green-500 disabled:cursor-not-allowed disabled:opacity-50"
+              className="mt-6 w-full rounded-lg bg-blue-600 px-4 py-3 font-semibold text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isUploadingAvatar
                 ? 'Uploading...'
@@ -317,7 +312,7 @@ export default function Profile() {
                 maxLength={20}
                 required
                 autoComplete="username"
-                className="w-full rounded-lg border border-stone-700 bg-stone-950 px-4 py-3 text-white outline-none transition focus:border-green-500"
+                className="w-full rounded-lg border border-stone-700 bg-stone-950 px-4 py-3 text-white outline-none transition focus:border-blue-500"
               />
             </div>
 
@@ -327,7 +322,7 @@ export default function Profile() {
                 isSubmitting ||
                 username.trim() === user.username
               }
-              className="mt-6 w-full rounded-lg bg-green-500 px-4 py-3 font-semibold text-stone-900 transition hover:bg-green-400 disabled:cursor-not-allowed disabled:opacity-50"
+              className="mt-6 w-full rounded-lg bg-blue-500 px-4 py-3 font-semibold text-stone-900 transition hover:bg-blue-400 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isSubmitting
                 ? 'Saving...'

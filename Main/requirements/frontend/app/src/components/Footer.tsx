@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useModal } from '../contexts/ModalContext';
 
 export default function Footer() {

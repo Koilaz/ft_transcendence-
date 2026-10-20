@@ -1,6 +1,6 @@
-// @ts-nocheck
 import { motion } from 'framer-motion';
 import { useGame } from '../hooks/useGame';
+import { MatrixRain } from '../components/MatrixRain';
 import {
   GameHeader,
   DialogueArea,
@@ -72,9 +72,12 @@ export default function Game() {
   }
 
   return (
-    <div className="fixed inset-0 bg-stone-950 flex flex-col w-full overflow-hidden">
+    <div className="fixed inset-0 bg-black flex flex-col w-full overflow-hidden">
+      {/* MatrixRain global pour toute la page de jeu */}
+      <MatrixRain className="absolute inset-0 -z-10" />
+      
       {/* PARTIE 1 - Header (10%) */}
-      <div className="h-[10%] flex-shrink-0">
+      <div className="h-[10%] flex-shrink-0 bg-stone-950/50 backdrop-blur-sm">
         <GameHeader
           roomNumber={roomNumber}
           roundIndicator={roundIndicator}
@@ -87,15 +90,12 @@ export default function Game() {
       </div>
 
       {/* PARTIE 2 - Dialogue (62.5%) */}
-      <div className="h-[62.5%] overflow-hidden min-h-0 text-black">
-        <DialogueArea
-          messages={messages}
-          myCharacter={myCharacter}
-        />
+      <div className="h-[62.5%] overflow-hidden min-h-0 bg-stone-950/30">
+        <DialogueArea messages={messages} myCharacter={myCharacter} />
       </div>
 
       {/* PARTIE 3 - Input de chat (4%) */}
-      <div className="h-[4%] flex-shrink-0 bg-orange-300">
+      <div className="h-[4%] flex-shrink-0 bg-stone-950/50">
         {inputState.enabled && (
           <motion.div
             className="w-[95%] max-w-[90vw] mx-auto h-full p-2"
@@ -115,7 +115,7 @@ export default function Game() {
       </div>
 
       {/* PARTIE 4 - Vote (23.50%) */}
-      <div className="h-[23.50%] flex-shrink-0 bg-orange-300">
+      <div className="h-[23.50%] flex-shrink-0 bg-stone-950/50">
         <VoteArea
           turnOrder={turnOrder}
           currentTurnCharacter={currentTurnCharacter}

@@ -1,34 +1,10 @@
-// @ts-nocheck
 // ============================================
 // IMPORTS
 // ============================================
 import { motion } from 'framer-motion';
-import { useState, useEffect, useMemo } from 'react';
-import type { FeedMessage } from '../../types/game';
+import { useState, useEffect } from 'react';
 import { getHeadImagePath, getCharacterFluoColor, getCharacterDialogueColor } from '../../utils/characters';
 import { getCharacterFont } from '../../utils/fonts';
-// import { ParticlesEffect } from '../ParticlesEffect';
-// import { ChainExplosionEffect } from '../ChainExplosionEffect';
-// import { GravityParticlesEffect } from '../GravityParticlesEffect';
-// import { ShootingStarsEffect } from '../ShootingStarsEffect';
-
-// ============================================
-// FORCE TAILWIND A GÉNÉRER LES CLASSES DE POLICES
-// (Nécessaire car les classes sont appliquées dynamiquement)
-// ============================================
-// Ce composant caché force Tailwind à inclure les classes de polices
-function FontClassesSafelist() {
-  return (
-    <div className="hidden">
-      <span className="font-wasabi">Wasabi</span>
-      <span className="font-ketchup">Ketchup</span>
-      <span className="font-moutarde">Moutarde</span>
-      <span className="font-cocktail">Cocktail</span>
-      <span className="font-mayo">Mayo</span>
-      <span className="font-poivre">Poivre</span>
-    </div>
-  );
-}
 
 // ============================================
 // COMPOSANT : AnimatedMayoPortrait (pour les dialogues)
@@ -290,21 +266,6 @@ function AnimatedPoivrePortrait({ className }: { className?: string }) {
 }
 
 // ============================================
-// HOOK : Détecte la taille d'écran (responsive)
-// ============================================
-function useMediaQuery(query: string): boolean {
-  const [matches, setMatches] = useState(false);
-  useEffect(() => {
-    const media = window.matchMedia(query);
-    setMatches(media.matches);
-    const listener = () => setMatches(media.matches);
-    media.addListener(listener);
-    return () => media.removeListener(listener);
-  }, []);
-  return matches;
-}
-
-// ============================================
 // TYPES
 // ============================================
 type DialogueBubbleProps = {
@@ -359,7 +320,8 @@ function DialogueBubble({ sender, text, isSystem, align, index }: DialogueBubble
     return map[colorClass] || '#ffffff';
   };
   
-  const hexColor = getFluoHex(fluoColor);
+  // Récupère la couleur hexadécimale du flou
+  //const hexColor = getFluoHex(fluoColor); n'est plus utilise pour l'instant. a supprimer pour la version finale
   
   // Génère le gradient soleil sur 360° partant du BAS, centre à 75% de hauteur
   const sunGradient = `repeating-conic-gradient(
@@ -370,7 +332,7 @@ function DialogueBubble({ sender, text, isSystem, align, index }: DialogueBubble
   
   return (
     <motion.div
-      className={`flex items-start gap-3 my-2 ${isLeft ? 'flex-row' : 'flex-row-reverse'} p-2 rounded-2xl ${dialogueColor} relative`}
+      className={`flex items-start gap-3 my-2 pointer-events-auto ${isLeft ? 'flex-row' : 'flex-row-reverse'} p-2 rounded-2xl ${dialogueColor} relative`}
       initial={{ opacity: 0, x: isLeft ? -30 : 30 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.3, delay: index * 0.1 }}
@@ -447,7 +409,7 @@ function DialogueBubble({ sender, text, isSystem, align, index }: DialogueBubble
         </div>
         
         {/* TEXTE DU MESSAGE - Police par personnage */}
-        <div className={`text-base text-black leading-[1.5] backdrop-blur-sm bg-white/20 rounded-full px-4 py-1 inline-block ${getCharacterFont(sender)}`}>
+        <div className={`text-base text-white leading-[1.5] backdrop-blur-sm bg-black/50 rounded-full px-4 py-1 inline-block ${getCharacterFont(sender)}`}>
           {text}
         </div>
       </div>
@@ -458,121 +420,41 @@ function DialogueBubble({ sender, text, isSystem, align, index }: DialogueBubble
 // ============================================
 // TYPES
 // ============================================
+type DialogueAreaProps = {
+  messages: Array<{
+    id: string;
+    kind: string;
+    sender: string;
+    text: string;
+  }>;
+  myCharacter: string | null;
+};
 
 // ============================================
 // COMPOSANT PRINCIPAL : DialogueArea
 // Gère l'affichage de la zone de dialogue (PARTIE 2)
 // ============================================
 export function DialogueArea({ messages, myCharacter }: DialogueAreaProps) {
-  // ============================================
-  // RESPONSIVE : Détecte si mobile
-  // ============================================
-  const isMobile = useMediaQuery('(max-width: 768px)');
-  
-  // ============================================
-  // ARRIERE-PLAN : Mots en blanc
-  // A MODIFIER : Liste des mots à afficher
-  // ============================================
-  const backgroundWords = [
-    "Hello", "Salut", "Hey", "Yo", "Hi", "Bonjour", "Coucou", "Allô",
-    "Chat", "Talk", "Welcome", "Bienvenue", "Discuss", "Hey"
-  ];
-
-  // ============================================
-  // A MODIFIER : Map des fonts par personnage
-  // Exemple : const fontMap = { 'Alice': 'font-pacifico', 'Bob': 'font-roboto' }
-  // À décommenter et compléter avec TES personnages et LEURS fonts
-  // ============================================
-  // const fontMap: Record<string, string> = {
-  //   'Alice': 'font-alice',
-  //   'Bob': 'font-bob',
-  //   'Charlie': 'font-charlie',
-  //   // ... ajoute TOUS tes personnages ici
-  // };
-
-  // ============================================
-  // Génère les mots - ADAPTE AUX TAILLES D'ECRAN
-  // 👇 NE PAS TOUCHER : useMemo évite le clignotement
-  // ============================================
-  const wordElements = useMemo(() => {
-    // Nombre de mots : 15 sur mobile, 50 sur desktop
-    const wordCount = isMobile ? 15 : 50;
-    
-    // Répète le tableau pour avoir assez de mots
-    const words = [...Array(wordCount)].map(
-      (_, i) => backgroundWords[i % backgroundWords.length]
-    );
-    
-    return words.map((word, i) => {
-      // Sélectionne un personnage aléatoirement pour la font (sera remplacé par fontMap)
-      const randomSender = messages[Math.floor(Math.random() * messages.length)]?.sender || '';
-      
-      return (
-        <span
-          key={i}
-          // 👇 À DECOMMENTER quand fontMap est prêt
-          // className={`absolute text-white/20 ${fontMap[randomSender] || 'font-sans'}`}
-          className="absolute text-white/20 font-sans"
-          style={{
-            left: `${Math.random() * 100}%`,
-            top: `${Math.random() * 100}%`,
-            // 👇 Taille adaptive : 12-20px sur mobile, 14-32px sur desktop
-            fontSize: `${isMobile ? 12 + Math.random() * 8 : 14 + Math.random() * 16}px`,
-            // 👇 Rotation aléatoire pour un effet naturel
-            transform: `rotate(${Math.random() * 20 - 10}deg)`,
-          }}
-        >
-          {word}
-        </span>
-      );
-    });
-  }, [isMobile]); // 👈 Recalcule si la taille d'écran change
-
-  // ============================================
-  // RENDU PRINCIPAL
-  // ============================================
   return (
-    /* Conteneur principal - PARTIE 2 du jeu */
     <motion.main
-      className="h-full w-full overflow-hidden px-4 pt-4 pb-0 relative bg-orange-300"  // 👇 FOND : Modifier ici pour changer la couleur
+      className="h-full w-full overflow-hidden px-4 pt-4 pb-0 relative pointer-events-none"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3, delay: 0.1 }}
     >
-      {/* Force Tailwind à générer les classes de polices */}
-      <FontClassesSafelist />
-      {/* ============================================
-           ARRIERE-PLAN : Mots en blanc (20% opacité)
-           A MODIFIER : 
-           - backgroundWords (liste des mots)
-           - fontMap (font par personnage)
-           - fontSize/rotation dans wordElements
-      ============================================ */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {wordElements}
-      </div>
-
-      {/* ============================================
-           CONTENEUR DES MESSAGES
-           A MODIFIER : 
-           - Le filtre (message.kind === 'chat')
-           - L'alignement (index % 2 === 0)
-      ============================================ */}
-      <div className="relative w-full h-full flex flex-col justify-end overflow-y-auto">
+      {/* Conteneur des messages (fond transparent pour voir MatrixRain parent) */}
+      <div className="relative w-full h-full flex flex-col justify-end overflow-y-auto pointer-events-none">
         {messages
-          .filter(message => message.kind === 'chat')  // 👇 Garde uniquement les messages de type 'chat'
-          .map((message, index) => {
-            const align = index % 2 === 0 ? 'left' : 'right';  // 👇 Alternance gauche/droite
-            return (
-              <DialogueBubble
-                key={message.id}
-                sender={message.sender}
-                text={message.text}
-                align={align}
-                index={index}
-              />
-            );
-          })}
+          .filter(message => message.kind === 'chat')
+          .map((message, index) => (
+            <DialogueBubble
+              key={message.id}
+              sender={message.sender}
+              text={message.text}
+              align={message.sender === myCharacter ? 'right' : 'left'}
+              index={index}
+            />
+          ))}
       </div>
     </motion.main>
   );

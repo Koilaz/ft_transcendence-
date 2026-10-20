@@ -1,4 +1,3 @@
-// @ts-nocheck
 // Configuration centrale des personnages
 
 // Mapping des noms de personnages (tels que reçus du backend) vers leurs propriétés
@@ -11,8 +10,8 @@ export const CHARACTERS = {
     bodyImage: '/bodyGeneralKetchup.png',
     color: 'bg-red-500/30 border-2 border-red-500',
     fluoColor: 'bg-red-500',
-    normalColor: 'bg-red-600',
-    dialogueColor: 'bg-red-600',
+    normalColor: 'bg-red-400',
+    dialogueColor: 'bg-red-400',
     colorClass: 'ring-red-500',
   },
   colonelmoutarde: {
@@ -21,8 +20,8 @@ export const CHARACTERS = {
     bodyImage: '/bodyColonelMoutarde.png',
     color: 'bg-amber-500/30 border-2 border-amber-500',
     fluoColor: 'bg-yellow-400',
-    normalColor: 'bg-yellow-400',
-    dialogueColor: 'bg-yellow-500',
+    normalColor: 'bg-yellow-300',
+    dialogueColor: 'bg-yellow-300',
     colorClass: 'ring-amber-500',
   },
   majorwasabi: {
@@ -31,8 +30,8 @@ export const CHARACTERS = {
     bodyImage: '/bodyMajorWasabi.png',
     color: 'bg-green-500/30 border-2 border-green-500',
     fluoColor: 'bg-lime-400',
-    normalColor: 'bg-green-500',
-    dialogueColor: 'bg-green-500',
+    normalColor: 'bg-emerald-400',
+    dialogueColor: 'bg-emerald-400',
     colorClass: 'ring-green-500',
   },
   marechalcocktail: {
@@ -41,8 +40,8 @@ export const CHARACTERS = {
     bodyImage: '/bodyMarechalCocktail.png',
     color: 'bg-blue-500/30 border-2 border-blue-500',
     fluoColor: 'bg-cyan-400',
-    normalColor: 'bg-blue-700',
-    dialogueColor: 'bg-blue-500',
+    normalColor: 'bg-blue-400',
+    dialogueColor: 'bg-blue-400',
     colorClass: 'ring-blue-500',
   },
   lieutenantmayo: {
@@ -51,8 +50,8 @@ export const CHARACTERS = {
     bodyImage: '/bodyLieutenantMayo.png',
     color: 'bg-white/20 border-2 border-white/50',
     fluoColor: 'bg-white',
-    normalColor: 'bg-stone-100',
-    dialogueColor: 'bg-stone-100',
+    normalColor: 'bg-stone-400',
+    dialogueColor: 'bg-stone-400',
     colorClass: 'ring-white',
   },
   caporalpoivre: {
@@ -61,8 +60,8 @@ export const CHARACTERS = {
     bodyImage: '/bodyCaporalPoivre.png',
     color: 'bg-purple-500/30 border-2 border-purple-500',
     fluoColor: 'bg-fuchsia-500',
-    normalColor: 'bg-purple-500',
-    dialogueColor: 'bg-purple-500',
+    normalColor: 'bg-violet-400',
+    dialogueColor: 'bg-violet-400',
     colorClass: 'ring-purple-500',
   },
 };

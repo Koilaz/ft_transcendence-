@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useEffect, useReducer, useRef, useState } from 'react';
 import { connectGameSocket, sendChatMessage, sendVoteMessage, sendReplayMessage, sendReadyMessage, RESUME_TOKEN_STORAGE_KEY, discardResumeToken } from '../services/gameSocket';
 import {
@@ -34,8 +33,8 @@ export function useGame() {
   // instantane 'reconnected', retour en file, ou 'reconnect_expired'.
   useEffect(() => {
     let disposed = false;
-    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
-    let handshakeTimer: ReturnType<typeof setTimeout> | null = null;
+    let reconnectTimer: ReturnType<typeof setTimeout> | undefined = undefined;
+    let handshakeTimer: ReturnType<typeof setTimeout> | undefined = undefined;
     let attempts = 0;
     let currentSocket: WebSocket | null = null;
 
@@ -60,8 +59,19 @@ export function useGame() {
           return;
         }
         if (message.type === 'roomClosed') {
-          // Fin definitive pour cette session : plus aucune tentative, et le
-          // jeton ne sert plus a rien (sa room est morte).
+          // Debug : afficher le resumeToken actuel
+          console.log('Room closed with code:', message.code, 'Current resumeToken:', sessionStorage.getItem(RESUME_TOKEN_STORAGE_KEY));
+          
+          // Si la session a expiré, on nettoie et on relance sans afficher l'erreur
+          if (message.code === 'reconnect_expired') {
+            discardResumeToken();
+            terminalRef.current = false; // Permet la reconnexion
+            dispatch({ type: 'resetGame' });
+            setTimeout(() => reconnectRef.current?.(), 100);
+            return; // Ne pas transmettre ce message au reducer (évite l'affichage de l'erreur)
+          }
+          
+          // Pour les autres cas (room fermée définitivement)
           terminalRef.current = true;
           discardResumeToken();
         }
@@ -94,8 +104,10 @@ export function useGame() {
         scheduleReconnect();
       });
       socket.addEventListener('error', () => {
-        if (!disposed)
+        if (!disposed) {
           setConnectionOpen(false);
+          scheduleReconnect();
+        }
       });
 
       // Poignee de main muette : une socket ouverte mais silencieuse depuis
@@ -104,7 +116,7 @@ export function useGame() {
       handshakeTimer = setTimeout(() => {
         if (!disposed && socket === currentSocket)
           socket.close();
-      }, 10000);
+      }, 30000);
     }
 
     // Onglet masque : aucune tentative tant que le joueur ne regarde pas ;
@@ -125,7 +137,11 @@ export function useGame() {
         clearTimeout(reconnectTimer);
       if (handshakeTimer)
         clearTimeout(handshakeTimer);
-      socketRef.current?.close();
+      // Ne fermer la socket que si elle est ouverte ou en cours d'ouverture
+      // Sinon on risque de déclencher une erreur "closed before established"
+      if (socketRef.current && socketRef.current.readyState !== WebSocket.CLOSING && socketRef.current.readyState !== WebSocket.CLOSED) {
+        socketRef.current.close();
+      }
       socketRef.current = null;
     };
   }, []);

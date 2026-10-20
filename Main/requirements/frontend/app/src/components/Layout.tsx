@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { Outlet, useLocation } from 'react-router-dom';
 import Footer from './Footer';
 

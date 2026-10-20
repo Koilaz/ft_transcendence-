@@ -1,4 +1,3 @@
-//@ts-nocheck
 import type { RoundResult, FinalRank } from '../services/gameSocket';
 import { useState } from 'react';
 

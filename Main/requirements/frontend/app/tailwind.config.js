@@ -18,10 +18,7 @@ export default {
     'font-cocktail',
     'font-mayo',
     'font-poivre',
-    'font-bla-bla',
-    // Ajoute ici les autres classes de polices quand tu les crées
-    // 'font-ninja',
-    // 'font-robot',
+    'font-bangers',
   ],
   plugins: [],
 }
