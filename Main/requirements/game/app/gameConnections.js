@@ -191,7 +191,8 @@ export function attachGameConnections(wss, {
 		}
 		else if (params.has('resumeToken') && !resuming)
 		{
-			// Une reprise expiree attend le clic Rejouer pour chercher une partie.
+			// Une reprise expiree ne cherche pas de partie d'elle-meme : le
+			// client repart en file par un 'replay' sur cette meme socket.
 			session.sendFn({ type: 'roomClosed', code: 'reconnect_expired' });
 		}
 		else

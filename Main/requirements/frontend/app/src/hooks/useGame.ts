@@ -62,12 +62,13 @@ export function useGame() {
           // Debug : afficher le resumeToken actuel
           console.log('Room closed with code:', message.code, 'Current resumeToken:', sessionStorage.getItem(RESUME_TOKEN_STORAGE_KEY));
           
-          // Si la session a expiré, on nettoie et on relance sans afficher l'erreur
+          // Si la session a expire, on repart en file sans afficher l'erreur,
+          // sur cette meme socket : en ouvrir une autre laisserait celle-ci
+          // ouverte, avec sa session cote serveur. Le serveur renvoie au
+          // besoin un nouveau jeton avant de remettre le joueur en file.
           if (message.code === 'reconnect_expired') {
-            discardResumeToken();
-            terminalRef.current = false; // Permet la reconnexion
             dispatch({ type: 'resetGame' });
-            setTimeout(() => reconnectRef.current?.(), 100);
+            sendReplayMessage(socket);
             return; // Ne pas transmettre ce message au reducer (évite l'affichage de l'erreur)
           }
           
@@ -103,11 +104,11 @@ export function useGame() {
         dispatch({ type: 'connection', text: 'deconnecte' });
         scheduleReconnect();
       });
+      // Un echec declenche error puis close : la relance part de close
+      // seulement, sinon chaque echec programmerait deux tentatives.
       socket.addEventListener('error', () => {
-        if (!disposed) {
+        if (!disposed)
           setConnectionOpen(false);
-          scheduleReconnect();
-        }
       });
 
       // Poignee de main muette : une socket ouverte mais silencieuse depuis

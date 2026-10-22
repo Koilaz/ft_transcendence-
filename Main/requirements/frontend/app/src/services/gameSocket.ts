@@ -189,6 +189,9 @@ function getGameWebSocketUrl(): string {
   // le JWT d'un compte donne displayName = username, sinon le pseudo d'invite.
   // Sans rien, le classement final affiche « joueur-N ».
   const params = new URLSearchParams();
+  const accessToken = localStorage.getItem('accessToken');
+  if (accessToken)
+    params.set('token', accessToken);
   //const guestName = localStorage.getItem('guestName');
   //if (guestName)
     //params.set('name', guestName);
