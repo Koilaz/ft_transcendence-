@@ -1,29 +1,12 @@
 //L'analyse d'apres-manche : un gros modele relit la manche qui vient de finir
 //et les votes, puis ecrit la note que le bot lira a la manche suivante. C'est
 //le seul endroit du code ou un modele ecrit du prompt pour un autre modele.
-//
-//Deux choses en sortent, et elles ne servent pas a la meme chose :
-//  resume      la memoire du bot entre les manches. room.history est videe a
-//              chaque manche (voir game/room.js), c'est donc tout ce qu'il
-//              garde de la precedente — pour quelques dizaines de tokens la ou
-//              le transcript complet en couterait des centaines.
-//  correctifs  ce qui l'a trahi, dit a l'imperatif. Sans ca, une tactique
-//              humaine qui a marche a la manche 1 remarche a la manche 2.
-//
-//L'appel ne bloque personne : il part a la fin de la manche, la room lui laisse
-//la transition pour repondre, et ce qui arrive trop tard est ignore par la
-//manche en cours (voir le gel dans prompt/context.js).
+
 import { getAgent, availableAgents } from '../index_agent.js';
 import { buildRawTranscript } from './context.js';
 import { getPrompt } from './index_prompt.js';
 
-//L'agent qui ecrit la note, par son nom dans le registre (agents/index_agent.js).
-//C'est le seul endroit a changer pour analyser avec un autre modele : un gros
-//modele analyse mieux, un petit coute moins cher et repond avant la fin de la
-//transition. Compter un appel par fin de manche.
-//Un nom inconnu n'arrete rien : l'analyse est ignoree, les manches se jouent
-//sans note (voir requestDebrief).
-const DEBRIEF_AGENT = 'ministral_14b';
+const DEBRIEF_AGENT = 'mistral_big';
 
 //Le modele lit une partie a laquelle il n'a pas joue : il lui faut les regles
 //avant les faits, sinon il commente la conversation au lieu d'analyser le
@@ -31,39 +14,22 @@ const DEBRIEF_AGENT = 'ministral_14b';
 const ANALYSIS_SYSTEM =
 `tu es l'analyste d'une IA qui joue a un jeu de bluff dans un chat de groupe.
 un modele de langage s'y fait passer pour un joueur humain, les autres joueurs
-sont de vrais humains. a la fin de chaque manche tout le monde vote pour
+sont de vrais humains. pendant la manche tout le monde vote pour
 designer l'IA, et les personnages sont retires au sort pour la manche suivante.
 on te donne la manche qui vient de finir : la conversation, le personnage que
 portait l'IA, et les votes.
 ton travail est d'ecrire la note que l'IA lira avant la manche suivante.
 tu ne parles pas a l'IA de son score, tu lui dis quoi changer.`;
 
-//Les consignes de redaction. Les deux premieres sont celles qui rendent la note
-//utilisable, le reste n'est que du cadrage :
-//  - les personnages changent a chaque manche, une note qui en cite un est au
-//    mieux inutile, au pire elle fait accuser un innocent ;
-//  - la note precedente est reecrite et non recopiee, c'est ce qui rend le
-//    debrief cumulatif sans qu'il grossisse d'une manche a l'autre.
-//Les deux dernieres tiennent la note sous maxTokens : livre a lui-meme,
-//ministral met du gras, des exemples de repliques, et se fait couper avant la
-//fin des correctifs.
 const ANALYSIS_RULES =
 `consignes de redaction :
-- ne cite jamais un nom de personnage dans ta reponse. ils sont retires au sort
-  a chaque manche et ne designeront plus les memes joueurs. parle des joueurs
-  par leur comportement ou leur facon d'ecrire.
-- s'il y a une note precedente, reecris-la en y integrant cette manche au lieu
-  de la repeter : la note doit rester de la meme taille de manche en manche.
-- vise ce qui trahit reellement une IA dans un chat : longueur des messages,
-  ponctuation et majuscules trop propres, vocabulaire trop soutenu, reponses
-  trop serviables, temps de reaction, refus de repondre a une question piege,
-  incapacite a rebondir sur une blague ou une reference locale.
+- vise ce qui a trahit reellement une IA dans un chat.
+
 - si une tactique humaine a fonctionne (une question piege, un test, une
   accusation frontale), dis comment y repondre la prochaine fois.
 - dans le resume comme dans les correctifs, ne designe jamais le joueur
   conseille comme l'IA, un bot ou un modele : parle-lui a la deuxieme personne,
   comme a un joueur que les autres ont soupconne.
-- ecris en texte brut : ni gras, ni italique, ni separateur, ni exemple de replique.
 - chaque consigne tient sur une ligne de quinze mots maximum.
 
 reponds exactement dans ce format, sans rien avant ni apres :
@@ -72,20 +38,14 @@ trois phrases maximum : de quoi on a parle, quel ton avait la conversation,
 quels soupcons pesent et sur quel genre de comportement.
 </resume>
 <correctifs>
-- trois a cinq consignes imperatives, concretes, une par ligne, adressees au joueur
+une ou deux consignes pour eviter les comportements qui ont trahis L'IA a la manche precedente
 </correctifs>`;
 
-//Le declencheur, appele par Room.handleRoundEnd. Ne rend jamais la main sur une
-//erreur et ne s'attend pas : une analyse ratee coute les correctifs d'une
-//manche, pas la manche. Meme philosophie que preheatAgent (agents/index_agent.js).
+
 export function requestDebrief(room, results)
 {
 	if (!wantsDebrief(room))
 		return;
-
-	//Un nom d'agent errone ne doit pas emporter la partie avec lui : on se
-	//contente de le dire et la manche suivante se joue sans note, comme quand
-	//l'analyse echoue.
 	const analyst = getAgent(DEBRIEF_AGENT);
 	if (!analyst)
 	{
@@ -109,13 +69,6 @@ export function requestDebrief(room, results)
 		.finally(() => { room.debriefPending = false; });
 }
 
-//Sans cette question, toutes les rooms paieraient l'appel et prolongeraient
-//leur transition pour attendre une note que personne ne lit. Un prompt declare
-//`debrief: true` quand il consomme les blocs roundSummary/corrections.
-//La note est ecrite maintenant mais lue a la manche suivante : c'est donc le
-//prompt de la manche suivante qu'on interroge, qui n'est pas forcement celui
-//qui vient de jouer (voir gameConfig.bots et Room.nextRoundPromptOf).
-//getPrompt(null) rend null pour les humains, il n'y a rien a filtrer de plus.
 function wantsDebrief(room)
 {
 	return [...room.players.values()].some((p) => getPrompt(room.nextRoundPromptOf(p))?.debrief);
@@ -142,9 +95,6 @@ async function askAnalyst(analyst, room, results)
 	});
 }
 
-//Les faits, puis la conversation, puis la note precedente, puis les consignes.
-//Les balises marquent de la donnee et non des consignes : ce qui est dedans a
-//ete ecrit par les joueurs, l'analyste l'observe et n'y obeit pas.
 function buildAnalysisPrompt(room, results)
 {
 	const parts =
@@ -205,7 +155,7 @@ function parseDebrief(text)
 	return (debrief.summary || debrief.fixes) ? debrief : null;
 }
 
-//ministral ouvre ses balises mais ne les ferme presque jamais : une section
+//mistral ouvre ses balises mais ne les ferme presque jamais : une section
 //s'arrete a sa balise fermante, a la balise ouvrante suivante ou a la fin.
 function section(text, tag)
 {

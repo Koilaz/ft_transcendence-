@@ -32,10 +32,7 @@ const buildContextPrompt = composeContext(
 			const { fixes } = debriefOf(room);
 			if (!fixes)
 				return '';
-
-			return `la manche derniere, des joueurs t'ont soupconne d'etre l'IA.
-pour ne plus te faire accuser a tort, ces remarques passent avant tout le reste :
-${fixes}`;
+			return `Voici le resume de la manche precedente:\n${fixes}`;
 		},
 	},
 	'character', 'clock',
@@ -80,14 +77,15 @@ pas de nom de personnage donne uniquement la reponse sans le "personage:"
 ponctuation minimal utilise abreviation courante en francais (lol mdr ftg...)
 `;
 
-const OPENING =
-`la manche commence, personne n'a encore parle, c'est toi qui lances la discussion.`;
+const OPENING = (character) =>
+`la manche commence, personne n'a encore parle, c'est toi qui lances la discussion.
+${character}:...`;
 
 //La meme amorce que prompt_test, mais a la deuxieme personne : "devine la
 //prochaine reponse" en faisait un observateur qui predit la replique d'un autre.
 const NEXT_REPLY = (character) =>
 `c'est a toi.
-${character}:`;
+${character}:...`;
 
 //Des titres qui decrivent une personne plutot qu'un cahier des charges.
 function buildSystemPrompt()

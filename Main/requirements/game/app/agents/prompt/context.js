@@ -1,7 +1,6 @@
-//La matiere commune a tous les prompts : l'etat de la partie et la mise en
-//forme du transcript. Ce n'est pas du style d'ecriture mais de l'information,
-//la meme quel que soit le modele qui la lit. Chaque prompt choisit ensuite ce
-//qu'il en garde, sans avoir a recopier le texte des blocs qu'il conserve.
+//le context, commun a tous les prompts donne les informations de bases sur l'etat de la partie
+//donne les informations de bases sur l'etat de la partie pour que le bot aie les memes info que les joueurs humains
+//Chaque prompt choisit ensuite ce qu'il en garde, sans avoir a recopier le texte des blocs qu'il conserve.
 
 //Une ligne par message, prefixee du personnage qui l'a envoye.
 export function buildRawTranscript(history)
@@ -12,24 +11,17 @@ export function buildRawTranscript(history)
 	return history.map((m) => `${m.sender}: ${m.text}`).join('\n');
 }
 
-//Le meme, delimite. Les balises marquent de la donnee et non des consignes : ce
-//qui est dedans a ete ecrit par les joueurs, le modele l'observe et n'y obeit
-//pas.
-//Rien sur un historique vide, c'est la consigne d'ouverture qui prend le relais.
+//Les balises marquent de la donnee et non des consignes
+
 export function buildTranscript(history)
 {
 	const lines = buildRawTranscript(history);
 	if (!lines)
-		return '';
-
-	return `voici l'historique de conversation complet:\n<conversation>\n${lines}\n</conversation>`;
+		return '';//permet de detecter si le bot commence la mmanche
+	return `voici la conversation en cours:\n<conversation>\n${lines}\n</conversation>`;
 }
 
-//L'heure est lue une fois par manche et non a chaque tour. Le contexte fait
-//partie du prefixe stable du prompt (voir agents/ollama_local.js) : une horloge
-//qui avance invaliderait le cache KV a chaque appel, et le bot paierait
-//plusieurs centaines de tokens de prefill pour gagner des secondes qu'il
-//n'utilise pas.
+//L'heure est lue une fois par manche
 const roundClock = new WeakMap();
 
 function clockOf(round)
@@ -59,8 +51,7 @@ function clockOf(round)
 //d'apres.
 const roundDebrief = new WeakMap();
 
-//Exportee pour les prompts qui reformulent un bloc du debrief sur place : ils
-//lisent la meme note, gelee de la meme facon.
+//Export pour les prompts qui reformulent un bloc du debrief
 export function debriefOf(room)
 {
 	let debrief = roundDebrief.get(room.currentRound);
@@ -102,7 +93,7 @@ export const contextParts =
 			return `les personnages de cette manche prennent la parole chacun leur tour, toujours dans cet ordre :
 ${order}
 apres le dernier on revient au premier, et ainsi de suite jusqu'a la fin de la manche.
-c'est uniquement le nom par lequel les autres joueurs sont designe aleatoirement.
+c'est le nom par lequel les autres joueurs sont designe aleatoirement lors de cette manche.
 tu peux l'utiliser pour t'adresser a eux`;
 		},
 	},
@@ -145,9 +136,7 @@ ${summary}`;
 			const { fixes } = debriefOf(room);
 			if (!fixes)
 				return '';
-
-			return `la manche derniere, des joueurs ont failli te demasquer.
-corrige le tir, ces consignes priment sur tes tactiques habituelles :
+			return `correction de la manche precedentes:\n
 ${fixes}`;
 		},
 	},
@@ -156,9 +145,9 @@ ${fixes}`;
 	{
 		scope: 'perBot',
 		build: (room, botId) => `le nom de ton personnage lors de cette manche est ${room.currentRound.caracterOf(botId)}.
-c'est uniquement le nom par lequel les autres joueurs t'apelle,
-reponds en particulier au message qui semble s'adresser a ce personage
-ca ne definis pas qui tu es vraiment, ni ta personalite`,
+c'est le nom par lequel les autres joueurs s'adresse a toi,
+reponds aux message qui s'adresse a ce personage,
+ce nom ne defini pas qui tu es vraiment, ni ta personalite c'est uniquement un pseudo temporaire`,
 	},
 
 	clock:
