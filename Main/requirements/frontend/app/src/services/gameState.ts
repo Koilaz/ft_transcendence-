@@ -101,7 +101,6 @@ export function gameReducer(state: GameUIState, action: GameAction): GameUIState
         disconnectedCharacters: [],
         leftCharacters: [],
         messages: [
-          ...state.messages,
           { id: nextMessageId(), kind: 'system', text: `>>> nouvelle manche, tu incarnes ${action.character}` },
         ],
       };

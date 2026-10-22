@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
@@ -76,7 +75,7 @@ export default function Register() {
                 maxLength={20}
                 required
                 autoComplete="username"
-                className="w-full rounded-lg border border-stone-700 bg-stone-950 px-4 py-3 text-white outline-none transition focus:border-green-500"
+                className="w-full rounded-lg border border-stone-700 bg-stone-950 px-4 py-3 text-white outline-none transition focus:border-blue-500"
               />
             </div>
 
@@ -95,7 +94,7 @@ export default function Register() {
                 onChange={(event) => setEmail(event.target.value)}
                 required
                 autoComplete="email"
-                className="w-full rounded-lg border border-stone-700 bg-stone-950 px-4 py-3 text-white outline-none transition focus:border-green-500"
+                className="w-full rounded-lg border border-stone-700 bg-stone-950 px-4 py-3 text-white outline-none transition focus:border-blue-500"
               />
             </div>
 
@@ -116,7 +115,7 @@ export default function Register() {
                 maxLength={100}
                 required
                 autoComplete="new-password"
-                className="w-full rounded-lg border border-stone-700 bg-stone-950 px-4 py-3 text-white outline-none transition focus:border-green-500"
+                className="w-full rounded-lg border border-stone-700 bg-stone-950 px-4 py-3 text-white outline-none transition focus:border-blue-500"
               />
             </div>
 
@@ -137,7 +136,7 @@ export default function Register() {
                 maxLength={100}
                 required
                 autoComplete="new-password"
-                className="w-full rounded-lg border border-stone-700 bg-stone-950 px-4 py-3 text-white outline-none transition focus:border-green-500"
+                className="w-full rounded-lg border border-stone-700 bg-stone-950 px-4 py-3 text-white outline-none transition focus:border-blue-500"
               />
             </div>
 
@@ -150,7 +149,7 @@ export default function Register() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full rounded-lg bg-green-500 px-4 py-3 font-semibold text-stone-900 transition hover:bg-green-400 disabled:cursor-not-allowed disabled:opacity-50"
+              className="w-full rounded-lg bg-blue-500 px-4 py-3 font-semibold text-stone-900 transition hover:bg-blue-400 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isSubmitting ? 'Creating account...' : 'Create account'}
             </button>
@@ -159,14 +158,14 @@ export default function Register() {
           <p className="mt-6 text-center text-sm text-stone-400">
             Already registered?{' '}
             <Link
-              className="font-medium text-green-400 hover:text-green-300"
+              className="font-medium text-blue-400 hover:text-blue-300"
               to="/login"
             >
               Log in
             </Link>
             {' | '}
             <Link
-              className="font-medium text-green-400 hover:text-green-300"
+              className="font-medium text-blue-400 hover:text-blue-300"
               to="/"
             >
               Return to Home

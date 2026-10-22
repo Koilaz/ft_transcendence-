@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { forwardRef } from 'react';
 import { motion } from 'framer-motion';
 import type { InputState } from '../../types/game';
@@ -17,7 +16,7 @@ export const ChatInput = forwardRef<HTMLInputElement, ChatInputProps>(
         <input
           ref={ref}
           className={`flex-1 bg-stone-900/50 border rounded-lg px-5 py-2 text-stone-200 text-lg transition-colors focus:outline-none ${
-            inputState.myTurn ? 'border-green-500 ring-2 ring-green-500' : 'border-stone-700'
+            inputState.myTurn ? 'border-blue-500 ring-2 ring-blue-500' : 'border-stone-700'
           }`}
           value={draft}
           disabled={!inputState.enabled}
@@ -29,7 +28,7 @@ export const ChatInput = forwardRef<HTMLInputElement, ChatInputProps>(
         />
         <motion.button
           type="button"
-          className="bg-green-500 hover:bg-green-600 text-white rounded-lg px-4 py-2 font-semibold text-lg disabled:opacity-40 disabled:cursor-not-allowed"
+          className="bg-blue-500 hover:bg-blue-600 text-white rounded-lg px-4 py-2 font-semibold text-lg disabled:opacity-40 disabled:cursor-not-allowed"
           disabled={!inputState.enabled || !draft.trim()}
           onClick={onSend}
           whileHover={{ scale: inputState.enabled ? 1.02 : 1 }}

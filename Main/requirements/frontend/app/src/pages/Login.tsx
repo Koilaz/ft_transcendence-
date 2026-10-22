@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
@@ -28,7 +27,7 @@ export default function Login() {
 
       setAccessToken(response.accessToken);
 
-      navigate('/profile');
+      navigate('/');
     } catch (error) {
       if (error instanceof Error) {
         setError(error.message);
@@ -66,7 +65,7 @@ export default function Login() {
                 onChange={(event) => setEmail(event.target.value)}
                 required
                 autoComplete="email"
-                className="w-full rounded-lg border border-stone-700 bg-stone-950 px-4 py-3 text-white outline-none transition focus:border-green-500"
+                className="w-full rounded-lg border border-stone-700 bg-stone-950 px-4 py-3 text-white outline-none transition focus:border-blue-500"
               />
             </div>
 
@@ -87,7 +86,7 @@ export default function Login() {
                 maxLength={100}
                 required
                 autoComplete="current-password"
-                className="w-full rounded-lg border border-stone-700 bg-stone-950 px-4 py-3 text-white outline-none transition focus:border-green-500"
+                className="w-full rounded-lg border border-stone-700 bg-stone-950 px-4 py-3 text-white outline-none transition focus:border-blue-500"
               />
             </div>
 
@@ -100,7 +99,7 @@ export default function Login() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full rounded-lg bg-green-500 px-4 py-3 font-semibold text-stone-900 transition hover:bg-green-400 disabled:cursor-not-allowed disabled:opacity-50"
+              className="w-full rounded-lg bg-blue-500 px-4 py-3 font-semibold text-stone-900 transition hover:bg-blue-400 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isSubmitting ? 'Logging in...' : 'Log in'}
             </button>
@@ -109,14 +108,14 @@ export default function Login() {
           <p className="mt-6 text-center text-sm text-stone-400">
             No account yet?{' '}
             <Link
-              className="font-medium text-green-400 hover:text-green-300"
+              className="font-medium text-blue-400 hover:text-blue-300"
               to="/register"
             >
               Create one
             </Link>
             {' | '}
             <Link
-              className="font-medium text-green-400 hover:text-green-300"
+              className="font-medium text-blue-400 hover:text-blue-300"
               to="/"
             >
               Return to Home

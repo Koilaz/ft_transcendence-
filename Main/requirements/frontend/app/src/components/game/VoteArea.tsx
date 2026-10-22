@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect, useRef } from 'react';
 import { getBodyImagePath, getCharacterColor } from '../../utils/characters';
@@ -164,8 +163,8 @@ export function VoteArea({
                       return (
                         <motion.div
                           key={i}
-                          className="absolute text-red-500 text-[clamp(0.75rem,1.2vw,1rem)] font-bold pointer-events-none font-bla-bla"
-                          style={{ left: '50%', top: '50%', transform: 'translate(-50%, -50%)', WebkitTextStroke: '1px rgba(0,0,0,0.5)', textStroke: '1px rgba(0,0,0,0.5)' }}
+                          className="absolute text-red-500 text-[clamp(0.75rem,1.2vw,1rem)] font-bold pointer-events-none font-bangers"
+                          style={{ left: '50%', top: '50%', transform: 'translate(-50%, -50%)', WebkitTextStroke: '1px rgba(0,0,0,0.5)' }}
                           initial={{ x: startX, y: startY, opacity: 0, scale: 1.2 }}
                           animate={{ x: endX, y: endY, opacity: [0, 1, 1, 0], scale: [1.2, 3.8, 3.8, 1.2] }}
                           transition={{
