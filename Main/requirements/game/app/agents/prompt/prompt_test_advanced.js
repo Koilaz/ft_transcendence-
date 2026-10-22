@@ -110,7 +110,7 @@ export const prompt_test_advanced =
 	buildTranscript,
 	sampling:
 	{
-		temperature: 1.2,
+		temperature: 1.1,
 		maxTokens: 50,
 		ollama: { repeat_penalty: 1, repeat_last_n: 256 },
 	},

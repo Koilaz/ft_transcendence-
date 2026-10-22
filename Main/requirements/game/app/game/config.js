@@ -10,7 +10,7 @@ export const gameConfig = {
 	//	                                                      vaut pour les manches suivantes
 	bots: [{
 		rounds: [
-			{ agent: 'local_agent', prompt: 'prompt_test' },
+			{ agent: 'local_agent', prompt: 'prompt_easy' },
 			{ agent: 'mistral_small', prompt: 'prompt_test_advanced' }, // manche 1
 			{ agent: 'mistral_medium', prompt: 'prompt_test_advanced' }, // manche 2
 			{ agent: 'mistral_big', prompt: 'prompt_test_advanced' }, // manche 3
