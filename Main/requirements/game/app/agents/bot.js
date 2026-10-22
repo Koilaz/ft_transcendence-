@@ -1,6 +1,6 @@
 import { generateReply } from './index_agent.js';
 import { requirePrompt } from './prompt/index_prompt.js';
-import { postTreatment } from './typos.js';
+import { postTreatment } from './postTreatment.js';
 import { gameConfig } from '../game/config.js';
 
 const BOT_MIN_DELAY = 2000; // delais minimal de reponse du bot
@@ -58,6 +58,8 @@ export function createBotSendFn(room, botId, { agent: agentName, prompt: promptN
 			//absent du registre jette une erreur fatale, traitee plus bas comme
 			//un agent introuvable.
 			const prompt = requirePrompt(promptName);
+			//Lu avant l'appel : la manche peut changer pendant la generation.
+			const character = room.currentRound.caracterOf(botId);
 			const rawReply = await generateReply(room.history, agentName, prompt.buildContextPrompt(room, botId), promptName);
 			if (!rawReply)
 			{
@@ -69,7 +71,7 @@ export function createBotSendFn(room, botId, { agent: agentName, prompt: promptN
 			//repetitions sont traitees pour tous dans room.addMessage). Meme coupure que
 			//pour les humains : un message plus long que ce que le front laisse
 			//taper trahirait le bot.
-			const reply = postTreatment(rawReply).slice(0, gameConfig.maxMessageLength);
+			const reply = postTreatment(rawReply, character).slice(0, gameConfig.maxMessageLength);
 			const targetDelayMs = replyDelayMs(reply, maxDelayMs);
 			const genMs = Date.now() - start;
 			const remaining = targetDelayMs - genMs;
