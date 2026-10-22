@@ -182,28 +182,25 @@ export function discardResumeToken(): void {
 }
 
 function getGameWebSocketUrl(): string {
+  // Auto-détection du protocole : wss:// si la page est en HTTPS, ws:// sinon
   const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
 
-  // Le serveur identifie le joueur a la connexion (voir gameConnections.js) :
+  // Le serveur identifie le joueur à la connexion (voir gameConnections.js) :
   // le JWT d'un compte donne displayName = username, sinon le pseudo d'invite.
   // Sans rien, le classement final affiche « joueur-N ».
   const params = new URLSearchParams();
-  const accessToken = localStorage.getItem('accessToken');
-  if (accessToken)
-    params.set('token', accessToken);
+  //const guestName = localStorage.getItem('guestName');
+  //if (guestName)
+    //params.set('name', guestName);
   const guestName = localStorage.getItem('guestName');
   if (guestName)
     params.set('name', guestName);
-
-  // Le jeton de reprise est conserve par onglet (sessionStorage) : une
-  // reconnexion rouvre la partie la ou elle en etait. Un onglet duplique le
-  // copie et prend la main — comportement documente par le serveur.
   const resumeToken = sessionStorage.getItem(RESUME_TOKEN_STORAGE_KEY);
   if (resumeToken)
     params.set('resumeToken', resumeToken);
-
   const query = params.toString();
 
+  // URL absolue basée sur l'hôte courant (passera par nginx qui proxyfie)
   return `${protocol}://${window.location.host}/ws/game${query ? `?${query}` : ''}`;
 }
 

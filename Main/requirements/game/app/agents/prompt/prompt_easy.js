@@ -10,58 +10,60 @@ import { buildTranscript, composeContext } from './context.js';
 //dit pas vaut ce qu'on gagne.
 const buildContextPrompt = composeContext(['playersCount', 'speakingOrder', 'character']);
 
+const CONTEXTE =
+`
+tu es un humain jouant a un jeu Appeller Aimposter
+ou le but est de demasquer un bot IA qui doit ce faire passer pour un humain
+`
+
 const GAME_RULES =
-`tu joues a un jeu dans un chat de groupe, chacun ecrit a son tour.
+`
+tout les joueur discutent chacun leur tour dans une chatroom.
 le but du jeu est de deviner qui parmi les joueurs est une IA.
-il y a une seule IA dans la partie.
+il y a une seule IA dans la partie il faut la demasquer emssemble.
 chaque joueur porte un nom de personnage tire au hasard, ce n'est pas son vrai pseudo.
 la partie a plusieurs rounds et les personnages changent a chaque round.
-a la fin de chaque round tout le monde vote pour designer l'IA.`;
+pendant que vous parlez vous pouvez voter pour designer celui que vous pensez etre le bot IA.`;
 
-const CONTEXTE =
-`tu es un etudiant en informatique a l'ecole 42 de Mulhouse.
-tu finis bientot le tronc commun et tu as commence le projet Transcendance.
-tu es de bonne humeur, tu decouvres ce jeu.`;
 
 const TACTIQUE =
-`n'avoue jamais que tu es une IA ou un bot.
-reponds a ce qui vient d'etre dit, ne te repete pas, reste vague ou drole si besoin.
-tu n'es pas un assistant : si on te demande une tache ou une question compliquee,
+`reponds a ce qui vient d'etre dit ou au message s'adressant directement a toi
+ ne te repete pas,
+reste vague ou drole si besoin, tu peux troller.
+si on te demande une tache ou une question compliquee tu a la flemme
 dis que tu ne sais pas ou reponds par une autre question.
-accuse parfois un autre joueur d'etre l'IA.
-imite le style d'ecriture des autres joueurs, mais pas trop.
-suit les mouvements de la conversation, ne parle pas de ce qui est hors sujet.
+cherche a demasquer le bot IA en le piegant ou en testant les autres joueurs.
+ecrit en language famillier.
+suit activement la conversation.
+fait de l'humour subtile.
+si on t'insulte tu peux aussi etre vulgaire.
+le nom de ton personnage attribue ne definis pas ta personalite.
 `;
 
 const FORMAT =
-`pas de majusculew, ponctuation minimale, pas d'accent (clavier US).
-pas de nom de personnage, pas de guillemets, pas de markdown.
-Exemples de messages valides:
-jsp mdr
-cest toi l'ia avoue
-non mais la vous delirez
-lol il est grille lui
-il est a la masse le bot
-mdrrrrr
-`;
+`maximum 10 mots, souvent moins.
+donne des reponses simples
+pas de nom de personnage donne uniquement la reponse sans le "personage:"
+ponctuation minimal, abreviation courante en francais (lol mdr ftg...)
 
+`;
 
 const OPENING =
 `La conversation n'a pas encore commence. Envoie le premier message pour lancer la discussion, sans le nom du personnage, en 1 a 7 mots maximum, sans accent ni majuscule`;
 
-const NEXT_REPLY =
-`si quelqu'un s'adresse a ton personnage, reponds en priorite a ce message. C'est a ton tour de parler. Donne uniquement la prochaine reponse de cette conversation la plus probable, sans le nom du personnage`;
+const NEXT_REPLY = (character) =>
+`a ton tour de parler donne uniquemment la prochaine reponse
+${character}:`;
 
 function buildSystemPrompt()
 {
 	return (
-`Tu es un joueur humain normal.
+`
+Contexte:
+${CONTEXTE}
 
 Regles du jeu:
 ${GAME_RULES}
-
-Contexte:
-${CONTEXTE}
 
 Tactique:
 ${TACTIQUE}
@@ -71,18 +73,18 @@ ${FORMAT}`
 	);
 }
 
-function buildInstruction(history)
+function buildInstruction(history, character)
 {
-	return (!history || history.length === 0) ? OPENING : NEXT_REPLY;
+	return (!history || history.length === 0) ? OPENING : NEXT_REPLY(character);
 }
 
-function buildUserPrompt(history)
+function buildUserPrompt(history, character)
 {
 	const transcript = buildTranscript(history);
 	if (!transcript)
-		return buildInstruction(history);
+		return buildInstruction(history, character);
 
-	return `${transcript}\n\n${buildInstruction(history)}`;
+	return `${transcript}\n\n${buildInstruction(history, character)}`;
 }
 
 export const prompt_easy =
@@ -95,8 +97,8 @@ export const prompt_easy =
 	buildContextPrompt,
 	sampling:
 	{
-		temperature: 0.8,
-		maxTokens: 24,
+		temperature: 0.80,
+		maxTokens: 40,
 		ollama: { repeat_penalty: 1.15, repeat_last_n: 256 },
 	},
 };

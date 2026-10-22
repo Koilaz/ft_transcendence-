@@ -1,4 +1,3 @@
-// @ts-nocheck
 import {
   useCallback,
   useEffect,
@@ -76,7 +75,7 @@ function PresenceDot({ isOnline }: { isOnline: boolean }) {
   return (
     <span
       className={`h-2 w-2 rounded-full ${
-        isOnline ? 'bg-green-400 shadow-[0_0_8px_#3ecf8e]' : 'bg-stone-600'
+        isOnline ? 'bg-blue-400 shadow-[0_0_8px_#3b82f6]' : 'bg-stone-600'
       }`}
     />
   );
@@ -118,7 +117,7 @@ function RequestCard({
         disabled={acceptLoading}
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
-        className="rounded-lg bg-green-500 px-4 py-2 text-sm font-semibold text-stone-900 transition hover:bg-green-400 disabled:cursor-not-allowed disabled:opacity-50"
+        className="rounded-lg bg-blue-500 px-4 py-2 text-sm font-semibold text-stone-900 transition hover:bg-blue-400 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {acceptLoading ? 'Loading...' : 'Accept'}
       </motion.button>
@@ -153,7 +152,7 @@ function FriendCard({
         <div>
           <p className="font-medium text-white">{user.username}</p>
           <p className={`flex items-center gap-2 text-xs ${
-            user.isOnline ? 'text-green-300' : 'text-stone-500'
+            user.isOnline ? 'text-blue-300' : 'text-stone-500'
           }`}>
             <PresenceDot isOnline={user.isOnline} />
             {getPresenceText(user)}
@@ -209,7 +208,7 @@ function UserCard({
         disabled={addLoading}
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
-        className="rounded-lg bg-green-500 px-4 py-2 text-sm font-semibold text-stone-900 transition hover:bg-green-400 disabled:cursor-not-allowed disabled:opacity-50"
+        className="rounded-lg bg-blue-500 px-4 py-2 text-sm font-semibold text-stone-900 transition hover:bg-blue-400 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {addLoading ? 'Loading...' : 'Add friend'}
       </motion.button>
@@ -251,9 +250,9 @@ function Notification({ message, type }: { message: string; type: 'error' | 'suc
       text: 'text-red-300',
     },
     success: {
-      border: 'border-emerald-900',
-      bg: 'bg-emerald-950',
-      text: 'text-emerald-300',
+      border: 'border-blue-900',
+      bg: 'bg-blue-950',
+      text: 'text-blue-300',
     },
   };
 
@@ -511,7 +510,7 @@ export default function Friends() {
           className="mb-8 flex items-center justify-between gap-4"
         >
           <div>
-            <p className="mb-2 text-sm uppercase tracking-widest text-green-400">
+            <p className="mb-2 text-sm uppercase tracking-widest text-blue-400">
               Social
             </p>
             <h1 className="text-4xl font-bold text-white">Friends</h1>
@@ -519,7 +518,7 @@ export default function Friends() {
 
           <Link
             to="/profile"
-            className="rounded-lg border border-stone-700 px-4 py-2 text-sm font-medium text-stone-300 transition hover:border-green-500 hover:text-green-300"
+            className="rounded-lg border border-stone-700 px-4 py-2 text-sm font-medium text-stone-300 transition hover:border-blue-500 hover:text-blue-300"
           >
             Back to profile
           </Link>

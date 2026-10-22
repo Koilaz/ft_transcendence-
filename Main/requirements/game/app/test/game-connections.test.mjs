@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { once } from 'node:events';
 import { WebSocket, WebSocketServer } from 'ws';
 import { attachGameConnections } from '../gameConnections.js';
+import { gameConfig } from '../game/config.js';
 
 // De vraies sockets, avec une file et une room controlees : aucun LLM ni
 // delai de manche ne masque les courses entre close, reprise et expiration.
@@ -134,10 +135,10 @@ try
 	assert.deepEqual(room.reconnections, [guestId]);
 	assert.equal(waiting.size, 0);
 	assert.ok(inGame.messages.some((msg) => msg.type === 'reconnected'));
-	inGame.socket.send(JSON.stringify({ type: 'chat', text: ` ${'x'.repeat(550)} ` }));
+	inGame.socket.send(JSON.stringify({ type: 'chat', text: ` ${'x'.repeat(gameConfig.maxMessageLength + 50)} ` }));
 	inGame.socket.send(JSON.stringify({ type: 'vote', targetCharacter: 'Caporal Mayo' }));
 	await until(() => room.votes.length === 1);
-	assert.deepEqual(room.messages, [{ playerId: guestId, text: 'x'.repeat(500) }]);
+	assert.deepEqual(room.messages, [{ playerId: guestId, text: 'x'.repeat(gameConfig.maxMessageLength) }]);
 	assert.deepEqual(room.votes, [{ playerId: guestId, target: 'Caporal Mayo' }]);
 
 	// Un refresh peut arriver avant close. L'ancienne socket perd tous ses droits.

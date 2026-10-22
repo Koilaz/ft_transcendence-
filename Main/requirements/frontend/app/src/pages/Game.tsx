@@ -1,10 +1,11 @@
-// @ts-nocheck
 import { motion } from 'framer-motion';
 import { useGame } from '../hooks/useGame';
+import { MatrixRain } from '../components/MatrixRain';
 import {
-  GameHeaderNew,
+  GameHeader,
   DialogueArea,
   VoteArea,
+  ChatInput,
 } from '../components/game';
 import { ScoreboardModal, GameEndModal, RoomClosedModal } from './VoteSystem';
 import { Lobby } from './Lobby';
@@ -15,6 +16,7 @@ export default function Game() {
     roomNumber,
     roundPhase,
     turnOrder,
+    turnCycle,
     currentTurnCharacter,
     myCharacter,
     countdown,
@@ -70,66 +72,50 @@ export default function Game() {
   }
 
   return (
-    <div className="fixed inset-0 bg-stone-950 text-stone-200 flex flex-col w-full overflow-hidden">
-      {/* PARTIE 1 - Header (fixe en haut) */}
-      <div className="flex-shrink-0">
-        <GameHeaderNew
+    <div className="fixed inset-0 bg-black flex flex-col w-full overflow-hidden">
+      {/* MatrixRain global pour toute la page de jeu */}
+      <MatrixRain className="absolute inset-0 -z-10" />
+      
+      {/* PARTIE 1 - Header (10%) */}
+      <div className="h-[10%] flex-shrink-0 bg-stone-950/50 backdrop-blur-sm">
+        <GameHeader
           roomNumber={roomNumber}
           roundIndicator={roundIndicator}
+          turnCycle={turnCycle}
           countdown={countdown}
           timerLabel={timerLabel}
           timerVisible={timerVisible}
+          characters={turnOrder}
         />
       </div>
 
-      {/* PARTIE 2 - Dialogue (prend l'espace disponible) */}
-      <div className="flex-1 overflow-hidden min-h-0">
-        <DialogueArea
-          messages={messages}
-          myCharacter={myCharacter}
-        />
+      {/* PARTIE 2 - Dialogue (62.5%) */}
+      <div className="h-[62.5%] overflow-hidden min-h-0 bg-stone-950/30">
+        <DialogueArea messages={messages} myCharacter={myCharacter} />
       </div>
 
-      {/* PARTIE 2.5 - Input de chat (fixe au-dessus de VoteArea) */}
-      {inputState.enabled && (
-        <div className="flex-shrink-0 p-4">
+      {/* PARTIE 3 - Input de chat (4%) */}
+      <div className="h-[4%] flex-shrink-0 bg-stone-950/50">
+        {inputState.enabled && (
           <motion.div
-            className="w-[90%] max-w-4xl mx-auto"
+            className="w-[95%] max-w-[90vw] mx-auto h-full p-2"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
           >
-            <div className="flex gap-3 bg-stone-800/90 backdrop-blur-sm border border-stone-700 rounded-xl p-3">
-              <input
-                ref={inputRef}
-                className={`flex-1 bg-stone-900/50 border rounded-lg px-5 py-3 text-stone-200 text-lg transition-colors focus:outline-none ${
-                  inputState.myTurn ? 'border-green-500 ring-2 ring-green-500' : 'border-stone-700'
-                }`}
-                value={draft}
-                disabled={!inputState.enabled}
-                placeholder={inputState.placeholder}
-                autoComplete="off"
-                maxLength={500}
-                onChange={(e) => setDraft(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-              />
-              <motion.button
-                type="button"
-                className="bg-green-500 hover:bg-green-600 text-white rounded-lg px-6 py-3 font-semibold text-lg disabled:opacity-40 disabled:cursor-not-allowed"
-                disabled={!inputState.enabled || !draft.trim()}
-                onClick={handleSend}
-                whileHover={{ scale: inputState.enabled ? 1.02 : 1 }}
-                whileTap={{ scale: inputState.enabled ? 0.98 : 1 }}
-              >
-                Envoyer
-              </motion.button>
-            </div>
+            <ChatInput
+              ref={inputRef}
+              draft={draft}
+              setDraft={setDraft}
+              inputState={inputState}
+              onSend={handleSend}
+            />
           </motion.div>
-        </div>
-      )}
+        )}
+      </div>
 
-      {/* PARTIE 3 - Vote (fixe en bas) */}
-      <div className="flex-shrink-0">
+      {/* PARTIE 4 - Vote (23.50%) */}
+      <div className="h-[23.50%] flex-shrink-0 bg-stone-950/50">
         <VoteArea
           turnOrder={turnOrder}
           currentTurnCharacter={currentTurnCharacter}

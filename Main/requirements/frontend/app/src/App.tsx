@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useEffect, useSyncExternalStore } from 'react';
 import AppRouter from './router/AppRouter';
 import { ModalProvider } from './contexts/ModalContext';

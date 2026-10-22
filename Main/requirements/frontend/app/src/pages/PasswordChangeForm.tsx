@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -119,7 +118,7 @@ export function PasswordChangeForm() {
       )}
 
       {successMessage && (
-        <p className="mb-6 rounded-lg border border-emerald-900 bg-emerald-950 px-4 py-3 text-sm text-emerald-300">
+        <p className="mb-6 rounded-lg border border-blue-900 bg-blue-950 px-4 py-3 text-sm text-blue-300">
           {successMessage}
         </p>
       )}
@@ -143,14 +142,14 @@ export function PasswordChangeForm() {
               maxLength={100}
               required
               autoComplete="current-password"
-              className="w-full rounded-lg border border-stone-700 bg-stone-950 px-4 py-3 text-white outline-none transition focus:border-green-500"
+              className="w-full rounded-lg border border-stone-700 bg-stone-950 px-4 py-3 text-white outline-none transition focus:border-blue-500"
             />
           </div>
 
           <button
             type="submit"
             disabled={isChecking}
-            className="mt-6 w-full rounded-lg bg-green-500 px-4 py-3 font-semibold text-stone-900 transition hover:bg-green-400 disabled:cursor-not-allowed disabled:opacity-50"
+            className="mt-6 w-full rounded-lg bg-blue-500 px-4 py-3 font-semibold text-stone-900 transition hover:bg-blue-400 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isChecking ? 'Checking...' : 'Continue'}
           </button>
@@ -174,7 +173,7 @@ export function PasswordChangeForm() {
               maxLength={72}
               required
               autoComplete="new-password"
-              className="w-full rounded-lg border border-stone-700 bg-stone-950 px-4 py-3 text-white outline-none transition focus:border-green-500"
+              className="w-full rounded-lg border border-stone-700 bg-stone-950 px-4 py-3 text-white outline-none transition focus:border-blue-500"
             />
 
             <p className="mt-2 text-sm text-stone-500">
@@ -199,14 +198,14 @@ export function PasswordChangeForm() {
               maxLength={72}
               required
               autoComplete="new-password"
-              className="w-full rounded-lg border border-stone-700 bg-stone-950 px-4 py-3 text-white outline-none transition focus:border-green-500"
+              className="w-full rounded-lg border border-stone-700 bg-stone-950 px-4 py-3 text-white outline-none transition focus:border-blue-500"
             />
           </div>
 
           <button
             type="submit"
             disabled={isSaving}
-            className="mt-6 w-full rounded-lg bg-green-500 px-4 py-3 font-semibold text-stone-900 transition hover:bg-green-400 disabled:cursor-not-allowed disabled:opacity-50"
+            className="mt-6 w-full rounded-lg bg-blue-500 px-4 py-3 font-semibold text-stone-900 transition hover:bg-blue-400 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isSaving ? 'Saving...' : 'Save new password'}
           </button>

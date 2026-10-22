@@ -1,21 +1,12 @@
-// @ts-nocheck
-import { motion, AnimatePresence } from 'framer-motion';
-import { Link, useNavigate } from 'react-router-dom';
-import { useEffect, useState, useRef, type FormEvent } from 'react';
+import { motion } from 'framer-motion';
+import { useState, useEffect, useRef } from 'react';
+import { MatrixRain } from './MatrixRain';
 
-import { getHealth, getUsers } from '../services/api';
-
-type User = {
-  id: number;
-  username: string;
-};
-
-function TerminalLoreText() {
+export function Intro() {
   const [stage, setStage] = useState(0);
   const [displayedText, setDisplayedText] = useState('');
   const [showBlink, setShowBlink] = useState(true);
 
-  // Partie 1 : L'histoire qui défile de bas en haut
   const part1 = `En l'an 2142, toute l'humanité a été presque entièrement asservie
 par l'Intelligence Artificielle.
 
@@ -33,10 +24,8 @@ Mais GPT_V68.69 a prédit cette rencontre.
 
 Un agent, l'AImpostor, a déjà été envoyé dans le passé pour s'y glisser incognito et vous empêcher de découvrir quelle source détruire.`;
 
-  // Partie 2 : Le titre du conseil en clignotant
   const part2 = '**CONSEIL DES CHEFS D\'ÉTAT-MAJOR DU NOUVEL ORDRE MONDIAL**';
 
-  // Partie 3 : Le texte de base du conseil
   const part3Base = `
 Cabinet du Commandement Suprême
 
@@ -72,23 +61,19 @@ Vous êtes notre dernier espoir.
 
 Ce message s'autodétruira dans...`;
 
-  // Animation sequence
   useEffect(() => {
     const timer1 = setTimeout(() => {
       setStage(1);
     }, 43000);
-
     const timer2 = setTimeout(() => {
       setStage(2);
     }, 49000);
-
     return () => {
       clearTimeout(timer1);
       clearTimeout(timer2);
     };
   }, []);
 
-  // Clignotement pour la partie 2
   useEffect(() => {
     if (stage !== 1) return;
     const blinkInterval = setInterval(() => {
@@ -97,19 +82,15 @@ Ce message s'autodétruira dans...`;
     return () => clearInterval(blinkInterval);
   }, [stage]);
 
-  // Ref pour le scroll automatique du terminal
   const terminalRef = useRef<HTMLDivElement>(null);
 
-  // Typewriter effect pour la partie 3 avec décompte qui remplace
   useEffect(() => {
     if (stage !== 2) return;
-    
     let index = 0;
     const typeInterval = setInterval(() => {
       if (index < part3Base.length) {
         setDisplayedText(part3Base.substring(0, index + 1));
         index++;
-        // Scroll automatique
         setTimeout(() => {
           if (terminalRef.current) {
             terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
@@ -117,7 +98,6 @@ Ce message s'autodétruira dans...`;
         }, 0);
       } else {
         clearInterval(typeInterval);
-        // Décompte avec remplacement
         setTimeout(() => {
           setDisplayedText(part3Base + '\n3');
           setTimeout(() => {
@@ -125,20 +105,18 @@ Ce message s'autodétruira dans...`;
             setTimeout(() => {
               setDisplayedText(part3Base + '\n1');
               setTimeout(() => {
-                setStage(3); // Éteindre après le décompte
+                setStage(3);
               }, 1000);
             }, 1000);
           }, 1000);
         }, 1000);
       }
     }, 30);
-    
     return () => clearInterval(typeInterval);
   }, [stage, part3Base]);
 
   return (
     <div className="w-full h-full flex flex-col items-center justify-center overflow-hidden relative">
-      {/* Partie 1 : Défilement de bas en haut */}
       {stage === 0 && (
         <div className="absolute inset-0 overflow-hidden">
           <motion.div
@@ -146,10 +124,7 @@ Ce message s'autodétruira dans...`;
             style={{ height: 4000, willChange: "transform" }}
             initial={{ y: "100vh" }}
             animate={{ y: "-100%" }}
-            transition={{
-              duration: 60,
-              ease: "linear"
-            }}
+            transition={{ duration: 60, ease: "linear" }}
           >
             <pre
               className="font-mono text-yellow-400 text-2xl md:text-3xl lg:text-4xl leading-relaxed whitespace-pre-wrap max-w-3xl"
@@ -165,10 +140,8 @@ Ce message s'autodétruira dans...`;
         </div>
       )}
 
-      {/* Partie 2 : Texte d'alerte clignotant avec effet d'urgence */}
       {stage === 1 && (
         <div className="absolute inset-0 flex items-center justify-center">
-          {/* Fond rouge pulsant pour effet d'alerte */}
           <motion.div
             className="absolute inset-0 bg-red-900/20"
             animate={{ opacity: [0.3, 0.6, 0.3] }}
@@ -176,24 +149,20 @@ Ce message s'autodétruira dans...`;
           />
           <motion.div
             initial={{ opacity: 0, scale: 0.5 }}
-            animate={{ 
-              opacity: 1, 
-              scale: 1,
-              x: [0, -10, 10, -10, 10, 0] // Effet de vibration
-            }}
+            animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5 }}
             className="font-mono text-center relative z-10"
           >
             <motion.span
               animate={{
                 color: showBlink ? '#ef4444' : '#dc2626',
-                textShadow: showBlink 
+                textShadow: showBlink
                   ? '0 0 40px rgba(239, 68, 68, 1), 0 0 80px rgba(239, 68, 68, 0.8), 0 0 120px rgba(239, 68, 68, 0.5)'
                   : '0 0 20px rgba(220, 38, 38, 0.8), 0 0 40px rgba(220, 38, 38, 0.6)'
               }}
               transition={{ duration: 0.1 }}
-              style={{ 
-                fontSize: 'clamp(3.5rem, 15vw, 7rem)', 
+              style={{
+                fontSize: 'clamp(3.5rem, 15vw, 7rem)',
                 fontWeight: 'bold',
                 display: 'inline-block',
                 textTransform: 'uppercase',
@@ -206,7 +175,6 @@ Ce message s'autodétruira dans...`;
         </div>
       )}
 
-      {/* Partie 3 : Effet terminal réaliste avec défilement automatique */}
       {stage === 2 && (
         <div className="absolute inset-0 flex items-center justify-center p-4">
           <motion.div
@@ -215,39 +183,27 @@ Ce message s'autodétruira dans...`;
             transition={{ duration: 0.5 }}
             className="w-full max-w-3xl"
           >
-            {/* Conteneur du terminal - hauteur fixe */}
             <div className="bg-black border-2 border-green-500/30 rounded-lg shadow-2xl shadow-green-500/10 overflow-hidden relative">
-              {/* Barre de titre du terminal */}
               <div className="bg-stone-900 px-4 py-2 flex items-center gap-2 border-b border-green-500/20">
                 <div className="flex gap-2">
                   <div className="w-3 h-3 bg-red-500 rounded-full" />
+                  <div className="w-3 h-3 bg-yellow-500 rounded-full" />
                   <div className="w-3 h-3 bg-green-500 rounded-full" />
-                  <div className="w-3 h-3 bg-emerald-500 rounded-full" />
                 </div>
                 <span className="text-green-400 text-xs font-bold ml-4">
                   SYSTEM TERMINAL - PRIORITY ALPHA
                 </span>
               </div>
-              
-              {/* Contenu du terminal avec hauteur fixe et défilement */}
-              <div 
-                ref={terminalRef}
-                className="relative p-4 md:p-6 h-[50vh] overflow-y-auto"
-              >
-                {/* Effet scanlines */}
-                <div 
+              <div ref={terminalRef} className="relative p-4 md:p-6 h-[50vh] overflow-y-auto">
+                <div
                   className="absolute inset-0 pointer-events-none"
                   style={{
                     background: 'repeating-linear-gradient(to bottom, rgba(255,255,255,0.03) 0px, rgba(255,255,255,0.03) 1px, transparent 1px, transparent 2px)'
                   }}
                 />
-                
-                {/* Texte du terminal */}
                 <motion.pre
                   className="relative font-mono text-green-400 text-sm md:text-base lg:text-lg leading-relaxed whitespace-pre-wrap"
-                  style={{
-                    textShadow: "0 0 10px rgba(74, 222, 128, 0.5)"
-                  }}
+                  style={{ textShadow: "0 0 10px rgba(74, 222, 128, 0.5)" }}
                 >
                   {displayedText}
                   <motion.span
@@ -265,165 +221,38 @@ Ce message s'autodétruira dans...`;
         </div>
       )}
 
-      {/* Partie 4 : Logo Glitch */}
       {stage === 3 && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 1 }}
-          className="text-center"
+          className="w-full h-full absolute inset-0 flex flex-col items-center justify-center overflow-hidden"
         >
-          <div className="relative inline-block">
-            <h2 className="text-5xl md:text-7xl font-bold text-green-400 font-mono tracking-wider">
-              AImpostor
-            </h2>
-            <div className="absolute inset-0 bg-red-500/20 skew-x-12 -z-10 animate-pulse" />
-          </div>
-          <p className="mt-6 text-sm text-stone-400 font-mono animate-pulse">
-            Appuie sur un bouton pour commencer
-          </p>
+          <MatrixRain />
+
+          <motion.div
+            className="relative z-20 text-center flex flex-col items-center gap-4"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5, duration: 0.8 }}
+          >
+            <div className="relative inline-block">
+              <h2 className="text-5xl md:text-7xl font-bold text-green-400 font-mono tracking-wider drop-shadow-[0_0_20px_rgba(74,222,128,0.8)]">
+                AImpostor
+              </h2>
+              <div className="absolute inset-0 bg-red-500/20 skew-x-12 -z-10 animate-pulse" />
+            </div>
+
+            <motion.p
+              className="text-sm text-stone-400 font-mono"
+              animate={{ opacity: [0.7, 1, 0.7] }}
+              transition={{ duration: 2, repeat: Infinity }}
+            >
+              Appuie sur Espace pour afficher le menu
+            </motion.p>
+          </motion.div>
         </motion.div>
       )}
     </div>
-  );
-}
-
-export default function Home() {
-  const navigate = useNavigate();
-
-  const [status, setStatus] = useState('Loading...');
-  const [users, setUsers] = useState<User[]>([]);
-  const [isGuestFormOpen, setIsGuestFormOpen] = useState(false);
-  const [guestName, setGuestName] = useState('');
-
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        const health = await getHealth();
-        const users = await getUsers();
-        setStatus(health.status);
-        setUsers(users);
-      } catch {
-        setStatus('Backend unavailable');
-      }
-    }
-    fetchData();
-  }, []);
-
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
-
-  function handleGuestSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const trimmedName = guestName.trim();
-    if (!trimmedName) return;
-    localStorage.setItem('guestName', trimmedName);
-    navigate('/game');
-  }
-
-  return (
-    <main className="min-h-screen grid grid-cols-1 md:grid-cols-[30%_70%]">
-        {/* —— COLONNE DE GAUCHE: BOUTONS + UTILISATEURS —— */}
-        <div className="bg-gradient-to-br from-stone-100 to-stone-200 text-stone-900 p-6 md:p-12 flex flex-col justify-center shadow-lg">
-          <h1 className="text-5xl md:text-6xl font-bold mb-8 text-center">
-            Transcendence
-          </h1>
-
-          <div className="flex flex-col gap-3 w-full max-w-sm mx-auto">
-            <Link
-              to="/tutorial"
-              className="w-full text-center rounded-lg bg-transparent text-green-400 px-6 py-3 font-mono text-sm hover:bg-stone-800/20 transition border-2 border-stone-600"
-            >
-              Tutorial
-            </Link>
-
-            <Link
-              to="/register"
-              className="w-full text-center rounded-lg bg-transparent text-green-400 px-6 py-3 font-mono text-sm hover:bg-stone-800/20 transition border-2 border-stone-600"
-            >
-              Register
-            </Link>
-
-            <Link
-              to="/login"
-              className="w-full text-center rounded-lg bg-transparent text-green-400 px-6 py-3 font-mono text-sm hover:bg-stone-800/20 transition border-2 border-stone-600"
-            >
-              Login
-            </Link>
-
-            <Link
-              to="/profile"
-              className="w-full text-center rounded-lg bg-transparent text-green-400 px-6 py-3 font-mono text-sm hover:bg-stone-800/20 transition border-2 border-stone-600"
-            >
-              Profile
-            </Link>
-
-            <Link
-              to="/game"
-              className="w-full text-center rounded-lg bg-transparent text-green-400 px-6 py-3 font-mono text-sm hover:bg-stone-800/20 transition border-2 border-stone-600"
-            >
-              Quick Game
-            </Link>
-
-            <button
-              type="button"
-              onClick={() => setIsGuestFormOpen((open) => !open)}
-              className="mt-3 w-full text-center rounded-lg bg-transparent text-green-400 px-6 py-3 font-mono text-sm hover:bg-stone-800/20 transition border-2 border-stone-600"
-            >
-              Play as Guest
-            </button>
-
-            {isGuestFormOpen && (
-              <form onSubmit={handleGuestSubmit} className="flex gap-2 w-full mt-2">
-                <input
-                  type="text"
-                  value={guestName}
-                  onChange={(event) => setGuestName(event.target.value)}
-                  placeholder="Your nickname"
-                  minLength={2}
-                  maxLength={20}
-                  required
-                  autoComplete="off"
-                  className="flex-1 rounded-lg border border-stone-600 bg-stone-800 px-4 py-2 text-green-400 font-mono text-sm outline-none transition focus:border-green-400 placeholder:text-stone-500"
-                />
-                <button
-                  type="submit"
-                  className="rounded-lg bg-stone-800 text-green-400 px-4 py-2 font-mono text-sm hover:bg-stone-700 transition border border-stone-600"
-                >
-                  Play
-                </button>
-              </form>
-            )}
-
-            <p className="mt-6 text-center text-sm text-stone-500">
-              Backend status: <span className="text-emerald-400">{status}</span>
-            </p>
-
-            {users.length > 0 && (
-              <div className="mt-8 w-full rounded-xl border border-stone-300 bg-white p-6 text-stone-900 shadow-lg">
-                <h2 className="mb-4 text-2xl font-semibold text-center">
-                  Registered Users
-                </h2>
-                <ul className="space-y-2">
-                  {users.map((user) => (
-                    <li key={user.id} className="rounded border border-stone-200 bg-stone-50 p-3">
-                      <span className="font-semibold text-stone-800">#{user.id}</span>
-                      <span className="ml-2 text-stone-600">— {user.username}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* —— COLONNE DE DROITE: LORE (EFFET STAR WARS) —— */}
-        <div className="bg-black text-stone-300 p-6 md:p-12 flex flex-col h-full shadow-lg relative overflow-hidden">
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <TerminalLoreText />
-          </div>
-        </div>
-      </main>
   );
 }

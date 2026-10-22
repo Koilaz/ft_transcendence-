@@ -1,20 +1,25 @@
-// @ts-nocheck
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState } from 'react';
-import { getBodyImagePath, getCharacterFluoColor } from '../../utils/characters';
+import { useState, useEffect, useRef } from 'react';
+import { getBodyImagePath, getCharacterColor } from '../../utils/characters';
 
+// ============================================
+// TYPES
+// ============================================
 type VoteAreaProps = {
-  turnOrder: string[];
-  currentTurnCharacter: string | null;
-  myCharacter: string | null;
-  roundPhase: string | null;
-  hasVoted: boolean;
-  // Cibles de vote deconnectees ou parties : jamais des cibles honnetes.
-  disconnectedCharacters: string[];
-  leftCharacters: string[];
-  onVote?: (character: string) => void;
+  turnOrder: string[];              // Liste des personnages dans l'ordre du tour
+  currentTurnCharacter: string | null;  // Personnage dont c'est le tour
+  myCharacter: string | null;     // Mon personnage
+  roundPhase: string | null;      // Phase actuelle : 'chatting', 'voting', etc.
+  hasVoted: boolean;                // True si j'ai déjà voté
+  disconnectedCharacters: string[]; // Personnages déconnectés (ne pas voter pour eux)
+  leftCharacters: string[];        // Personnages partis de la room (ne pas voter pour eux)
+  onVote?: (character: string) => void;  // Callback pour envoyer le vote
 };
 
+// ============================================
+// COMPOSANT : VoteArea
+// Gère l'affichage et l'interaction de la zone de vote (PARTIE 4)
+// ============================================
 export function VoteArea({
   turnOrder,
   currentTurnCharacter,
@@ -25,24 +30,25 @@ export function VoteArea({
   leftCharacters,
   onVote,
 }: VoteAreaProps) {
-  const [selectedVote, setSelectedVote] = useState<string | null>(null);
+  // --- ETAT LOCAL ---
+  const [selectedVote, setSelectedVote] = useState<string | null>(null); // Personnage sélectionné pour le vote
 
+  // --- LOGIQUE DE VOTE ---
   const isVotingPhase = roundPhase === 'voting';
   // Le backend collecte les votes en temps reel pendant la phase de
   // discussion : il n'existe pas de phase 'voting' distincte, on peut voter
   // des que la manche est en cours. Un vote deja depose (y compris restaure
   // par l'instantane de reprise) verrouille la zone.
-  const canVote = (roundPhase === 'voting' || roundPhase === 'chatting') && !hasVoted;
+  const canVote = (roundPhase === 'voting' || roundPhase === 'chatting') && !hasVoted; // Peut-on voter ?
 
-  // Calcule la largeur relative pour chaque personnage
-  function getCharacterWidth(numCharacters: number): string {
-    return `${100 / numCharacters}%`;
-  }
 
+
+  // --- GESTION DES INTERACTIONS ---
   function handleVote(character: string) {
-    if (!canVote) return;
+    if (!canVote) return; // Bloque si on ne peut pas voter
     if (character === myCharacter) return; // Ne peut pas voter pour soi
     
+    // Toggle : sélectionne/désélectionne le personnage
     if (selectedVote === character) {
       setSelectedVote(null);
     } else {
@@ -52,108 +58,131 @@ export function VoteArea({
 
   function confirmVote() {
     if (selectedVote && onVote) {
-      onVote(selectedVote);
-      setSelectedVote(null);
+      onVote(selectedVote);  // Envoie le vote au parent
+      setSelectedVote(null); // Réinitialise la sélection
     }
   }
 
+  // ============================================
+  // RENDU
+  // ============================================
   return (
+    // Conteneur principal - prendre toute la hauteur disponible
     <motion.footer
-      className="flex-shrink-0 p-6 bg-stone-900 border-t border-stone-700"
+      className="h-full w-full"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: 0.2 }}
     >
-      <div className="max-w-5xl mx-auto w-full">
-        {/* Indication du tour */}
-        <motion.div
-          className="mb-4 text-center"
-          animate={{
-            opacity: [1, 0.7, 1] 
-          }}
-          transition={{
-            duration: 2, 
-            repeat: Infinity 
-          }}
-        >
-          {hasVoted ? (
-            <span className="text-xl font-bold text-emerald-400">
-              VOTE ENREGISTRÉ — en attente de la fin de manche
-            </span>
-          ) : (
-            <span className="text-xl font-bold text-amber-400">
-              {isVotingPhase
-                ? 'PHASE DE VOTE - Cliquez pour éliminer'
-                : `TOUR DE : ${currentTurnCharacter || 'Personne'}`}
-            </span>
-          )}
-        </motion.div>
-
-        {/* Personnages */}
-        <div className="flex justify-center items-center gap-6 mb-6">
+      <div className="h-full w-full flex flex-col">
+        
+        {/* ==========================================
+             SECTION 1 : NOMS DES PERSONNAGES
+             Affiche le nom de chaque personnage au-dessus de son bouton
+        ========================================== */}
+        <div className="h-[10%] flex justify-evenly items-end text-center pb-2">
           {turnOrder.map((character) => {
             const isMe = character === myCharacter;
-            const isCurrent = character === currentTurnCharacter;
-            const isSelected = selectedVote === character;
+            return (
+              <div
+                key={character}
+                className="flex-1 flex justify-center"
+                style={{ maxWidth: `calc(100% / ${turnOrder.length})` }}
+              >
+                <div
+                  className={`rounded-lg px-3 py-1 ${
+                    isMe
+                      ? 'bg-yellow-500/90 text-yellow-900 font-bold border-2 border-yellow-600'
+                      : 'bg-white/70 text-black font-bold'
+                  }`}
+                >
+                  <span className="text-[clamp(0.875rem,1.5vw,1.125rem)]">
+                    {character}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* ==========================================
+             SECTION 2 : LISTE DES PERSONNAGES
+             Boutons cliquables pour sélectionner un personnage
+        ========================================== */}
+        <div className="flex-1 flex justify-evenly items-center overflow-hidden w-full">
+          {turnOrder.map((character) => {
+            // --- ETATS DU PERSONNAGE ---
+            const isMe = character === myCharacter;           // C'est moi ?
+            const isCurrent = character === currentTurnCharacter;  // C'est son tour ?
+            const isSelected = selectedVote === character; // Sélectionné pour le vote ?
             // Un joueur deconnecte ou parti est forcement humain : le bot
             // n'a pas de socket et ne part jamais. Voter pour lui serait une
             // defaite certaine, on ne laisse pas le piege ouvert.
             const isAbsent =
               disconnectedCharacters.includes(character) ||
               leftCharacters.includes(character);
-            const isVotable = canVote && !isMe && !isAbsent;
-            const bgColor = getCharacterFluoColor(character);
-            const charWidth = getCharacterWidth(turnOrder.length);
+            const isVotable = canVote && !isMe && !isAbsent;  // Peut-on voter pour ce personnage ?
+            const bgColor = getCharacterColor(character);  // Couleur normale du personnage
 
             return (
+              // Bouton personnage
               <motion.button
                 key={character}
-                className={`relative flex flex-col items-center gap-2 p-3 rounded-xl transition-all ${bgColor} ${
+                // Styles : fond normal, bordure selon l'état, ratio 1:2 pour les images body
+                className={`relative flex flex-col items-center justify-start rounded-xl transition-all ${bgColor} overflow-hidden max-h-full aspect-[1/2] pb-2 flex-1 ${
                   isMe
-                    ? 'ring-2 ring-yellow-500'
+                    ? 'ring-2 ring-yellow-500'          // Moi = bordure jaune
                     : isVotable
-                      ? `cursor-pointer hover:brightness-150 hover:scale-105 ${isSelected ? 'ring-2 ring-white' : ''}`
-                      : 'cursor-not-allowed'
-                } ${isAbsent ? 'grayscale opacity-40' : ''}`}
-                style={{ width: charWidth, minWidth: charWidth }}
+                      ? `cursor-pointer hover:brightness-150 ${isSelected ? 'ring-2 ring-white' : ''}`  // Votable = survol brillant
+                      : 'cursor-not-allowed'             // Non votable = curseur interdit
+                } ${isAbsent ? 'grayscale opacity-40' : ''} ${isCurrent ? 'ring-2 ring-amber-400' : ''}`}  // Tour actuel = bordure ambrée
+                style={{ maxWidth: `calc(100% / ${turnOrder.length})` }}
                 onClick={() => handleVote(character)}
                 disabled={!isVotable}
-                whileHover={{ scale: isVotable ? 1.05 : 1 }}
-                whileTap={{ scale: isVotable ? 0.95 : 1 }}
-                animate={{
-                  boxShadow: isCurrent 
-                    ? ['0 0 0 0 rgba(245, 158, 11, 0.4)', '0 0 0 15px rgba(245, 158, 11, 0)', '0 0 0 0 rgba(245, 158, 11, 0.4)']
-                    : '0 0 0 0 rgba(0,0,0,0)'
-                }}
-                transition={{
-                  duration: 1.5, 
-                  repeat: Infinity 
-                }}
               >
-                {/* Image du personnage - par dessus la couleur */}
-                <div className="w-full h-auto aspect-square relative">
+                {/* Image du personnage - affiche toute l'image (tête + pieds) */}
+                <div className="w-full h-full flex items-center justify-center">
                   <img
                     src={getBodyImagePath(character)}
                     alt={character}
-                    className="w-full h-full object-cover drop-shadow-lg"
+                    className="max-w-full max-h-full object-contain drop-shadow-lg"
                   />
                 </div>
                 
-                {/* Nom */}
-                <div className={`text-sm font-semibold ${
-                  isMe ? 'text-yellow-400' : 'text-stone-300'
-                }`}>
-                  {character}
-                </div>
-                
-                {/* Indicateur "TOI" */}
-                {isMe && (
-                  <div className="absolute -top-3 -right-3 bg-yellow-500 text-yellow-900 text-[11px] font-bold px-2 py-1 rounded-full">
-                    TOI
-                  </div>
+                {/* Texte indicateur de tour - effet manga sur le personnage actuel */}
+                {isCurrent && (
+                  <>
+                    {Array.from({ length: 6 }).map((_, i) => {
+                      const angle = (i / 6) * Math.PI * 2;
+                      const startRadius = 0;
+                      const endRadius = 180;
+                      const startX = Math.cos(angle) * startRadius;
+                      const startY = Math.sin(angle) * startRadius;
+                      const endX = Math.cos(angle) * endRadius;
+                      const endY = Math.sin(angle) * endRadius;
+                      return (
+                        <motion.div
+                          key={i}
+                          className="absolute text-red-500 text-[clamp(0.75rem,1.2vw,1rem)] font-bold pointer-events-none font-bangers"
+                          style={{ left: '50%', top: '50%', transform: 'translate(-50%, -50%)', WebkitTextStroke: '1px rgba(0,0,0,0.5)' }}
+                          initial={{ x: startX, y: startY, opacity: 0, scale: 1.2 }}
+                          animate={{ x: endX, y: endY, opacity: [0, 1, 1, 0], scale: [1.2, 3.8, 3.8, 1.2] }}
+                          transition={{
+                            duration: 1.8, 
+                            repeat: Infinity, 
+                            delay: i * 0.2,
+                            ease: "easeOut",
+                            times: [0, 0.1, 0.7, 1]
+                          }}
+                        >
+                          bla
+                        </motion.div>
+                      );
+                    })}
+                  </>
                 )}
                 
-                {/* Indicateur selection */}
+                {/* Surbrillance de sélection */}
                 {isSelected && (
                   <div className="absolute inset-0 bg-white/10 rounded-xl" />
                 )}
@@ -162,17 +191,32 @@ export function VoteArea({
           })}
         </div>
 
-        {/* Bouton de confirmation de vote */}
+        {/* ==========================================
+             SECTION 3 : BOUTON DE CONFIRMATION / VOTE ENREGISTRÉ
+             Apparaît quand un personnage est sélectionné ou après avoir voté
+        ========================================== */}
         <AnimatePresence>
-          {canVote && selectedVote && (
+          {hasVoted ? (
+            // Message de confirmation quand le vote est enregistré
             <motion.div
-              className="flex justify-center"
+              className="flex justify-center p-4"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10 }}
+            >
+              <span className="text-[clamp(1rem,2vw,1.5rem)] font-bold text-emerald-400">
+                VOTE ENREGISTRÉ — en attente de la fin de manche
+              </span>
+            </motion.div>
+          ) : canVote && selectedVote && (
+            <motion.div
+              className="flex justify-center p-4"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 10 }}
             >
               <motion.button
-                className="bg-red-500 hover:bg-red-600 text-white font-bold px-8 py-4 rounded-lg text-lg transition-colors"
+                className="bg-red-500 hover:bg-red-600 text-white font-bold rounded-lg text-[clamp(0.875rem,1.75vw,1.125rem)] transition-colors"
                 onClick={confirmVote}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}

@@ -33,3 +33,9 @@ backup/
 *.log
 dist/
 build/
+
+# ---- fichiers perso ----
+INCOHERENCES.md
+MODIFS_DEPUIS_FRONT.md
+PLAN_I18N.md
+refonte-responsive.md

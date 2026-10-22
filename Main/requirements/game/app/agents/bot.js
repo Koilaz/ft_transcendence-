@@ -1,9 +1,13 @@
-import { generateReply } from '../agents/index_agent.js';
-import { requirePrompt } from '../agents/prompt/index_prompt.js';
-import { postTreatment } from './typos.js';
+import { generateReply } from './index_agent.js';
+import { requirePrompt } from './prompt/index_prompt.js';
+import { postTreatment } from './postTreatment.js';
+import { gameConfig } from '../game/config.js';
 
 const BOT_MIN_DELAY = 2000; // delais minimal de reponse du bot
+const BOT_REACTION_MS = { min: 1000, max: 3000 }; // lecture du message precedent avant de taper
+const BOT_TYPING_MS_PER_CHAR = { min: 100, max: 200 }; // vitesse de frappe : 5 a 10 caracteres par seconde
 const MAX_CONSECUTIVE_FAILURES = 3; // au-dela, l'agent est considere mort et on arrete de l'appeler
+const BOT_SILENCE_CHANCE = 1 / 15; // un humain saute parfois son tour : le bot aussi
 
 //nombre de joueurs dans la partie, quelles sont les personnages de la partie,
 //info sur les config (timeout etc)
@@ -38,8 +42,14 @@ export function createBotSendFn(room, botId, { agent: agentName, prompt: promptN
 			return;
 		if (isDead)
 			return;// disjoncteur ouvert : plus aucun appel a l'agent
+		//Tire avant l'appel : un tour muet ne coute rien a l'API et ne compte
+		//pas comme un echec. Loggue pour ne pas le confondre avec une panne.
+		if (Math.random() < BOT_SILENCE_CHANCE)
+		{
+			console.log(`[bot] ${botId} (${identity}) muet ce tour (tirage aleatoire)`);
+			return;
+		}
 		const maxDelayMs = Math.max(BOT_MIN_DELAY, msg.countdown * 1000); //1000 pour que parfois le bot ne reponde pas du tout si il depasse le delais.
-		const targetDelayMs = randomInt(BOT_MIN_DELAY, maxDelayMs);
 		try
 		{
 			const start = Date.now();
@@ -48,6 +58,8 @@ export function createBotSendFn(room, botId, { agent: agentName, prompt: promptN
 			//absent du registre jette une erreur fatale, traitee plus bas comme
 			//un agent introuvable.
 			const prompt = requirePrompt(promptName);
+			//Lu avant l'appel : la manche peut changer pendant la generation.
+			const character = room.currentRound.caracterOf(botId);
 			const rawReply = await generateReply(room.history, agentName, prompt.buildContextPrompt(room, botId), promptName);
 			if (!rawReply)
 			{
@@ -55,7 +67,12 @@ export function createBotSendFn(room, botId, { agent: agentName, prompt: promptN
 				return;// l'API a échoué : le bot restera muet ce tour si le disjoncteur ne s'active pas
 			}
 			consecutiveFailures = 0;
-			const reply = postTreatment(rawReply);// fautes de frappe : le bot doit passer pour un humain
+			//fautes de frappe : le bot doit passer pour un humain (minuscules et
+			//repetitions sont traitees pour tous dans room.addMessage). Meme coupure que
+			//pour les humains : un message plus long que ce que le front laisse
+			//taper trahirait le bot.
+			const reply = postTreatment(rawReply, character).slice(0, gameConfig.maxMessageLength);
+			const targetDelayMs = replyDelayMs(reply, maxDelayMs);
 			const genMs = Date.now() - start;
 			const remaining = targetDelayMs - genMs;
 			if (remaining > 0)
@@ -68,7 +85,7 @@ export function createBotSendFn(room, botId, { agent: agentName, prompt: promptN
 			const round = room.currentRound;
 			const aLaParole = round?.status === 'chatting' && round.canSpeak(botId);
 			console.log(`[#TMP bot] ${botId} (${identity})`
-				+ ` gen=${genMs}ms attente=${Math.max(0, remaining)}ms total=${Date.now() - start}ms`
+				+ ` gen=${genMs}ms cible=${targetDelayMs}ms (${reply.length} car.) attente=${Math.max(0, remaining)}ms total=${Date.now() - start}ms`
 				+ ` budget=${msg.countdown}s`
 				+ ` | round=${round?.status ?? 'aucun'}`
 				+ ` | ${aLaParole ? 'ENVOI' : 'JETE (le tour est deja passe)'}`
@@ -84,6 +101,18 @@ export function createBotSendFn(room, botId, { agent: agentName, prompt: promptN
 				onFailure(err.message);
 		}
 	};
+}
+
+//Le temps qu'un humain mettrait a envoyer ce message : lire, puis taper chaque
+//caractere. Vitesse de frappe tiree a chaque message, comme un joueur plus ou
+//moins concentre. La generation se deroule pendant ce temps et ne s'y ajoute
+//pas. Un message trop long pour le tour peut arriver trop tard, comme celui
+//d'un humain.
+function replyDelayMs(reply, maxDelayMs)
+{
+	const reading = randomInt(BOT_REACTION_MS.min, BOT_REACTION_MS.max);
+	const typing = reply.length * randomInt(BOT_TYPING_MS_PER_CHAR.min, BOT_TYPING_MS_PER_CHAR.max);
+	return Math.min(maxDelayMs, Math.max(BOT_MIN_DELAY, reading + typing));
 }
 
 function sleep(ms)
