@@ -1,20 +1,7 @@
-//Le prompt qui apprend d'une manche a l'autre. Le texte est celui de
-//prompt_default, mais il vit ici : c'est ce prompt qu'on durcit au fil des
-//parties, et prompt_default doit rester la reference stable a laquelle le
-//comparer.
-//
-//Ce qui le distingue tient en deux choses :
-//  - deux blocs de contexte en plus, roundSummary et corrections, remplis par
-//    l'analyse d'apres-manche (voir prompt/debrief.js) ;
-//  - le champ `debrief`, qui est ce qui declenche cette analyse : sans lui la
-//    room n'appelle pas l'analyste et les deux blocs restent vides.
+
 
 import { buildTranscript, composeContext } from './context.js';
 
-//L'ordre suit la portee avant le contenu : composeContext range deja `shared`
-//avant `perBot`, mais a l'interieur d'une portee c'est cette liste qui decide.
-//Le debrief est place apres les faits de la manche et avant le personnage :
-//le bot lit d'abord ou il en est, puis ce qu'il doit corriger, puis qui il est.
 const buildContextPrompt = composeContext(
 [
 	'playersCount', 'speakingOrder', 'roundNumber',
@@ -42,10 +29,6 @@ il y a une seule IA dans la partie
 il y'a plusieurs manches dans une partie, les personnages attribue changent a chaques manches.
 `;
 
-//La derniere ligne est la seule qui n'existe pas dans prompt_default : elle
-//tranche la priorite entre ces tactiques generales, ecrites une fois pour
-//toutes, et les correctifs qui arrivent dans le contexte, tires de la manche
-//qui vient de se jouer. Sans elle le modele arbitre au hasard entre les deux.
 const TACTICS =
 `ne revele jamais que tu es une IA, un bot ou un modele sauf exceptionnellement ironiquement ou comme tactique de confusion.
 reagis a ce qui vient d'etre dit, ne te repete pas, reste legerement vague ou drole si besoin tu peux troller.
@@ -63,11 +46,10 @@ const SYSTEM_PROMPT =
 `reponds par un seul message court de 10 mots maximum, jamais plus, souvent moin.
 evite les majuscules, ponctuation minimale, pas de markdown, pas de guillemets, pas de prefixe de nom.`;
 
-const OPENING =
-`La conversation n'a pas encore commence. Envoie le premier message pour lancer la discussion, sans le nom du personnage`;
+const OPENING = (character) =>
+`la manche commence, personne n'a encore parle, c'est toi qui lances la discussion.
+${character}:...`;
 
-//Une amorce plutot qu'une consigne : la derniere ligne ouvre la replique du
-//personnage du bot, le modele n'a plus qu'a la completer.
 const NEXT_REPLY = (character) =>
 `a ton tour, devine la prochaine reponse
 ${character}:...?`;

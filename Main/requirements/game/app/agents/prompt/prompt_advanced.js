@@ -111,8 +111,5 @@ export const prompt_advanced =
 	buildUserPrompt,
 	buildTranscript,
 	buildContextPrompt,
-	//C'est cette ligne qui fait travailler l'analyste a la fin de chaque manche.
-	//Sans elle, les deux blocs de contexte ci-dessus n'auraient jamais rien a
-	//afficher.
-	debrief: true,
+	debrief: true,//active le debrief
 };

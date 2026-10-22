@@ -34,8 +34,9 @@ const ANALYSIS_RULES =
 
 reponds exactement dans ce format, sans rien avant ni apres :
 <resume>
-trois phrases maximum : de quoi on a parle, quel ton avait la conversation,
-quels soupcons pesent et sur quel genre de comportement.
+quatre phrases maximum : de quoi on a parle, quel ton avait la conversation,
+quels soupcons pesent et sur quel genre de comportement, et une phrase sur
+la facon dont la conversation s'est terminee (dernier sujet, dernier echange).
 </resume>
 <correctifs>
 une ou deux consignes pour eviter les comportements qui ont trahis L'IA a la manche precedente

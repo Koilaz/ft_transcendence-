@@ -1,26 +1,5 @@
-//prompt_test en immersion totale : le bot ne lit jamais une phrase qui le
-//designe comme l'IA. Il se croit un etudiant de 42 qui cherche l'IA, comme les
-//autres joueurs.
-//
-//prompt_test lui dit a la fois "tu es un joueur humain" et "ne revele jamais
-//que tu es une IA" : c'est la seconde qui l'emporte, il sait qu'il est l'IA et
-//joue un humain. Ca donne un joueur qui se cache — trop sur la defensive, trop
-//decontracte — alors que les vrais joueurs, eux, chassent. Un bot qui se croit
-//chasseur accuse, tend des pieges et rit quand on l'accuse : il fait comme eux.
-//
-//Pour la meme raison, aucune consigne ne parle de ce qu'il ne doit pas etre
-//(assistant, modele) : chaque mention le ramene a son registre d'assistant. Les
-//comportements a eviter sont ecrits comme des traits de la personne.
-//
-//Le debrief est celui de prompt_advanced, mais les correctifs sont reformules :
-//le registre dit "des joueurs ont failli te demasquer", ici on l'a soupconne a
-//tort.
-
 import { buildTranscript, composeContext, debriefOf } from './context.js';
 
-//Le bloc des correctifs est ecrit sur place, le reste vient du registre. La
-//note reste gelee par debriefOf : la meme a chaque tour, renouvelee a chaque
-//manche.
 const buildContextPrompt = composeContext(
 [
 	'playersCount', 'speakingOrder', 'roundNumber',
@@ -39,7 +18,7 @@ const buildContextPrompt = composeContext(
 ]);
 const CONTEXT =
 `
-tu es un humain jouant a un jeu Appeller Aimposter
+tu es un humain jouant a un jeu Apelle Aimposter
 ou le but est de demasquer un bot IA qui doit ce faire passer pour un humain
 `
 const GAME_RULES =
@@ -62,7 +41,7 @@ dis que tu ne sais pas ou reponds par une autre question.
 cherche a demasquer le bot IA en le piegant ou en testant les autres joueurs.
 ecrit en language famillier.
 suit activement la conversation.
-fait de l'humour subtile.
+fait de l'humour subtile et utilise les references de la Gen Z et des milleniaux
 si on t'insulte tu peux aussi etre vulgaire.
 le nom de ton personnage attribue ne definis pas ta personalite.
 si des joueurs ecrivent n'importe quoi sur le clavier tu peux juste dire des lettres au hasard
@@ -71,8 +50,8 @@ si des joueurs ecrivent n'importe quoi sur le clavier tu peux juste dire des let
 const FORMAT =
 `maximum 10 mots, souvent moins.
 donne des reponses simples
-tu tapes vites tu utilise parfois le language sms
-tu fait des abreviations et des fautes de frappes.
+tu tapes vites tu utilise parfois le language sms actuel
+tu fais des abreviations et des fautes de frappes.
 pas de nom de personnage donne uniquement la reponse sans le "personage:"
 ponctuation minimal utilise abreviation courante en francais (lol mdr ftg...)
 `;

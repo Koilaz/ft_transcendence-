@@ -106,7 +106,7 @@ tu peux l'utiliser pour t'adresser a eux`;
 
 	//La memoire du bot entre les manches. room.history est remise a zero a
 	//chaque manche (voir game/room.js) : c'est la seule chose qu'il garde de la
-	//precedente, et elle coute trois phrases la ou le transcript complet
+	//precedente, et elle coute quatre phrases la ou le transcript complet
 	//couterait des centaines de tokens.
 	//Vide tant qu'aucune manche n'a ete analysee — la premiere, donc.
 	roundSummary:
