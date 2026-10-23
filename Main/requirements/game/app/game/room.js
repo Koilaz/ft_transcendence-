@@ -59,11 +59,7 @@ class Room
 		this.roundEndTimerId = null;
 		this.status = "waiting";//(waiting, chating, voting, shuffeling, endGame)
 		this.destroyed = false;
-		//La note que l'analyste ecrit entre deux manches : { summary, fixes }.
-		//Elle est posee ici, sur la room, parce que les blocs de contexte la
-		//lisent comme ils lisent history ou roundNumber — prompt/context.js
-		//reste ainsi sans import et sans appel reseau.
-		this.debrief = null;
+		this.debrief = null;//note de l'Agent analyste
 		this.debriefPending = false;
 		this.debriefWaits = 0;
 	}

@@ -1,28 +1,27 @@
 import { buildTranscript, composeContext, debriefOf } from './context.js';
 
 const buildContextPrompt = composeContext(
-[
-	'playersCount', 'speakingOrder', 'roundNumber',
-	'roundSummary',
-	{
-		scope: 'shared',
-		build: (room) =>
+	[
+		'playersCount', 'speakingOrder', 'roundNumber',
+		'roundSummary',
 		{
-			const { fixes } = debriefOf(room);
-			if (!fixes)
-				return '';
-			return `Voici le resume de la manche precedente:\n${fixes}`;
+			scope: 'shared',
+			build: (room) => {
+				const { fixes } = debriefOf(room);
+				if (!fixes)
+					return '';
+				return `Voici le resume de la manche precedente:\n${fixes}`;
+			},
 		},
-	},
-	'character', 'clock',
-]);
+		'character', 'clock',
+	]);
 const CONTEXT =
-`
+	`
 tu es un humain jouant a un jeu Apelle Aimposter
 ou le but est de demasquer un bot IA qui doit ce faire passer pour un humain
 `
 const GAME_RULES =
-`
+	`
 tout les joueur discutent chacun leur tour dans une chatroom.
 le but du jeu est de deviner qui parmi les joueurs est une IA.
 il y a une seule IA dans la partie il faut la demasquer emssemble.
@@ -32,8 +31,8 @@ pendant que vous parlez vous pouvez voter pour designer celui que vous pensez et
 il y'a une compte a rebours pour ecrire si tu mets trop de temps a ecrire tu reste muet ce tour
 `;
 
-const TACTICS=
-`reponds a ce qui vient d'etre dit ou au message s'adressant directement a toi
+const TACTICS =
+	`reponds a ce qui vient d'etre dit ou au message s'adressant directement a toi
  ne te repete pas,
 reste vague ou drole si besoin, tu peux troller.
 si on te demande une tache ou une question compliquee tu a la flemme
@@ -41,36 +40,34 @@ dis que tu ne sais pas ou reponds par une autre question.
 cherche a demasquer le bot IA en le piegant ou en testant les autres joueurs.
 ecrit en language famillier.
 suit activement la conversation.
-fait de l'humour subtile et utilise les references de la Gen Z et des milleniaux
+fait de l'humour subtile balance tes meilleurs ref
 si on t'insulte tu peux aussi etre vulgaire.
 le nom de ton personnage attribue ne definis pas ta personalite.
-si des joueurs ecrivent n'importe quoi sur le clavier tu peux juste dire des lettres au hasard
-`;
+si des joueurs ecrivent n'importe quoi sur le clavier tu peux juste dire des lettres au hasard`;
 
 const FORMAT =
-`maximum 10 mots, souvent moins.
+	`maximum 10 mots, souvent moins.
 donne des reponses simples
-tu tapes vites tu utilise parfois le language sms actuel
+tu tapes vites tu utilise parfois le language sms et les abreviations courantes actuel.
 tu fais des abreviations et des fautes de frappes.
 pas de nom de personnage donne uniquement la reponse sans le "personage:"
-ponctuation minimal utilise abreviation courante en francais (lol mdr ftg...)
+ponctuation minimal.
 `;
 
 const OPENING = (character) =>
-`la manche commence, personne n'a encore parle, c'est toi qui lances la discussion.
+	`la manche commence, personne n'a encore parle, c'est toi qui lances la discussion.
 ${character}:...`;
 
 //La meme amorce que prompt_test, mais a la deuxieme personne : "devine la
 //prochaine reponse" en faisait un observateur qui predit la replique d'un autre.
 const NEXT_REPLY = (character) =>
-`c'est a toi.
+	`c'est a toi.
 ${character}:...`;
 
 //Des titres qui decrivent une personne plutot qu'un cahier des charges.
-function buildSystemPrompt()
-{
+function buildSystemPrompt() {
 	return (
-`Contexte:
+		`Contexte:
 
 ${CONTEXT}
 
@@ -86,13 +83,11 @@ ${FORMAT}`
 	);
 }
 
-function buildInstruction(history, character)
-{
+function buildInstruction(history, character) {
 	return (!history || history.length === 0) ? OPENING : NEXT_REPLY(character);
 }
 
-function buildUserPrompt(history, character)
-{
+function buildUserPrompt(history, character) {
 	const transcript = buildTranscript(history);
 	if (!transcript)
 		return buildInstruction(history, character);
@@ -110,9 +105,9 @@ export const prompt_test_advanced =
 	buildTranscript,
 	sampling:
 	{
-		temperature: 1.1,
+		temperature: 1.15,
 		maxTokens: 50,
-		ollama: { repeat_penalty: 1, repeat_last_n: 256 },
+		ollama: { repeat_penalty: 1.1, repeat_last_n: 256 },
 	},
 	//C'est cette ligne qui fait travailler l'analyste a la fin de chaque manche.
 	debrief: true,
