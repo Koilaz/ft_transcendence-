@@ -20,8 +20,8 @@ export const CHARACTERS = {
     bodyImage: '/bodyColonelMoutarde.png',
     color: 'bg-amber-500/30 border-2 border-amber-500',
     fluoColor: 'bg-yellow-400',
-    normalColor: 'bg-yellow-300',
-    dialogueColor: 'bg-yellow-300',
+    normalColor: 'bg-yellow-200',
+    dialogueColor: 'bg-yellow-200',
     colorClass: 'ring-amber-500',
   },
   majorwasabi: {
@@ -50,8 +50,8 @@ export const CHARACTERS = {
     bodyImage: '/bodyLieutenantMayo.png',
     color: 'bg-white/20 border-2 border-white/50',
     fluoColor: 'bg-white',
-    normalColor: 'bg-stone-400',
-    dialogueColor: 'bg-stone-400',
+    normalColor: 'bg-stone-300',
+    dialogueColor: 'bg-stone-300',
     colorClass: 'ring-white',
   },
   caporalpoivre: {

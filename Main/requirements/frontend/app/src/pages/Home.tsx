@@ -129,25 +129,38 @@ export default function Home() {
                     ×
                   </button>
                   <div className="flex flex-col gap-3 w-full max-w-md">
-                    <Link
-                      to="/game"
-                      className="w-full text-center rounded-lg bg-transparent text-white px-4 py-2 font-medium text-sm hover:bg-stone-800/50 transition border border-stone-600"
-                      onClick={() => setShowMenu(false)}
-                    >
-                      Quick Game
-                    </Link>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (!isGuestFormOpen) {
-                          setIsGuestFormOpen(true);
-                        }
-                      }}
-                      className="w-full text-center rounded-lg bg-transparent text-white px-4 py-2 font-medium text-sm hover:bg-stone-800/50 transition border border-stone-600"
-                    >
-                      Play as Guest
-                    </button>
+                    {localStorage.getItem('accessToken') ? (
+                      // Connecté : seulement Quick Game
+                      <Link
+                        to="/game"
+                        className="w-full text-center rounded-lg bg-transparent text-white px-4 py-2 font-medium text-sm hover:bg-stone-800/50 transition border border-stone-600"
+                        onClick={() => setShowMenu(false)}
+                      >
+                        Quick Game
+                      </Link>
+                    ) : (
+                      // Non connecté : Login + Play as Guest
+                      <>
+                        <Link
+                          to="/login"
+                          className="w-full text-center rounded-lg bg-transparent text-white px-4 py-2 font-medium text-sm hover:bg-stone-800/50 transition border border-stone-600"
+                          onClick={() => setShowMenu(false)}
+                        >
+                          Login
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!isGuestFormOpen) {
+                              setIsGuestFormOpen(true);
+                            }
+                          }}
+                          className="w-full text-center rounded-lg bg-transparent text-white px-4 py-2 font-medium text-sm hover:bg-stone-800/50 transition border border-stone-600"
+                        >
+                          Play as Guest
+                        </button>
+                      </>
+                    )}
 
                     {isGuestFormOpen && (
                       <form onSubmit={handleGuestSubmit} className="flex gap-2 w-full mt-2">

@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import { getBodyImagePath, getCharacterColor } from '../../utils/characters';
 
 // ============================================
@@ -34,7 +34,6 @@ export function VoteArea({
   const [selectedVote, setSelectedVote] = useState<string | null>(null); // Personnage sélectionné pour le vote
 
   // --- LOGIQUE DE VOTE ---
-  const isVotingPhase = roundPhase === 'voting';
   // Le backend collecte les votes en temps reel pendant la phase de
   // discussion : il n'existe pas de phase 'voting' distincte, on peut voter
   // des que la manche est en cours. Un vote deja depose (y compris restaure

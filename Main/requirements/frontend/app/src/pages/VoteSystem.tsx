@@ -84,7 +84,7 @@ function formatScore(score: number) {
 }
 
 type ScoreboardModalProps = {
-  aiCharacter: string;
+  aiCharacter: string | null;
   results: RoundResult[];
   countdown: number | null;
   // Prolongation demandee par le serveur : l'agent d'analyse n'a pas encore

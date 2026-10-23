@@ -21,10 +21,9 @@ function getBunnyPhase(countdown: number): keyof typeof bunnyImages {
 
 type TimerBunnyProps = {
   countdown: number;
-  size?: number;
 };
 
-export function TimerBunny({ countdown, size }: TimerBunnyProps) {
+export function TimerBunny({ countdown }: TimerBunnyProps) {
   const phase = getBunnyPhase(countdown);
   const imgSrc = bunnyImages[phase];
 

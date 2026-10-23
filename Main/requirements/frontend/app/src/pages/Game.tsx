@@ -1,6 +1,8 @@
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { useGame } from '../hooks/useGame';
 import { MatrixRain } from '../components/MatrixRain';
+import { discardResumeToken } from '../services/gameSocket';
 import {
   GameHeader,
   DialogueArea,
@@ -11,6 +13,7 @@ import { ScoreboardModal, GameEndModal, RoomClosedModal } from './VoteSystem';
 import { Lobby } from './Lobby';
 
 export default function Game() {
+  const navigate = useNavigate();
   const {
     connectionOpen,
     roomNumber,
@@ -22,12 +25,10 @@ export default function Game() {
     countdown,
     messages,
     timerVisible,
-    timerLabel,
     roundIndicator,
     draft,
     setDraft,
     inputState,
-    feedRef,
     inputRef,
     handleSend,
     handleVote,
@@ -47,7 +48,17 @@ export default function Game() {
     isReady,
     agentsDown,
     handleReady,
+    socketRef,
   } = useGame();
+
+  const handleQuit = () => {
+    const socket = socketRef.current;
+    if (socket && socket.readyState === WebSocket.OPEN) {
+      socket.close();
+    }
+    discardResumeToken();
+    navigate('/');
+  };
 
   // File d'attente : tant que le serveur n'a pas ouvert de room ('waiting'),
   // l'ecran montre le lore et le bouton « Pret ». Des que la partie demarre,
@@ -83,9 +94,8 @@ export default function Game() {
           roundIndicator={roundIndicator}
           turnCycle={turnCycle}
           countdown={countdown}
-          timerLabel={timerLabel}
           timerVisible={timerVisible}
-          characters={turnOrder}
+          onQuit={handleQuit}
         />
       </div>
 

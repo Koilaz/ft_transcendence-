@@ -188,6 +188,8 @@ export function useGame() {
   function handleReady() {
     const socket = socketRef.current;
     if (!socket) return;
+    // Supprimer l'ancien jeton de reprise pour éviter de reprendre une session expirée
+    discardResumeToken();
     sendReadyMessage(socket);
   }
 

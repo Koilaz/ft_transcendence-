@@ -1,5 +1,4 @@
 import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
 import { TimerBunny } from '../TimerBunny';
 
 type GameHeaderProps = {
@@ -7,10 +6,8 @@ type GameHeaderProps = {
   roundIndicator: string;
   turnCycle: number | null;
   countdown: number | null;
-  timerLabel: string;
   timerVisible: boolean;
-  characters?: string[];
-  onQuit?: () => void;
+  onQuit: () => void;
 };
 
 export function GameHeader({
@@ -18,9 +15,7 @@ export function GameHeader({
   roundIndicator,
   turnCycle,
   countdown,
-  timerLabel,
   timerVisible,
-  characters = [],
   onQuit,
 }: GameHeaderProps) {
   // Extraction du numéro de manche et de tour
@@ -134,12 +129,13 @@ export function GameHeader({
 
           {/* Quitter - 10% */}
           <div className="w-[10%] h-full flex items-center justify-end pr-2">
-            <Link
-              to="/"
-              className="bg-cyan-800/80 border border-cyan-600 rounded-lg p-2 text-xl font-semibold text-red-400 transition-colors"
+            <button
+              type="button"
+              onClick={onQuit}
+              className="bg-cyan-800/80 border border-cyan-600 rounded-lg p-2 text-xl font-semibold text-red-400 transition-colors hover:bg-cyan-700/80"
             >
               ❌
-            </Link>
+            </button>
           </div>
     </motion.header>
   );

@@ -263,14 +263,13 @@ type DialogueBubbleProps = {
   text: string;        // Contenu du message
   isSystem?: boolean;  // True = message système (centré)
   align: 'left' | 'right'; // Alignement de la bulle
-  index: number;       // Index pour les animations
 };
 
 // ============================================
 // COMPOSANT : DialogueBubble
 // Affiche une bulle de dialogue individuelle
 // ============================================
-function DialogueBubble({ sender, text, isSystem, align, index }: DialogueBubbleProps) {
+function DialogueBubble({ sender, text, isSystem, align }: DialogueBubbleProps) {
   // --- MESSAGES SYSTEME (centrés, style différent) ---
   if (isSystem) {
     return (
@@ -290,61 +289,20 @@ function DialogueBubble({ sender, text, isSystem, align, index }: DialogueBubble
   const fluoColor = getCharacterFluoColor(sender);
   const dialogueColor = getCharacterDialogueColor(sender);
   
-  // Mapping des couleurs Tailwind vers hex pour le gradient soleil
-  const getFluoHex = (colorClass: string) => {
-    const map: Record<string, string> = {
-      'bg-cyan-500': '#06b6d4', 'bg-cyan-400': '#22d3ee', 'bg-cyan-600': '#0891b2',
-      'bg-pink-500': '#ec4899', 'bg-pink-400': '#f472b6', 'bg-pink-600': '#db2777',
-      'bg-rose-500': '#f43f5e', 'bg-rose-400': '#f87171', 'bg-rose-600': '#e11d48',
-      'bg-lime-500': '#84cc16', 'bg-lime-400': '#a3e635', 'bg-lime-600': '#65a30d',
-      'bg-orange-500': '#ea580c', 'bg-orange-400': '#fb923c', 'bg-orange-600': '#c2410c',
-      'bg-purple-500': '#a855f7', 'bg-purple-400': '#c084fc', 'bg-purple-600': '#7c3aed',
-      'bg-yellow-500': '#eab308', 'bg-yellow-400': '#fbbf24', 'bg-yellow-600': '#ca8a04',
-      'bg-emerald-500': '#10b981', 'bg-emerald-400': '#34d399', 'bg-emerald-600': '#059669',
-      'bg-teal-500': '#14b8a6', 'bg-teal-400': '#5eead4', 'bg-teal-600': '#0d9488',
-      'bg-green-500': '#22c55e', 'bg-green-400': '#4ade80', 'bg-green-600': '#16a34a',
-    };
-    return map[colorClass] || '#ffffff';
-  };
-  
-  // Récupère la couleur hexadécimale du flou
-  //const hexColor = getFluoHex(fluoColor); n'est plus utilise pour l'instant. a supprimer pour la version finale
-  
-  // Génère le gradient soleil sur 360° partant du BAS, centre à 75% de hauteur
-  const sunGradient = `repeating-conic-gradient(
-    from -90deg at 50% 75%,
-    #ffffff 0deg 5deg,
-    #fb923c 5deg 10deg
-  )`;
-  
   return (
     <div
       className={`flex items-start gap-3 my-2 pointer-events-auto ${isLeft ? 'flex-row' : 'flex-row-reverse'} p-2 rounded-2xl ${dialogueColor} relative`}
     >
-      {/* Arrière-plan Particules */}
-      {/* <ParticlesEffect 
-        particleCount={200} 
-        maxSize={8} 
-        followSpeed={0.2}
-        visibleFromStart={true}
-        backgroundColor="transparent"
-      /> */}
-      
       {/* ==================================
-           PORTRAIT - EFFET SOLEIL OPTION 3
-           8 rayons épais avec dégradé de couleur
+           PORTRAIT - EFFET SOLEIL OPTION
       ================================== */}
       <div
         className="flex-shrink-0 aspect-square rounded-lg overflow-hidden relative"
         style={{ width: 'clamp(60px, 20%, 150px)' }}
       >
-        {/* Rayons BLANC + ORANGE - 180° partant du BAS */}
+        {/* Rayons ORANGE */}
         <div
-          className="absolute inset-0"
-          style={{
-            background: sunGradient,
-            opacity: 0.6,
-          }}
+          className="absolute inset-0 bg-[url('/bg-head-sunburst-orange.webp')] bg-cover opacity-80"
         />
         {sender === 'Lieutenant Mayo' ? (
           <AnimatedMayoPortrait className="relative w-full h-full object-cover rounded-lg border-2 border-white/50" />
@@ -383,8 +341,10 @@ function DialogueBubble({ sender, text, isSystem, align, index }: DialogueBubble
         />
         
         {/* NOM DU PERSONNAGE - Police par personnage */}
-        <div className={`text-sm font-bold text-black mb-2 ${!isLeft ? 'text-right' : ''}`}>
-          <span className={`${fluoColor}/30 px-2 py-1 rounded ${getCharacterFont(sender)}`}>
+        <div className={`text-base font-bold text-white mb-2 ${!isLeft ? 'text-right' : ''}`}>
+          <span className={`text-white font-bangers text-[clamp(0.875rem,1.5vw,1.125rem)]`}
+          style={{ WebkitTextStroke: '1px #60a5fa' }}
+          >
             {sender}
           </span>
         </div>
@@ -405,7 +365,7 @@ type DialogueAreaProps = {
   messages: Array<{
     id: string;
     kind: string;
-    sender: string;
+    sender?: string;
     text: string;
   }>;
   myCharacter: string | null;
@@ -423,14 +383,15 @@ export function DialogueArea({ messages, myCharacter }: DialogueAreaProps) {
       {/* Conteneur des messages (fond transparent pour voir MatrixRain parent) */}
       <div className="relative w-full h-full flex flex-col justify-end overflow-y-auto pointer-events-auto">
         {messages
-          .filter(message => message.kind === 'chat')
-          .map((message, index) => (
+          .filter((message): message is { id: string; kind: 'chat'; sender: string; text: string } => 
+            message.kind === 'chat'
+          )
+          .map((message) => (
             <DialogueBubble
               key={message.id}
               sender={message.sender}
               text={message.text}
               align={message.sender === myCharacter ? 'right' : 'left'}
-              index={index}
             />
           ))}
       </div>
