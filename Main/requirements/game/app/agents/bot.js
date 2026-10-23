@@ -3,11 +3,35 @@ import { requirePrompt } from './prompt/index_prompt.js';
 import { postTreatment } from './postTreatment.js';
 import { gameConfig } from '../game/config.js';
 
-const BOT_MIN_DELAY = 2000; // delais minimal de reponse du bot
+const BOT_MIN_DELAY = 3000; // delais minimal de reponse du bot
 const BOT_REACTION_MS = { min: 1000, max: 3000 }; // lecture du message precedent avant de taper
 const BOT_TYPING_MS_PER_CHAR = { min: 100, max: 200 }; // vitesse de frappe : 5 a 10 caracteres par seconde
 const MAX_CONSECUTIVE_FAILURES = 3; // au-dela, l'agent est considere mort et on arrete de l'appeler
 const BOT_SILENCE_CHANCE = 1 / 15; // un humain saute parfois son tour : le bot aussi
+const BOT_CANNED_CHANCE = 1 / 15; // parfois une phrase toute faite au lieu de l'agent
+
+const CANNED_REPLIES = [
+	'C\'est les tenebres',
+	'comment est votre blanquette ?',
+	'est ce qu\'une ia peut dire rgj;roaekgaljaerlgjarelaerjk',
+	'trklhjjdhlkwjgwrihaegjtwkl',
+	'Wallah c\'est pas moi le bot',
+	'celui qui dit qui c\'est l\'ia je lui offre un sandwich',
+	'Vous pensez quoi de Epstein ?',
+	'Yamete kudasai',
+	'Je vais voir aller au bocal',
+	'a',
+	'Ah',
+	'ok boomer',
+	'koikoube',
+	'weqgrergrehgreg',
+	'ok',
+	'il est claque au sol ce jeux',
+	'wertgrrqghrethtrhjrtjyryjrjrsjr',
+	'vas y le tuteur valide le projet stp',
+	'nkgkjlkjlkjljhnhgf',
+	'5htrhrhrwyjgngfjdtyjetyjyejw',
+];
 
 //nombre de joueurs dans la partie, quelles sont les personnages de la partie,
 //info sur les config (timeout etc)
@@ -60,7 +84,9 @@ export function createBotSendFn(room, botId, { agent: agentName, prompt: promptN
 			const prompt = requirePrompt(promptName);
 			//Lu avant l'appel : la manche peut changer pendant la generation.
 			const character = room.currentRound.caracterOf(botId);
-			const rawReply = await generateReply(room.history, agentName, prompt.buildContextPrompt(room, botId), promptName);
+			//Une phrase toute faite evite l'appel a l'API mais passe par les
+			//memes fautes de frappe et la meme normalisation qu'une vraie reponse.
+			const rawReply = pickCannedReply() ?? await generateReply(room.history, agentName, prompt.buildContextPrompt(room, botId), promptName);
 			if (!rawReply)
 			{
 				onFailure('reponse vide');
@@ -113,6 +139,15 @@ function replyDelayMs(reply, maxDelayMs)
 	const reading = randomInt(BOT_REACTION_MS.min, BOT_REACTION_MS.max);
 	const typing = reply.length * randomInt(BOT_TYPING_MS_PER_CHAR.min, BOT_TYPING_MS_PER_CHAR.max);
 	return Math.min(maxDelayMs, Math.max(BOT_MIN_DELAY, reading + typing));
+}
+
+//Une fois sur BOT_CANNED_CHANCE, une phrase de CANNED_REPLIES ; sinon null et
+//l'agent repond normalement.
+function pickCannedReply()
+{
+	if (Math.random() >= BOT_CANNED_CHANCE)
+		return null;
+	return CANNED_REPLIES[Math.floor(Math.random() * CANNED_REPLIES.length)];
 }
 
 function sleep(ms)
