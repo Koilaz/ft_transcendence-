@@ -257,7 +257,5 @@ export function useGame() {
     maxManches: state.maxManches,
     debriefWait: state.debriefWait,
     hasVoted: state.hasVoted,
-    disconnectedCharacters: state.disconnectedCharacters,
-    leftCharacters: state.leftCharacters,
   };
 }

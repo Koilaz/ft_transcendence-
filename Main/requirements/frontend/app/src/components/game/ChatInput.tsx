@@ -12,10 +12,10 @@ type ChatInputProps = {
 export const ChatInput = forwardRef<HTMLInputElement, ChatInputProps>(
   ({ draft, setDraft, inputState, onSend }, ref) => {
     return (
-      <div className="flex gap-3 backdrop-blur-sm rounded-xl px-3 pb-3 h-full">
+      <div className="flex gap-3 backdrop-blur-sm rounded-xl px-3 h-full">
         <input
           ref={ref}
-          className={`flex-1 bg-stone-900/50 border rounded-lg px-5 py-2 text-stone-200 text-lg transition-colors focus:outline-none ${
+          className={`flex-1 bg-stone-900/50 border rounded-lg px-4 py-1 text-stone-200 text-base transition-colors focus:outline-none ${
             inputState.myTurn ? 'border-blue-500 ring-2 ring-blue-500' : 'border-stone-700'
           }`}
           value={draft}
@@ -28,7 +28,7 @@ export const ChatInput = forwardRef<HTMLInputElement, ChatInputProps>(
         />
         <motion.button
           type="button"
-          className="bg-blue-500 hover:bg-blue-600 text-white rounded-lg px-4 py-2 font-semibold text-lg disabled:opacity-40 disabled:cursor-not-allowed"
+          className="bg-blue-500 hover:bg-blue-600 text-white rounded-lg px-4 py-1 font-semibold text-base disabled:opacity-40 disabled:cursor-not-allowed"
           disabled={!inputState.enabled || !draft.trim()}
           onClick={onSend}
           whileHover={{ scale: inputState.enabled ? 1.02 : 1 }}

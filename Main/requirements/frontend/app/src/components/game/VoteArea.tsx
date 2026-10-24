@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState } from 'react';
-import { getBodyImagePath, getCharacterColor } from '../../utils/characters';
+import { getBodyImagePath, getCharacterColor, getCharacterBorder } from '../../utils/characters';
 
 // ============================================
 // TYPES
@@ -11,8 +11,6 @@ type VoteAreaProps = {
   myCharacter: string | null;     // Mon personnage
   roundPhase: string | null;      // Phase actuelle : 'chatting', 'voting', etc.
   hasVoted: boolean;                // True si j'ai déjà voté
-  disconnectedCharacters: string[]; // Personnages déconnectés (ne pas voter pour eux)
-  leftCharacters: string[];        // Personnages partis de la room (ne pas voter pour eux)
   onVote?: (character: string) => void;  // Callback pour envoyer le vote
 };
 
@@ -26,8 +24,6 @@ export function VoteArea({
   myCharacter,
   roundPhase,
   hasVoted,
-  disconnectedCharacters,
-  leftCharacters,
   onVote,
 }: VoteAreaProps) {
   // --- ETAT LOCAL ---
@@ -114,27 +110,22 @@ export function VoteArea({
             const isMe = character === myCharacter;           // C'est moi ?
             const isCurrent = character === currentTurnCharacter;  // C'est son tour ?
             const isSelected = selectedVote === character; // Sélectionné pour le vote ?
-            // Un joueur deconnecte ou parti est forcement humain : le bot
-            // n'a pas de socket et ne part jamais. Voter pour lui serait une
-            // defaite certaine, on ne laisse pas le piege ouvert.
-            const isAbsent =
-              disconnectedCharacters.includes(character) ||
-              leftCharacters.includes(character);
-            const isVotable = canVote && !isMe && !isAbsent;  // Peut-on voter pour ce personnage ?
+            const isVotable = canVote && !isMe;  // Peut-on voter pour ce personnage ?
             const bgColor = getCharacterColor(character);  // Couleur normale du personnage
+            const borderColor = getCharacterBorder(character);  // Bordure foncée du personnage
 
             return (
               // Bouton personnage
               <motion.button
                 key={character}
                 // Styles : fond normal, bordure selon l'état, ratio 1:2 pour les images body
-                className={`relative flex flex-col items-center justify-start rounded-xl transition-all ${bgColor} overflow-hidden max-h-full aspect-[1/2] pb-2 flex-1 ${
+                className={`relative flex flex-col items-center justify-start rounded-xl transition-all border-2 ${bgColor} ${borderColor} overflow-hidden max-h-full aspect-[1/2] pb-2 flex-1 ${
                   isMe
                     ? 'ring-2 ring-yellow-500'          // Moi = bordure jaune
                     : isVotable
                       ? `cursor-pointer hover:brightness-150 ${isSelected ? 'ring-2 ring-white' : ''}`  // Votable = survol brillant
                       : 'cursor-not-allowed'             // Non votable = curseur interdit
-                } ${isAbsent ? 'grayscale opacity-40' : ''} ${isCurrent ? 'ring-2 ring-amber-400' : ''}`}  // Tour actuel = bordure ambrée
+                } ${isCurrent ? 'ring-2 ring-amber-400' : ''}`}  // Tour actuel = bordure ambrée
                 style={{ maxWidth: `calc(100% / ${turnOrder.length})` }}
                 onClick={() => handleVote(character)}
                 disabled={!isVotable}

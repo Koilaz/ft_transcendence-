@@ -59,14 +59,11 @@ export type GameReconnectedMessage = {
   } | null;
   roundPhase: string;
   hasVoted: boolean;
-  disconnectedCharacters: string[];
-  leftCharacters: string[];
   debriefWaiting: boolean;
 };
 
-// Un joueur vient de perdre la liaison : sa place reste reserveee jusqu'a la
-// fin de la manche (temporary), il reste une cible de vote mais voter pour lui
-// est une defaite certaine puisque le bot, lui, ne part jamais.
+// Un joueur vient de perdre la liaison : sa place reste reservee jusqu'a la
+// fin de la manche (temporary). Le message n'est affiche que dans le fil de chat.
 export type GamePlayerDisconnectedMessage = {
   type: 'playerDisconnected';
   character: string;

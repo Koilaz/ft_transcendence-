@@ -28,8 +28,6 @@ export const initialState: GameUIState = {
   maxManches: null,
   debriefWait: null,
   hasVoted: false,
-  disconnectedCharacters: [],
-  leftCharacters: [],
   messages: [],
   roundResults: null,
   aiCharacter: null,
@@ -98,8 +96,6 @@ export function gameReducer(state: GameUIState, action: GameAction): GameUIState
         aiCharacter: null,
         debriefWait: null,
         hasVoted: false,
-        disconnectedCharacters: [],
-        leftCharacters: [],
         messages: [
           { id: nextMessageId(), kind: 'system', text: `>>> nouvelle manche, tu incarnes ${action.character}` },
         ],
@@ -165,8 +161,6 @@ export function gameReducer(state: GameUIState, action: GameAction): GameUIState
         maxManches: action.state.max_manches ?? state.maxManches,
         waitingPlayers: action.state.players ?? state.waitingPlayers,
         hasVoted: action.hasVoted,
-        disconnectedCharacters: action.disconnectedCharacters,
-        leftCharacters: action.leftCharacters,
         roundResults: null,
         aiCharacter: null,
         endGameData: null,
@@ -182,7 +176,6 @@ export function gameReducer(state: GameUIState, action: GameAction): GameUIState
     case 'playerDisconnected':
       return {
         ...state,
-        disconnectedCharacters: [...state.disconnectedCharacters, action.character],
         messages: [
           ...state.messages,
           { id: nextMessageId(), kind: 'system', text: `${action.character} est déconnecté. Sa place reste réservée.` },
@@ -191,7 +184,6 @@ export function gameReducer(state: GameUIState, action: GameAction): GameUIState
     case 'playerReconnected':
       return {
         ...state,
-        disconnectedCharacters: state.disconnectedCharacters.filter((c) => c !== action.character),
         messages: [
           ...state.messages,
           { id: nextMessageId(), kind: 'system', text: `${action.character} est de retour.` },
