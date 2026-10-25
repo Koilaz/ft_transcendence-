@@ -6,12 +6,6 @@ const bunnyImages = {
   stress: '/game/timer/bunnyPinkPhaseStress.webp',
 } as const;
 
-// Seuil pour changer d'animation (en secondes)
-// Pour un tour de 25 secondes :
-// - normal: 20-25s
-// - neutral: 10-19s
-// - nervous: 5-9s
-// - stress: 0-4s
 function getBunnyPhase(countdown: number): keyof typeof bunnyImages {
   if (countdown >= 5) return 'normal';
   if (countdown >= 4) return 'neutral';

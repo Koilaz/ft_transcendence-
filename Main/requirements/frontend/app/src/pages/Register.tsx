@@ -1,7 +1,8 @@
 import { useState, type FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 import { register } from '../services/api';
+import { Alert, AppLink, Button, Card, Input, Title } from '../components/ui';
 
 export default function Register() {
   const navigate = useNavigate();
@@ -50,128 +51,74 @@ export default function Register() {
   return (
     <main className="min-h-screen bg-stone-950 px-4 text-white">
       <div className="mx-auto flex min-h-screen max-w-md items-center">
-        <section className="w-full rounded-2xl border border-stone-700 bg-stone-900 p-8 shadow-xl">
-          <h1 className="mb-2 text-3xl font-bold">Create account</h1>
+        <Card className="w-full">
+          <Title level={1} className="mb-2">Create account</Title>
 
           <p className="mb-8 text-stone-400">
             Join AImpostor and create your profile.
           </p>
 
           <form className="space-y-5" onSubmit={handleSubmit}>
-            <div>
-              <label
-                className="mb-2 block text-sm font-medium text-stone-300"
-                htmlFor="username"
-              >
-                Username
-              </label>
+            <Input
+              id="username"
+              type="text"
+              label="Username"
+              value={username}
+              onChange={(event) => setUsername(event.target.value)}
+              minLength={3}
+              maxLength={20}
+              required
+              autoComplete="username"
+            />
 
-              <input
-                id="username"
-                type="text"
-                value={username}
-                onChange={(event) => setUsername(event.target.value)}
-                minLength={3}
-                maxLength={20}
-                required
-                autoComplete="username"
-                className="w-full rounded-lg border border-stone-700 bg-stone-950 px-4 py-3 text-white outline-none transition focus:border-blue-500"
-              />
-            </div>
+            <Input
+              id="email"
+              type="email"
+              label="Email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              required
+              autoComplete="email"
+            />
 
-            <div>
-              <label
-                className="mb-2 block text-sm font-medium text-stone-300"
-                htmlFor="email"
-              >
-                Email
-              </label>
+            <Input
+              id="password"
+              type="password"
+              label="Password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              minLength={8}
+              maxLength={100}
+              required
+              autoComplete="new-password"
+            />
 
-              <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                required
-                autoComplete="email"
-                className="w-full rounded-lg border border-stone-700 bg-stone-950 px-4 py-3 text-white outline-none transition focus:border-blue-500"
-              />
-            </div>
+            <Input
+              id="confirm-password"
+              type="password"
+              label="Confirm password"
+              value={confirmPassword}
+              onChange={(event) => setConfirmPassword(event.target.value)}
+              minLength={8}
+              maxLength={100}
+              required
+              autoComplete="new-password"
+            />
 
-            <div>
-              <label
-                className="mb-2 block text-sm font-medium text-stone-300"
-                htmlFor="password"
-              >
-                Password
-              </label>
+            {error && <Alert variant="error">{error}</Alert>}
 
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                minLength={8}
-                maxLength={100}
-                required
-                autoComplete="new-password"
-                className="w-full rounded-lg border border-stone-700 bg-stone-950 px-4 py-3 text-white outline-none transition focus:border-blue-500"
-              />
-            </div>
-
-            <div>
-              <label
-                className="mb-2 block text-sm font-medium text-stone-300"
-                htmlFor="confirm-password"
-              >
-                Confirm password
-              </label>
-
-              <input
-                id="confirm-password"
-                type="password"
-                value={confirmPassword}
-                onChange={(event) => setConfirmPassword(event.target.value)}
-                minLength={8}
-                maxLength={100}
-                required
-                autoComplete="new-password"
-                className="w-full rounded-lg border border-stone-700 bg-stone-950 px-4 py-3 text-white outline-none transition focus:border-blue-500"
-              />
-            </div>
-
-            {error && (
-              <p className="rounded-lg border border-red-900 bg-red-950 px-4 py-3 text-sm text-red-300">
-                {error}
-              </p>
-            )}
-
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full rounded-lg bg-blue-500 px-4 py-3 font-semibold text-stone-900 transition hover:bg-blue-400 disabled:cursor-not-allowed disabled:opacity-50"
-            >
+            <Button type="submit" variant="primary" size="lg" fullWidth disabled={isSubmitting}>
               {isSubmitting ? 'Creating account...' : 'Create account'}
-            </button>
+            </Button>
           </form>
 
           <p className="mt-6 text-center text-sm text-stone-400">
             Already registered?{' '}
-            <Link
-              className="font-medium text-blue-400 hover:text-blue-300"
-              to="/login"
-            >
-              Log in
-            </Link>
+            <AppLink to="/login">Log in</AppLink>
             {' | '}
-            <Link
-              className="font-medium text-blue-400 hover:text-blue-300"
-              to="/"
-            >
-              Return to Home
-            </Link>
+            <AppLink to="/">Return to Home</AppLink>
           </p>
-        </section>
+        </Card>
       </div>
     </main>
   );

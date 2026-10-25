@@ -1,6 +1,6 @@
 import { forwardRef } from 'react';
-import { motion } from 'framer-motion';
 import type { InputState } from '../../types/game';
+import { Button } from '../ui';
 
 type ChatInputProps = {
   draft: string;
@@ -26,16 +26,15 @@ export const ChatInput = forwardRef<HTMLInputElement, ChatInputProps>(
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && onSend()}
         />
-        <motion.button
-          type="button"
-          className="bg-blue-500 hover:bg-blue-600 text-white rounded-lg px-4 py-1 font-semibold text-base disabled:opacity-40 disabled:cursor-not-allowed"
+        <Button
+          variant="primary"
+          size="md"
           disabled={!inputState.enabled || !draft.trim()}
           onClick={onSend}
-          whileHover={{ scale: inputState.enabled ? 1.02 : 1 }}
-          whileTap={{ scale: inputState.enabled ? 0.98 : 1 }}
+          className="px-4 py-1 text-base"
         >
           Envoyer
-        </motion.button>
+        </Button>
       </div>
     );
   }

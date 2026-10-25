@@ -3,10 +3,9 @@ import {
   useState,
   type FormEvent,
 } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 import {
-  DEFAULT_AVATAR_URL,
   getMe,
   updateMe,
   uploadAvatar,
@@ -14,6 +13,17 @@ import {
 } from '../services/api';
 import { PasswordChangeForm } from './PasswordChangeForm';
 import { setAccessToken } from '../services/session';
+import {
+  Alert,
+  Avatar,
+  Button,
+  ButtonLink,
+  Card,
+  Input,
+  Spinner,
+  StatBox,
+  Title,
+} from '../components/ui';
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -146,14 +156,10 @@ export default function Profile() {
     }
   }
 
-
-
   if (isLoading) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-stone-950 text-white">
-        <p className="text-stone-400">
-          Loading profile...
-        </p>
+        <Spinner />
       </main>
     );
   }
@@ -161,22 +167,17 @@ export default function Profile() {
   if (!user) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-stone-950 px-4 text-white">
-        <section className="w-full max-w-md rounded-2xl border border-red-900 bg-red-950 p-6">
-          <h1 className="mb-3 text-2xl font-bold">
+        <Card className="w-full max-w-md" padding="md">
+          <Title level={1} className="mb-3 text-red-300">
             Unable to load profile
-          </h1>
-
+          </Title>
           <p className="mb-6 text-red-300">
             {error || 'User not found'}
           </p>
-
-          <Link
-            to="/login"
-            className="inline-block rounded-lg bg-blue-500 px-4 py-3 font-semibold text-stone-900 hover:bg-blue-400 transition"
-          >
+          <ButtonLink to="/login" variant="primary" size="lg">
             Return to login
-          </Link>
-        </section>
+          </ButtonLink>
+        </Card>
       </main>
     );
   }
@@ -184,66 +185,44 @@ export default function Profile() {
   return (
     <main className="min-h-screen bg-stone-950 px-4 py-12 text-white">
       <div className="mx-auto max-w-2xl">
-        <section className="rounded-2xl border border-stone-700 bg-stone-900 p-8 shadow-xl">
+        <Card>
           <div className="mb-8 flex items-start justify-between gap-4">
             <div>
               <p className="mb-2 text-sm uppercase tracking-widest text-blue-400">
                 Profile
               </p>
-
-              <h1 className="text-4xl font-bold">{user.username}</h1>
+              <Title level={1} className="text-4xl">{user.username}</Title>
             </div>
 
             <div className="flex gap-3">
-              <button
-                type="button"
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={() => navigate('/')}
-                className="rounded-lg border border-stone-700 px-4 py-2 text-sm font-medium text-stone-300 transition hover:bg-stone-800/50"
               >
                 Back
-              </button>
-              <Link
+              </Button>
+              <ButtonLink
                 to="/friends"
-                className="rounded-lg border border-blue-500 px-4 py-2 text-sm font-medium text-blue-300 transition hover:bg-blue-500/10"
+                variant="outline"
+                size="sm"
+                className="border-blue-500 text-blue-300 hover:bg-blue-500/10"
               >
                 Friends
-              </Link>
+              </ButtonLink>
             </div>
           </div>
 
-          {error && (
-            <p className="mb-6 rounded-lg border border-red-900 bg-red-950 px-4 py-3 text-sm text-red-300">
-              {error}
-            </p>
-          )}
-
-          {successMessage && (
-            <p className="mb-6 rounded-lg border border-blue-900 bg-blue-950 px-4 py-3 text-sm text-blue-300">
-              {successMessage}
-            </p>
-          )}
+          {error && <Alert variant="error" className="mb-6">{error}</Alert>}
+          {successMessage && <Alert variant="success" className="mb-6">{successMessage}</Alert>}
 
           <div className="mb-8 space-y-4">
-            <div className="rounded-xl border border-stone-700 bg-stone-950 p-4">
-              <p className="text-sm text-stone-500">User ID</p>
-
-              <p className="mt-1 text-lg text-white">{user.id}</p>
-            </div>
-
-            <div className="rounded-xl border border-stone-700 bg-stone-950 p-4">
-              <p className="text-sm text-stone-500">Email</p>
-
-              <p className="mt-1 text-lg text-white">{user.email}</p>
-            </div>
+            <StatBox label="User ID" value={user.id} />
+            <StatBox label="Email" value={user.email} />
 
             <div className="rounded-xl border border-stone-700 bg-stone-950 p-4">
               <p className="mb-3 text-sm text-stone-500">Avatar</p>
-
-              <img
-                src={user.avatarUrl ?? DEFAULT_AVATAR_URL}
-                alt={`Avatar de ${user.username}`}
-                className="h-32 w-32 rounded-full object-cover"
-              />
+              <Avatar src={user.avatarUrl} alt={`Avatar de ${user.username}`} size="xl" />
             </div>
           </div>
 
@@ -251,9 +230,7 @@ export default function Profile() {
             className="mb-8 border-t border-stone-700 pt-8"
             onSubmit={handleAvatarSubmit}
           >
-            <h2 className="mb-5 text-2xl font-semibold text-white">
-              Change avatar
-            </h2>
+            <Title level={2} className="mb-5">Change avatar</Title>
 
             <input
               type="file"
@@ -261,7 +238,6 @@ export default function Profile() {
               onChange={(event) => {
                 const file =
                   event.target.files?.[0] ?? null;
-
                 setAvatarFile(file);
               }}
               className="block w-full rounded-lg border border-stone-700 bg-stone-950 px-4 py-3 text-sm text-stone-300"
@@ -271,67 +247,50 @@ export default function Profile() {
               JPEG, PNG or WebP — maximum 2 MB.
             </p>
 
-            <button
+            <Button
               type="submit"
-              disabled={
-                !avatarFile ||
-                isUploadingAvatar
-              }
-              className="mt-6 w-full rounded-lg bg-blue-600 px-4 py-3 font-semibold text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
+              variant="primary"
+              size="lg"
+              fullWidth
+              disabled={!avatarFile || isUploadingAvatar}
+              className="mt-6 bg-blue-600 hover:bg-blue-500"
             >
-              {isUploadingAvatar
-                ? 'Uploading...'
-                : 'Upload avatar'}
-            </button>
+              {isUploadingAvatar ? 'Uploading...' : 'Upload avatar'}
+            </Button>
           </form>
 
           <form
             className="border-t border-stone-700 pt-8"
             onSubmit={handleProfileSubmit}
           >
-            <h2 className="mb-5 text-2xl font-semibold text-white">
-              Edit profile
-            </h2>
+            <Title level={2} className="mb-5">Edit profile</Title>
 
-            <div>
-              <label
-                className="mb-2 block text-sm font-medium text-stone-300"
-                htmlFor="username"
-              >
-                Username
-              </label>
+            <Input
+              id="username"
+              type="text"
+              label="Username"
+              value={username}
+              onChange={(event) => setUsername(event.target.value)}
+              minLength={3}
+              maxLength={20}
+              required
+              autoComplete="username"
+            />
 
-              <input
-                id="username"
-                type="text"
-                value={username}
-                onChange={(event) =>
-                  setUsername(event.target.value)
-                }
-                minLength={3}
-                maxLength={20}
-                required
-                autoComplete="username"
-                className="w-full rounded-lg border border-stone-700 bg-stone-950 px-4 py-3 text-white outline-none transition focus:border-blue-500"
-              />
-            </div>
-
-            <button
+            <Button
               type="submit"
-              disabled={
-                isSubmitting ||
-                username.trim() === user.username
-              }
-              className="mt-6 w-full rounded-lg bg-blue-500 px-4 py-3 font-semibold text-stone-900 transition hover:bg-blue-400 disabled:cursor-not-allowed disabled:opacity-50"
+              variant="primary"
+              size="lg"
+              fullWidth
+              disabled={isSubmitting || username.trim() === user.username}
+              className="mt-6"
             >
-              {isSubmitting
-                ? 'Saving...'
-                : 'Save changes'}
-            </button>
+              {isSubmitting ? 'Saving...' : 'Save changes'}
+            </Button>
           </form>
 
           <PasswordChangeForm />
-        </section>
+        </Card>
       </div>
     </main>
   );

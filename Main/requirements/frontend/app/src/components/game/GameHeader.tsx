@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { TimerBunny } from '../TimerBunny';
+import { TimerBunny } from './animations';
 
 type GameHeaderProps = {
   roomNumber: number | null;
