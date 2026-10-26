@@ -75,7 +75,6 @@ export function VoteArea({
         ========================================== */}
         <div className="h-[10%] flex justify-evenly items-end text-center pb-2">
           {turnOrder.map((character) => {
-            const isMe = character === myCharacter;
             return (
               <div
                 key={character}

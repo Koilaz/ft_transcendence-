@@ -60,6 +60,10 @@ export type GameReconnectedMessage = {
   roundPhase: string;
   hasVoted: boolean;
   debriefWaiting: boolean;
+  // Absents suivis en direct : place reservee (temporaire) ou depart definitif
+  // (voir room.js : reconnectPlayer).
+  disconnectedCharacters: string[];
+  leftCharacters: string[];
 };
 
 // Un joueur vient de perdre la liaison : sa place reste reservee jusqu'a la
@@ -176,6 +180,29 @@ export const RESUME_TOKEN_STORAGE_KEY = 'gameResumeToken';
 // apres un remplacement d'onglet, chaque reprise chasserait l'autre en boucle.
 export function discardResumeToken(): void {
   sessionStorage.removeItem(RESUME_TOKEN_STORAGE_KEY);
+}
+
+// Health check : vérifie que le service game répond avant de tenter le
+// WebSocket. Un fetch sur /ws/game en HTTP retourne 204 si le service est
+// up (route Express dédiée), 502 si nginx ne trouve pas le backend (down).
+// Le 204 garde la console propre : un 404 y serait logué en rouge
+// (« Failed to load resource ») à chaque chargement de la page.
+export async function waitForGameServer(
+  signal: AbortSignal,
+  maxAttempts = 30,
+  delayMs = 1000,
+): Promise<boolean> {
+  for (let i = 0; i < maxAttempts; i++) {
+    if (signal.aborted) return false;
+    try {
+      const response = await fetch('/ws/game', { method: 'HEAD', signal });
+      if (response.status !== 502) return true;
+    } catch {
+      // 502 ou erreur réseau → on réessaie
+    }
+    await new Promise((resolve) => setTimeout(resolve, delayMs));
+  }
+  return false;
 }
 
 function getGameWebSocketUrl(): string {

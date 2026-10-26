@@ -1,5 +1,5 @@
 import { useEffect, useReducer, useRef, useState } from 'react';
-import { connectGameSocket, sendChatMessage, sendVoteMessage, sendReplayMessage, sendReadyMessage, RESUME_TOKEN_STORAGE_KEY, discardResumeToken } from '../services/gameSocket';
+import { connectGameSocket, sendChatMessage, sendVoteMessage, sendReplayMessage, sendReadyMessage, RESUME_TOKEN_STORAGE_KEY, discardResumeToken, waitForGameServer } from '../services/gameSocket';
 import {
   gameReducer,
   initialState,
@@ -33,8 +33,10 @@ export function useGame() {
   // instantane 'reconnected', retour en file, ou 'reconnect_expired'.
   useEffect(() => {
     let disposed = false;
+    const abortController = new AbortController();
     let reconnectTimer: ReturnType<typeof setTimeout> | undefined = undefined;
     let handshakeTimer: ReturnType<typeof setTimeout> | undefined = undefined;
+    let reconnectExpiredTimer: ReturnType<typeof setTimeout> | undefined = undefined;
     let attempts = 0;
     let currentSocket: WebSocket | null = null;
 
@@ -59,15 +61,12 @@ export function useGame() {
           return;
         }
         if (message.type === 'roomClosed') {
-          // Debug : afficher le resumeToken actuel
-          console.log('Room closed with code:', message.code, 'Current resumeToken:', sessionStorage.getItem(RESUME_TOKEN_STORAGE_KEY));
-          
           // Si la session a expiré, on nettoie et on relance sans afficher l'erreur
           if (message.code === 'reconnect_expired') {
             discardResumeToken();
             terminalRef.current = false; // Permet la reconnexion
             dispatch({ type: 'resetGame' });
-            setTimeout(() => reconnectRef.current?.(), 100);
+            reconnectExpiredTimer = setTimeout(() => reconnectRef.current?.(), 100);
             return; // Ne pas transmettre ce message au reducer (évite l'affichage de l'erreur)
           }
           
@@ -127,16 +126,26 @@ export function useGame() {
     }
     document.addEventListener('visibilitychange', onVisibility);
 
-    connect();
+    // Health check avant la première connexion : évite l'erreur console
+    // quand le service game n'est pas encore démarré.
+    async function init() {
+      const ready = await waitForGameServer(abortController.signal);
+      if (disposed || !ready) return;
+      connect();
+    }
+    init();
     reconnectRef.current = connect;
 
     return () => {
       disposed = true;
+      abortController.abort();
       document.removeEventListener('visibilitychange', onVisibility);
       if (reconnectTimer)
         clearTimeout(reconnectTimer);
       if (handshakeTimer)
         clearTimeout(handshakeTimer);
+      if (reconnectExpiredTimer)
+        clearTimeout(reconnectExpiredTimer);
       // Ne fermer la socket que si elle est ouverte ou en cours d'ouverture
       // Sinon on risque de déclencher une erreur "closed before established"
       if (socketRef.current && socketRef.current.readyState !== WebSocket.CLOSING && socketRef.current.readyState !== WebSocket.CLOSED) {
@@ -188,8 +197,9 @@ export function useGame() {
   function handleReady() {
     const socket = socketRef.current;
     if (!socket) return;
-    // Supprimer l'ancien jeton de reprise pour éviter de reprendre une session expirée
-    discardResumeToken();
+    // Le jeton de reprise est conserve : c'est lui qui permet de reprendre sa
+    // place apres un refresh en pleine partie. Un jeton perime se guerit tout
+    // seul : le serveur repond 'reconnect_expired' et on repart a zero.
     sendReadyMessage(socket);
   }
 

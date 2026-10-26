@@ -217,7 +217,7 @@ export default function Profile() {
           {successMessage && <Alert variant="success" className="mb-6">{successMessage}</Alert>}
 
           <div className="mb-8 space-y-4">
-            <StatBox label="User ID" value={user.id} />
+            <StatBox label="User ID" value={String(user.id)} />
             <StatBox label="Email" value={user.email} />
 
             <div className="rounded-xl border border-stone-700 bg-stone-950 p-4">

@@ -1,7 +1,10 @@
-export { AnimatedMayoPortrait } from './AnimatedMayoPortrait';
-export { AnimatedWasabiPortrait } from './AnimatedWasabiPortrait';
-export { AnimatedKetchupPortrait } from './AnimatedKetchupPortrait';
-export { AnimatedMoutardePortrait } from './AnimatedMoutardePortrait';
-export { AnimatedPoivrePortrait } from './AnimatedPoivrePortrait';
-export { AnimatedCocktailPortrait } from './AnimatedCocktailPortrait';
+export { AnimatedPortrait } from './AnimatedPortrait';
+export {
+  AnimatedCocktailPortrait,
+  AnimatedKetchupPortrait,
+  AnimatedMayoPortrait,
+  AnimatedMoutardePortrait,
+  AnimatedPoivrePortrait,
+  AnimatedWasabiPortrait,
+} from './portraits';
 export { TimerBunny } from './TimerBunny';
