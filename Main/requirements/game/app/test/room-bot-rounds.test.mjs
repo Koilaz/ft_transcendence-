@@ -46,10 +46,12 @@ import { check, report } from './check.mjs';
 	check('B. manche 2 : agent et prompt de la manche 2',
 		bot.agentName === 'agent_dur' && bot.promptName === 'prompt_default');
 	check('B. nouveau bot, nouveau sendFn', bot.sendFn !== sendFn1);
+	const sendFn2 = bot.sendFn;
 
 	room.currentRound.stop();
 	room.startNewRound();
 	check('B. au-dela de la liste, le dernier bot continue', bot.agentName === 'agent_dur');
+	check('B. meme bot, disjoncteur neuf a chaque manche', bot.sendFn !== sendFn2);
 	check('B. c est toujours le meme joueur', room.players.get(bot.id) === bot);
 
 	room.destroy('game_finished');

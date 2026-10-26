@@ -35,6 +35,13 @@ check('le lobby continue de diffuser son compteur',
 dequeue('h0');
 check('la file reste utilisable', queueSize() === joueurs.length - 1);
 
+// « Prêt » ne contourne pas la file : la partie partirait sans imposteur et
+// planterait en fin de manche, faute de bot a reveler.
+for (const id of joueurs.map((_, index) => `h${index + 1}`))
+	ready(id);
+check('sans bot jouable, tous prets ne lancent pas le compte a rebours',
+	joueurs[1].msgs.at(-1)?.countdown === null && roomCount() === 0);
+
 // Avec un agent valide, la file reste en attente jusqu'a l'action « Prêt ».
 gameConfig.bots = ['mistral_medium'];
 const valide = { msgs: [], room: null };

@@ -139,6 +139,12 @@ export type GameRoundTransitionMessage = {
   aiCharacter: string;
 };
 
+// Le bot ne repond plus : la manche s'arrete sans points, le temps que le
+// serveur reverifie les agents (voir room.js : cancelRound).
+export type GameRoundCancelledMessage = {
+  type: 'roundCancelled';
+};
+
 export type GameEndMessage = {
   type: 'gameEnd';
   winnerId: string;
@@ -166,6 +172,7 @@ export type GameMessage =
   | GameSilenceMessage
   | GameVoteRegisteredMessage
   | GameRoundTransitionMessage
+  | GameRoundCancelledMessage
   | GameEndMessage
   | GameRoomClosedMessage;
 
@@ -255,6 +262,7 @@ export function connectGameSocket(
         message.type !== 'silence' &&
         message.type !== 'voteRegistered' &&
         message.type !== 'roundTransition' &&
+        message.type !== 'roundCancelled' &&
         message.type !== 'gameEnd' &&
         message.type !== 'roomClosed'
       ) {

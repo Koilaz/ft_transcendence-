@@ -364,14 +364,16 @@ commettre. Details dans [Game/VOTING_TODO.md](Game/VOTING_TODO.md).
 | `roundState` | broadcast | `{ status }` | entree en phase de vote |
 | `voteRegistered` | prive | `{}` | vote pris en compte |
 | `roundEnd` | broadcast | `{ aiCharacter, results[] }` | fin de manche |
+| `roundCancelled` | broadcast | `{}` | le bot ne repond plus : manche annulee sans points, healthcheck relance |
 | `gameEnd` | broadcast | `{ ranking[], winnerId }` | fin de partie. `ranking[].name` est le pseudo, ou « L'AImpostor » pour l'agent |
 | `playerDisconnected` | broadcast | `{ character }` | un joueur a quitte la partie |
 | `roomClosed` | broadcast | `{ code }` | la room ferme definitivement |
+| `agentsDown` | prive | `{ agents[] }` | a la connexion et a chaque `replay`, si des bots de `gameConfig.bots` sont hors service |
 
 Codes de `roomClosed` : `game_finished` (envoye juste apres `gameEnd`),
-`not_enough_players`, `empty_room`.
-`agent_failure` est prevu mais pas encore emis. Ce sont des chaines machine :
-le front choisit le texte et la langue.
+`not_enough_players`, `empty_room`, `agent_failure` (un bot de la partie est
+KO au healthcheck relance apres une manche annulee). Ce sont des chaines
+machine : le front choisit le texte et la langue.
 
 **Client → serveur**
 

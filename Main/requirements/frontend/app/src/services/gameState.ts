@@ -209,6 +209,16 @@ export function gameReducer(state: GameUIState, action: GameAction): GameUIState
         roundResults: action.results,
         aiCharacter: action.aiCharacter,
       };
+    case 'roundCancelled':
+      // Meme texte que la ligne systeme du serveur, que l'instantane de
+      // reprise restitue (voir room.js : cancelRound).
+      return {
+        ...state,
+        messages: [
+          ...state.messages,
+          { id: nextMessageId(), kind: 'system', text: "Manche annulée : l'IA ne répond plus. Vérification technique en cours." },
+        ],
+      };
     case 'gameEnd':
       return {
         ...state,

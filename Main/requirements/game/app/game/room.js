@@ -3,7 +3,7 @@ import { Round } from './round.js';
 import { createBotSendFn } from '../agents/bot.js';
 import { normalizeMessage } from '../agents/postTreatment.js';
 import { gameConfig, botEntries } from './config.js';
-import { preheatAgent } from '../agents/index_agent.js';
+import { preheatAgent, checkAllAgents, unavailableBots } from '../agents/index_agent.js';
 import { getPrompt } from '../agents/prompt/index_prompt.js';
 import { requestDebrief } from '../agents/prompt/debrief.js';
 
@@ -101,14 +101,13 @@ class Room
 		return this.botOfRound(player, this.roundNumber + 1).prompt;
 	}
 
-	//Donne au bot l'agent et le prompt prevus pour cette manche. Le sendFn n'est
-	//recree que si le bot change : il repart avec un disjoncteur neuf, la panne
-	//d'un agent ne condamne pas celui de la manche suivante.
+	//Donne au bot l'agent et le prompt prevus pour cette manche, avec un
+	//disjoncteur neuf meme si le bot ne change pas : la mort d'un bot ne vaut
+	//que pour sa manche, qu'elle l'annule (voir cancelRound) ou qu'elle soit
+	//deja finie quand sa reponse revient.
 	applyBotRound(player, roundNumber)
 	{
 		const { agent, prompt } = this.botOfRound(player, roundNumber);
-		if (player.agentName === agent && player.promptName === prompt)
-			return;
 		player.agentName = agent;
 		player.promptName = prompt;
 		player.sendFn = createBotSendFn(this, player.id, { agent, prompt });
@@ -412,6 +411,36 @@ class Room
             }
         }, 4000);
     }
+
+	//Le bot de cette manche ne repond plus (voir agents/bot.js) : la manche
+	//s'arrete sans points mais compte comme jouee, et le healthcheck est
+	//relance. Un bot de la partie hors service renvoie tout le monde au lobby,
+	//sinon la partie reprend comme apres une manche normale.
+	//round est la manche ou le bot a ete appele : sa reponse a pu revenir une
+	//fois la manche finie, il n'y a alors plus rien a annuler.
+	async cancelRound(round)
+	{
+		if (round.status !== 'chatting')
+			return;
+		round.stop();
+		console.log(`[room ${this.id}] manche ${this.roundNumber} annulee : le bot ne repond plus`);
+		this.addSystemMessage("Manche annulée : l'IA ne répond plus. Vérification technique en cours.");
+		this.broadcast({ type: 'roundCancelled' });
+		this.setStatus('transition');
+		await checkAllAgents();
+		//Les joueurs ont pu partir pendant le healthcheck.
+		if (this.destroyed)
+			return;
+		//Tous les bots de la room, toutes manches confondues, au format de
+		//gameConfig.bots : le meme tri que celui de la file.
+		const bots = [...this.players.values()].filter((p) => p.botRounds)
+			.map((p) => ({ rounds: p.botRounds }));
+		if (unavailableBots(bots).length)
+			return this.destroy('agent_failure');
+		if (this.roundNumber >= gameConfig.maxRounds)
+			return this.endGame();
+		this.launchStartTimer(gameConfig.roundTransitionDelay);
+	}
 
 	//Fin du compte a rebours de transition. La manche suivante attend sa note :
 	//le bot partira avec les correctifs de la precedente, ou sans. On prolonge

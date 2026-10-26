@@ -297,8 +297,9 @@ export class Round {
 		return this.turnOrder.map((id) => this.caracterOf(id));
 	}
 
-	//Arret net de la manche, appele par Room.destroy. Il n'y a pas de fin de
-	//manche a jouer quand la room ferme. Le statut compte autant que le chrono :
+	//Arret net de la manche, appele par Room.destroy et Room.cancelRound. Il
+	//n'y a pas de fin de manche a jouer quand la room ferme ou que la manche est
+	//annulee. Le statut compte autant que le chrono :
 	//la reponse d'un bot encore en cours de generation arrive apres coup, et
 	//tant que la manche se croit 'chatting' elle relancerait un tour.
 	stop()

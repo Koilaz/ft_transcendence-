@@ -139,6 +139,12 @@ test('fin de manche : les resultats tombent, la fermeture pose son code', () => 
   assert.equal(closed.roomClosedCode, 'reconnect_expired');
 });
 
+test("une manche annulee l'annonce dans le fil", () => {
+  const next = gameReducer(playing(initialState), { type: 'roundCancelled' });
+  assert.equal(next.messages.at(-1).kind, 'system');
+  assert.ok(next.messages.at(-1).text.includes('annulée'));
+});
+
 test('resetGame remet la page dans son etat de depart', () => {
   const state = gameReducer(playing(initialState), { type: 'voteRegistered' });
   const next = gameReducer(state, { type: 'resetGame' });
