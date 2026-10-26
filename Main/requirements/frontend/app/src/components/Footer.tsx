@@ -1,8 +1,6 @@
-import { useModal } from '../contexts/ModalContext';
+import { Link } from 'react-router-dom';
 
 export default function Footer() {
-  const { setActiveModal } = useModal();
-
   return (
     <footer className="bg-black text-white py-8 px-4 w-full">
       <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
@@ -12,18 +10,18 @@ export default function Footer() {
           </p>
         </div>
         <nav className="flex gap-6">
-          <button
-            onClick={() => setActiveModal('terms')}
+          <Link
+            to="/terms-of-service"
             className="text-sm hover:text-gray-300 transition-colors"
           >
             Terms of Service
-          </button>
-          <button
-            onClick={() => setActiveModal('privacy')}
+          </Link>
+          <Link
+            to="/privacy-policy"
             className="text-sm hover:text-gray-300 transition-colors"
           >
             Privacy Policy
-          </button>
+          </Link>
         </nav>
       </div>
     </footer>

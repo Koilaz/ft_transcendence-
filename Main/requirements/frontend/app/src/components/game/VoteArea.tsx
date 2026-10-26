@@ -1,6 +1,7 @@
-import { motion, AnimatePresence } from 'framer-motion';
-import { useState, useEffect, useRef } from 'react';
-import { getBodyImagePath, getCharacterColor } from '../../utils/characters';
+import { motion } from 'framer-motion';
+import { useState } from 'react';
+import { getBodyImagePath, getCharacterColor, getCharacterBorder } from '../../utils/characters';
+import { Badge } from '../ui';
 
 // ============================================
 // TYPES
@@ -11,8 +12,6 @@ type VoteAreaProps = {
   myCharacter: string | null;     // Mon personnage
   roundPhase: string | null;      // Phase actuelle : 'chatting', 'voting', etc.
   hasVoted: boolean;                // True si j'ai déjà voté
-  disconnectedCharacters: string[]; // Personnages déconnectés (ne pas voter pour eux)
-  leftCharacters: string[];        // Personnages partis de la room (ne pas voter pour eux)
   onVote?: (character: string) => void;  // Callback pour envoyer le vote
 };
 
@@ -26,15 +25,13 @@ export function VoteArea({
   myCharacter,
   roundPhase,
   hasVoted,
-  disconnectedCharacters,
-  leftCharacters,
   onVote,
 }: VoteAreaProps) {
   // --- ETAT LOCAL ---
   const [selectedVote, setSelectedVote] = useState<string | null>(null); // Personnage sélectionné pour le vote
+  const [votedFor, setVotedFor] = useState<string | null>(null); // Personnage pour qui on a voté
 
   // --- LOGIQUE DE VOTE ---
-  const isVotingPhase = roundPhase === 'voting';
   // Le backend collecte les votes en temps reel pendant la phase de
   // discussion : il n'existe pas de phase 'voting' distincte, on peut voter
   // des que la manche est en cours. Un vote deja depose (y compris restaure
@@ -47,19 +44,15 @@ export function VoteArea({
   function handleVote(character: string) {
     if (!canVote) return; // Bloque si on ne peut pas voter
     if (character === myCharacter) return; // Ne peut pas voter pour soi
-    
-    // Toggle : sélectionne/désélectionne le personnage
+
+    // Reclic sur le même personnage → confirme le vote
     if (selectedVote === character) {
+      if (onVote) onVote(character);
+      setVotedFor(character);
       setSelectedVote(null);
     } else {
+      // Premier clic → sélectionne
       setSelectedVote(character);
-    }
-  }
-
-  function confirmVote() {
-    if (selectedVote && onVote) {
-      onVote(selectedVote);  // Envoie le vote au parent
-      setSelectedVote(null); // Réinitialise la sélection
     }
   }
 
@@ -82,7 +75,6 @@ export function VoteArea({
         ========================================== */}
         <div className="h-[10%] flex justify-evenly items-end text-center pb-2">
           {turnOrder.map((character) => {
-            const isMe = character === myCharacter;
             return (
               <div
                 key={character}
@@ -90,13 +82,9 @@ export function VoteArea({
                 style={{ maxWidth: `calc(100% / ${turnOrder.length})` }}
               >
                 <div
-                  className={`rounded-lg px-3 py-1 ${
-                    isMe
-                      ? 'bg-yellow-500/90 text-yellow-900 font-bold border-2 border-yellow-600'
-                      : 'bg-white/70 text-black font-bold'
-                  }`}
+                  className="rounded-lg px-3 py-1 bg-stone-900/80 text-white font-bold border-2 border-blue-500"
                 >
-                  <span className="text-[clamp(0.875rem,1.5vw,1.125rem)]">
+                  <span className="font-bangers text-[clamp(0.875rem,1.5vw,1.125rem)]">
                     {character}
                   </span>
                 </div>
@@ -115,27 +103,19 @@ export function VoteArea({
             const isMe = character === myCharacter;           // C'est moi ?
             const isCurrent = character === currentTurnCharacter;  // C'est son tour ?
             const isSelected = selectedVote === character; // Sélectionné pour le vote ?
-            // Un joueur deconnecte ou parti est forcement humain : le bot
-            // n'a pas de socket et ne part jamais. Voter pour lui serait une
-            // defaite certaine, on ne laisse pas le piege ouvert.
-            const isAbsent =
-              disconnectedCharacters.includes(character) ||
-              leftCharacters.includes(character);
-            const isVotable = canVote && !isMe && !isAbsent;  // Peut-on voter pour ce personnage ?
+            const isVotedFor = votedFor === character;    // Personnage pour qui on a voté ?
+            const isVotable = canVote && !isMe;  // Peut-on voter pour ce personnage ?
             const bgColor = getCharacterColor(character);  // Couleur normale du personnage
+            const borderColor = getCharacterBorder(character);  // Bordure foncée du personnage
 
             return (
               // Bouton personnage
               <motion.button
                 key={character}
                 // Styles : fond normal, bordure selon l'état, ratio 1:2 pour les images body
-                className={`relative flex flex-col items-center justify-start rounded-xl transition-all ${bgColor} overflow-hidden max-h-full aspect-[1/2] pb-2 flex-1 ${
-                  isMe
-                    ? 'ring-2 ring-yellow-500'          // Moi = bordure jaune
-                    : isVotable
-                      ? `cursor-pointer hover:brightness-150 ${isSelected ? 'ring-2 ring-white' : ''}`  // Votable = survol brillant
-                      : 'cursor-not-allowed'             // Non votable = curseur interdit
-                } ${isAbsent ? 'grayscale opacity-40' : ''} ${isCurrent ? 'ring-2 ring-amber-400' : ''}`}  // Tour actuel = bordure ambrée
+                className={`group relative flex flex-col items-center justify-start rounded-xl transition-all border-2 ${bgColor} ${borderColor} overflow-hidden max-h-full aspect-[1/2] pb-2 flex-1 ${
+                  isVotable ? 'cursor-pointer' : 'cursor-not-allowed'
+                }`}
                 style={{ maxWidth: `calc(100% / ${turnOrder.length})` }}
                 onClick={() => handleVote(character)}
                 disabled={!isVotable}
@@ -182,50 +162,33 @@ export function VoteArea({
                   </>
                 )}
                 
-                {/* Surbrillance de sélection */}
-                {isSelected && (
-                  <div className="absolute inset-0 bg-white/10 rounded-xl" />
+                {/* Badge au survol ou sélectionné */}
+                {isVotable && (
+                  <div className={`absolute bottom-0 left-0 right-0 z-20 flex justify-center pb-1 pointer-events-none transition-opacity duration-200 ${isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                    <Badge color="red">
+                      {isSelected ? 'CONFIRMER VOTE' : 'VOTER POUR LUI'}
+                    </Badge>
+                  </div>
+                )}
+
+                {/* Badge vert quand le vote est enregistré sur ce personnage */}
+                {isVotedFor && (
+                  <div className="absolute bottom-0 left-0 right-0 z-20 flex justify-center pb-1 pointer-events-none">
+                    <Badge color="green">VOTE ENREGISTRÉ</Badge>
+                  </div>
+                )}
+
+                {/* Badge pour mon personnage */}
+                {isMe && (
+                  <div className="absolute bottom-0 left-0 right-0 z-20 flex justify-center pb-1 pointer-events-none">
+                    <Badge color="blue">C'EST TOI</Badge>
+                  </div>
                 )}
               </motion.button>
             );
           })}
         </div>
 
-        {/* ==========================================
-             SECTION 3 : BOUTON DE CONFIRMATION / VOTE ENREGISTRÉ
-             Apparaît quand un personnage est sélectionné ou après avoir voté
-        ========================================== */}
-        <AnimatePresence>
-          {hasVoted ? (
-            // Message de confirmation quand le vote est enregistré
-            <motion.div
-              className="flex justify-center p-4"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 10 }}
-            >
-              <span className="text-[clamp(1rem,2vw,1.5rem)] font-bold text-emerald-400">
-                VOTE ENREGISTRÉ — en attente de la fin de manche
-              </span>
-            </motion.div>
-          ) : canVote && selectedVote && (
-            <motion.div
-              className="flex justify-center p-4"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 10 }}
-            >
-              <motion.button
-                className="bg-red-500 hover:bg-red-600 text-white font-bold rounded-lg text-[clamp(0.875rem,1.75vw,1.125rem)] transition-colors"
-                onClick={confirmVote}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                ❌ VOTER POUR {selectedVote}
-              </motion.button>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
     </motion.footer>
   );

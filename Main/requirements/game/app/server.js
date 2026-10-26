@@ -10,6 +10,10 @@ import { attachGameConnections } from './gameConnections.js';
 
 const app = express();
 app.use(express.static('public'));//#tmp
+// Health check du frontend (gameSocket.ts : waitForGameServer) : repondre
+// 204 en HTTP simple evite « Failed to load resource: 404 » dans la console
+// du navigateur. Les upgrades WebSocket passent par ws, pas par Express.
+app.get('/ws/game', (req, res) => res.status(204).end());
 const server = http.createServer(app);
 //maxPayload : ws accepte 100 Mio par defaut, bien plus qu'un message de chat
 const wss = new WebSocketServer({ server, path: '/ws/game', maxPayload: 16 * 1024 });

@@ -1,16 +1,13 @@
 import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
-import { TimerBunny } from '../TimerBunny';
+import { TimerBunny } from './animations';
 
 type GameHeaderProps = {
   roomNumber: number | null;
   roundIndicator: string;
   turnCycle: number | null;
   countdown: number | null;
-  timerLabel: string;
   timerVisible: boolean;
-  characters?: string[];
-  onQuit?: () => void;
+  onQuit: () => void;
 };
 
 export function GameHeader({
@@ -18,9 +15,7 @@ export function GameHeader({
   roundIndicator,
   turnCycle,
   countdown,
-  timerLabel,
   timerVisible,
-  characters = [],
   onQuit,
 }: GameHeaderProps) {
   // Extraction du numéro de manche et de tour
@@ -33,7 +28,7 @@ export function GameHeader({
 
   return (
     <motion.header
-      className="h-full w-full flex-shrink-0 flex items-center border-b border-stone-700 relative bg-cyan-900/60"
+      className="h-full w-full flex-shrink-0 flex items-center border-b border-stone-700 relative bg-cyan-900/60 overflow-hidden"
       initial={{ opacity: 0, y: -20 }}
       animate={{
         opacity: 1,
@@ -43,33 +38,33 @@ export function GameHeader({
         duration: 0.3,
       }}
     >
-          {/* Salle - 10% */}
-          <div className="w-[10%] h-full flex items-center justify-center px-2">
-            <div className="bg-cyan-800/80 border border-cyan-600 rounded-xl px-3 py-1 flex flex-col items-center gap-1">
-              <span className="text-lg md:text-xl lg:text-2xl font-bold text-white truncate font-bangers">
+          {/* Salle — 12% mobile, 10% desktop */}
+          <div className="w-[12%] sm:w-[10%] h-full flex items-center justify-center px-1 sm:px-2">
+            <div className="bg-cyan-800/80 border border-cyan-600 rounded-lg sm:rounded-xl px-1.5 py-0.5 sm:px-3 sm:py-1 flex flex-col items-center gap-0.5 sm:gap-1 max-w-full">
+              <span className="text-[10px] sm:text-sm md:text-lg font-bold text-white truncate font-bangers">
                 Salle
               </span>
-              <span className="text-lg md:text-xl lg:text-2xl font-bold text-white truncate font-bangers">
+              <span className="text-[10px] sm:text-sm md:text-lg font-bold text-white truncate font-bangers">
                 #{roomNumber ?? '—'}
               </span>
             </div>
           </div>
 
-          {/* Manche - 15% */}
-          <div className="w-[15%] h-full flex items-center justify-center">
+          {/* Manche — 16% mobile, 15% desktop */}
+          <div className="w-[16%] sm:w-[15%] h-full flex items-center justify-center">
             <motion.div
               key={currentManche}
               initial={{ scale: 0.8, opacity: 0.5 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ duration: 0.3 }}
-              className="bg-cyan-800/80 border border-cyan-600 rounded-xl px-3 py-2 flex flex-col items-center gap-1"
+              className="bg-cyan-800/80 border border-cyan-600 rounded-lg sm:rounded-xl px-1 py-0.5 sm:px-3 sm:py-2 flex flex-col items-center gap-0.5 sm:gap-1"
             >
-              <span className="text-white text-sm font-semibold font-bangers">Manche</span>
-              <div className="flex items-center gap-1">
+              <span className="text-white text-[9px] sm:text-xs md:text-sm font-semibold font-bangers">Manche</span>
+              <div className="flex items-center gap-0 sm:gap-1">
                 {[1, 2, 3, 4].map((i) => (
                   <span
                     key={i}
-                    className="text-2xl text-white font-bangers"
+                    className="text-[10px] sm:text-lg md:text-2xl text-white font-bangers"
                   >
                     {i <= currentManche ? '★' : '☆'}
                   </span>
@@ -78,8 +73,8 @@ export function GameHeader({
             </motion.div>
           </div>
 
-          {/* Bunny gauche - 15% */}
-          <div className="w-[15%] h-full flex items-center justify-end pr-1">
+          {/* Bunny gauche — 12% mobile, 15% desktop */}
+          <div className="w-[12%] sm:w-[15%] h-full flex items-center justify-end pr-0.5 sm:pr-1">
             {timerVisible && countdown !== null && (
               <div className="h-full w-full">
                 <TimerBunny countdown={countdown} />
@@ -87,21 +82,17 @@ export function GameHeader({
             )}
           </div>
 
-          {/* Timer - 20% */}
+          {/* Timer — 20% partout. Taille en vh car contraint par la hauteur du header (8% vh). */}
           <div className="w-[20%] h-full flex items-center justify-center">
             {timerVisible && countdown !== null && (
-              <motion.span
-                className="text-[clamp(3rem,14vw,10rem)] font-bold text-white font-bangers"
-                animate={{ scale: [1, 1.05, 1] }}
-                transition={{ duration: 1, repeat: Infinity }}
-              >
+              <span className="text-[clamp(1.25rem,6vh,4rem)] font-bold text-white font-bangers">
                 {countdown}
-              </motion.span>
+              </span>
             )}
           </div>
 
-          {/* Bunny droit - 15% */}
-          <div className="w-[15%] h-full flex items-center justify-start pl-1">
+          {/* Bunny droit — 12% mobile, 15% desktop */}
+          <div className="w-[12%] sm:w-[15%] h-full flex items-center justify-start pl-0.5 sm:pl-1">
             {timerVisible && countdown !== null && (
               <div className="h-full w-full scale-x-[-1]">
                 <TimerBunny countdown={countdown} />
@@ -109,21 +100,21 @@ export function GameHeader({
             )}
           </div>
 
-          {/* Tour - 15% */}
-          <div className="w-[15%] h-full flex items-center justify-center">
+          {/* Tour — 16% mobile, 15% desktop */}
+          <div className="w-[16%] sm:w-[15%] h-full flex items-center justify-center">
             <motion.div
               key={currentTour}
               initial={{ scale: 0.8, opacity: 0.5 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ duration: 0.3 }}
-              className="bg-cyan-800/80 border border-cyan-600 rounded-xl px-3 py-2 flex flex-col items-center gap-1"
+              className="bg-cyan-800/80 border border-cyan-600 rounded-lg sm:rounded-xl px-1 py-0.5 sm:px-3 sm:py-2 flex flex-col items-center gap-0.5 sm:gap-1"
             >
-              <span className="text-white text-sm font-semibold font-bangers">Tour</span>
-              <div className="flex items-center gap-1">
+              <span className="text-white text-[9px] sm:text-xs md:text-sm font-semibold font-bangers">Tour</span>
+              <div className="flex items-center gap-0 sm:gap-1">
                 {[1, 2, 3].map((i) => (
                   <span
                     key={i}
-                    className="text-xl text-white font-bangers"
+                    className="text-[10px] sm:text-base md:text-xl text-white font-bangers"
                   >
                     {i <= currentTour ? '●' : '○'}
                   </span>
@@ -132,14 +123,15 @@ export function GameHeader({
             </motion.div>
           </div>
 
-          {/* Quitter - 10% */}
-          <div className="w-[10%] h-full flex items-center justify-end pr-2">
-            <Link
-              to="/"
-              className="bg-cyan-800/80 border border-cyan-600 rounded-lg p-2 text-xl font-semibold text-red-400 transition-colors"
+          {/* Quitter — 12% mobile, 10% desktop */}
+          <div className="w-[12%] sm:w-[10%] h-full flex items-center justify-end pr-1 sm:pr-2">
+            <button
+              type="button"
+              onClick={onQuit}
+              className="bg-cyan-800/80 border border-cyan-600 rounded-lg p-1 sm:p-2 text-xs sm:text-xl font-semibold text-red-400 transition-colors hover:bg-cyan-700/80"
             >
               ❌
-            </Link>
+            </button>
           </div>
     </motion.header>
   );

@@ -1,6 +1,8 @@
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { useGame } from '../hooks/useGame';
 import { MatrixRain } from '../components/MatrixRain';
+import { discardResumeToken } from '../services/gameSocket';
 import {
   GameHeader,
   DialogueArea,
@@ -11,6 +13,7 @@ import { ScoreboardModal, GameEndModal, RoomClosedModal } from './VoteSystem';
 import { Lobby } from './Lobby';
 
 export default function Game() {
+  const navigate = useNavigate();
   const {
     connectionOpen,
     roomNumber,
@@ -22,12 +25,10 @@ export default function Game() {
     countdown,
     messages,
     timerVisible,
-    timerLabel,
     roundIndicator,
     draft,
     setDraft,
     inputState,
-    feedRef,
     inputRef,
     handleSend,
     handleVote,
@@ -39,15 +40,23 @@ export default function Game() {
     roomClosedCode,
     debriefWait,
     hasVoted,
-    disconnectedCharacters,
-    leftCharacters,
     waitingPlayers,
     minPlayers,
     readyPlayers,
     isReady,
     agentsDown,
     handleReady,
+    socketRef,
   } = useGame();
+
+  const handleQuit = () => {
+    const socket = socketRef.current;
+    if (socket && socket.readyState === WebSocket.OPEN) {
+      socket.close();
+    }
+    discardResumeToken();
+    navigate('/');
+  };
 
   // File d'attente : tant que le serveur n'a pas ouvert de room ('waiting'),
   // l'ecran montre le lore et le bouton « Pret ». Des que la partie demarre,
@@ -76,29 +85,28 @@ export default function Game() {
       {/* MatrixRain global pour toute la page de jeu */}
       <MatrixRain className="absolute inset-0 -z-10" />
       
-      {/* PARTIE 1 - Header (10%) */}
-      <div className="h-[10%] flex-shrink-0 bg-stone-950/50 backdrop-blur-sm">
+      {/* PARTIE 1 - Header (8%) */}
+      <div className="h-[8%] flex-shrink-0 bg-stone-950/50 backdrop-blur-sm">
         <GameHeader
           roomNumber={roomNumber}
           roundIndicator={roundIndicator}
           turnCycle={turnCycle}
           countdown={countdown}
-          timerLabel={timerLabel}
           timerVisible={timerVisible}
-          characters={turnOrder}
+          onQuit={handleQuit}
         />
       </div>
 
-      {/* PARTIE 2 - Dialogue (62.5%) */}
-      <div className="h-[62.5%] overflow-hidden min-h-0 bg-stone-950/30">
+      {/* PARTIE 2 - Dialogue (62%) */}
+      <div className="h-[62%] relative min-h-0 bg-stone-950/30">
         <DialogueArea messages={messages} myCharacter={myCharacter} />
       </div>
 
-      {/* PARTIE 3 - Input de chat (4%) */}
-      <div className="h-[4%] flex-shrink-0 bg-stone-950/50">
+      {/* PARTIE 3 - Input de chat (6%) */}
+      <div className="h-[6%] flex-shrink-0 bg-stone-950/50">
         {inputState.enabled && (
           <motion.div
-            className="w-[95%] max-w-[90vw] mx-auto h-full p-2"
+            className="w-[95%] max-w-[90vw] mx-auto h-full px-3 py-1"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
@@ -114,16 +122,14 @@ export default function Game() {
         )}
       </div>
 
-      {/* PARTIE 4 - Vote (23.50%) */}
-      <div className="h-[23.50%] flex-shrink-0 bg-stone-950/50">
+      {/* PARTIE 4 - Vote (24%) */}
+      <div className="h-[24%] flex-shrink-0 bg-stone-950/50">
         <VoteArea
           turnOrder={turnOrder}
           currentTurnCharacter={currentTurnCharacter}
           myCharacter={myCharacter}
           roundPhase={roundPhase}
           hasVoted={hasVoted}
-          disconnectedCharacters={disconnectedCharacters}
-          leftCharacters={leftCharacters}
           onVote={handleVote}
         />
       </div>

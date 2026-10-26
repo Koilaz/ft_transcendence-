@@ -2,10 +2,11 @@ import { useEffect, useRef, useState } from 'react';
 
 const CHARACTERS = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
-// className s'ajoute aux classes du canvas : la page de jeu y passe -z-10 pour
-// garder la pluie sous l'interface. Sans ça, le canvas positionné se peint
-// au-dessus des blocs non positionnés et capte leurs clics (bouton de vote).
-export function MatrixRain({ className = '' }: { className?: string }) {
+type MatrixRainProps = {
+  className?: string;
+};
+
+export function MatrixRain({ className = "" }: MatrixRainProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [columns, setColumns] = useState(0);
 

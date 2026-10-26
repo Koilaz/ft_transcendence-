@@ -82,6 +82,9 @@ fclean: clean
 ffclean: fclean ollama-clean
 
 # Reconstruction complète du projet.
-re: fclean up
+install:
+	cd requirements/frontend/app && npm install
+
+re: fclean install up
 
 .PHONY: all up down start stop restart game-re game-logs ollama-pull ollama-list logs ps clean ollama-clean fclean ffclean re

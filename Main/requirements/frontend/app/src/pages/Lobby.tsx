@@ -135,6 +135,19 @@ export function Lobby({
         <p className="text-slate-100 font-bold">{loreSignature}</p>
       </article>
 
+      {/* Les regles sont donnees avant la partie : le joueur doit savoir
+          comment designer l'imposteur avant de commencer. */}
+      <section className="w-full max-w-3xl mt-6 border border-slate-800 bg-slate-900/60 p-5">
+        <h2 className="text-xs uppercase tracking-[0.2em] text-slate-500 mb-3">
+          Règles du jeu
+        </h2>
+        <ul className="space-y-2 text-sm text-slate-300">
+          <li>• Discutez entre vous pour découvrir qui est l'imposteur.</li>
+          <li>• Désignez l'imposteur en cliquant sur son personnage en bas de l'écran.</li>
+          <li>• Attention au temps imparti : sans désignation, la partie est perdue.</li>
+        </ul>
+      </section>
+
       {/* Le decompte avant lancement sert d'autodestruction au message. */}
       <section
         className="w-full max-w-3xl mt-6 border border-slate-800 bg-slate-900/60 p-5
