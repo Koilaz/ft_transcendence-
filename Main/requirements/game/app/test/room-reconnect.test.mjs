@@ -134,9 +134,9 @@ try
 			messages.get('private-human-1').some((message) => message.type === 'playerReconnected' && message.character === character));
 		room.submitVote(id, round.caracterOf('private-human-1'));
 		check('A. le vote initial ne peut pas etre remplace apres retour', round.votes.get(id) === vote);
-		room.addMessage(id, 'Je suis revenu');
+		room.addMessage(id, 'je suis revenu');
 		check('A. le joueur revenu reprend effectivement la partie',
-			room.history.at(-1)?.text === 'Je suis revenu' && round.currentPlayer.id === 'private-bot');
+			room.history.at(-1)?.text === 'je suis revenu' && round.currentPlayer.id === 'private-bot');
 		room.destroy();
 	}
 

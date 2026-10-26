@@ -1,6 +1,7 @@
 import { Player } from './player.js';
 import { Round } from './round.js';
 import { createBotSendFn } from '../agents/bot.js';
+import { normalizeMessage } from '../agents/postTreatment.js';
 import { gameConfig, botEntries } from './config.js';
 import { preheatAgent } from '../agents/index_agent.js';
 import { getPrompt } from '../agents/prompt/index_prompt.js';
@@ -258,6 +259,9 @@ class Room
 		const player = this.players.get(sender);
 		if (!player || !player.connected)
 			return;
+		text = normalizeMessage(text);
+		if (!text)
+			return;// que des emojis ou des symboles : il ne reste rien a envoyer
 		const msgData = { sender: character, text: text, isAI: !!player.agentName };
 
 		this.history.push(msgData);
@@ -317,9 +321,6 @@ class Room
 	{
 		if (this.destroyed || !this.expireDisconnectedPlayers())
 			return;
-		//Les personnages sont retires au sort a chaque manche : un meme nom ne
-		//designe plus la meme personne. Le bot est le seul lecteur de history,
-		//et la conserver lui ferait attribuer des propos au mauvais joueur.
 		this.history = [];
 
 		if (this.timerId)

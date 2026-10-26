@@ -1,5 +1,4 @@
-//Le prompt attribue a un bot qui n'en precise aucun. C'est une cle du registre
-//de prompts (agents/prompt/index_prompt.js).
+
 export const DEFAULT_PROMPT = 'prompt_default';
 
 export const gameConfig = {
@@ -9,27 +8,25 @@ export const gameConfig = {
 	//	{ rounds: ['ministral_14b', { agent, prompt }, ...] }  un bot par manche, dans
 	//	                                                      l'ordre ; la derniere entree
 	//	                                                      vaut pour les manches suivantes
-	//Difficulte progressive : le bot garde son siege et son score toute la
-	//partie, seuls son agent et son prompt changent d'une manche a l'autre.
-	bots: [{ rounds: [
-		{ agent: 'local_agent', prompt: 'prompt_advanced' }, // manche 1
-		{ agent: 'local_agent', prompt: 'prompt_advanced' }, // manche 2
-		{ agent: 'local_agent', prompt: 'prompt_advanced' }, // manche 3
-		{ agent: 'local_agent', prompt: 'prompt_advanced' }, // manche 4
-	] }],
-	turnPerRound: 3,   // nombre de tours par manche
-	turnDuration: 15,   // secondes par tour
+	bots: [{
+		rounds: [
+			{ agent: 'local_agent', prompt: 'prompt_easy' },
+			{ agent: 'mistral_small', prompt: 'prompt_test_advanced' }, // manche 1
+			{ agent: 'mistral_medium', prompt: 'prompt_test_advanced' }, // manche 2
+			{ agent: 'mistral_big', prompt: 'prompt_test_advanced' }, // manche 3
+			//{ agent: 'mistral_big', prompt: 'prompt_test' }, // manche 4
+		]
+	}],
+	turnPerRound: 5,   // nombre de tours par manche
+	turnDuration: 17,   // secondes par tour
+	maxMessageLength: 120, // caracteres par message de chat, au-dela le serveur tronque
 	maxPlayers: 6,
 	minPlayers: 3,          // seuil pour DEMARRER une partie
 	minPlayersToContinue: 3, // seuil pour CONTINUER une partie deja lancee
-	startingTimer: 10,       // secondes apres que tous les joueurs sont prets
-	maxRounds: 4, // nombre de manche
+	startingTimer: 5,       // secondes apres que tous les joueurs sont prets
+	maxRounds: 3, // nombre de manche
 	roundTransitionDelay: 5,
-	//Prolongations du tableau des scores accordees a l'analyse d'apres-manche
-	//quand elle n'a pas encore repondu (prompt_advanced uniquement). Chacune
-	//dure roundTransitionDelay : 2 x 10 s d'attente au maximum, apres quoi la
-	//manche demarre sans correctifs.
-	debriefMaxWaits: 2,
+	debriefMaxWaits: 5,//Prolongations du tableau des scores accordees a l'analyse d'apres-manche
 };
 /*
 available agents (cles du registre dans agents/index_agent.js) :
@@ -43,27 +40,21 @@ available prompts (cles du registre dans agents/prompt/index_prompt.js) :
 	prompt_default   prompt complet, pour les gros modeles
 	prompt_easy      version allegee, pour les petits modeles (7B et moins)
 	prompt_basic     prompt d'origine, un seul bloc sans sections ni exemples
-	prompt_advanced  prompt_default + la note d'apres-manche : resume des
-	                 manches passees et correctifs sur ce qui a demasque le bot.
-	                 Coute un appel a l'agent d'analyse par fin de manche
-	                 (DEBRIEF_AGENT, en tete de prompt/debrief.js), et peut
-	                 prolonger la transition (voir debriefMaxWaits).
+	prompt_advanced  prompt_default + debrief
+	prompt_test      prompt de travail
+	prompt_test_advanced
+					prompt_test en immersion totale : le bot ne se sait jamais
+					 IA, il se croit un joueur qui la cherche. Meme note
+					 d'apres-manche, correctifs reformules.
 */
 
-function botEntry(bot)
-{
+function botEntry(bot) {
 	if (typeof bot === 'string')
 		return { agent: bot, prompt: DEFAULT_PROMPT };
 	return { agent: bot.agent, prompt: bot.prompt ?? DEFAULT_PROMPT };
 }
 
-//gameConfig.bots accepte plusieurs ecritures pour rester lisible. Tout le reste
-//du code ne voit que la forme complete : pour chaque bot, la liste de ses
-//{ agent, prompt } par manche, jamais vide — un seul element pour un bot qui ne
-//change pas. Un `rounds` vide retombe sur un bot sans agent, que le rapport de
-//sante signale. Recalcule a chaque appel, comme le reste — la config bouge, et
-//les tests la modifient.
-export function botEntries(bots = gameConfig.bots)
-{
+
+export function botEntries(bots = gameConfig.bots) {
 	return bots.map((bot) => (bot.rounds?.length ? bot.rounds : [bot]).map(botEntry));
 }
