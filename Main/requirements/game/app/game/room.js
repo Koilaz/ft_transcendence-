@@ -1,6 +1,6 @@
 import { Player } from './player.js';
 import { Round } from './round.js';
-import { createBotSendFn } from './bot.js';
+import { createBotSendFn } from '../agents/bot.js';
 import { gameConfig, botEntries } from './config.js';
 import { preheatAgent } from '../agents/index_agent.js';
 import { getPrompt } from '../agents/prompt/index_prompt.js';

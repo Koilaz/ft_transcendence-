@@ -1,10 +1,5 @@
-// Post traitement des reponses des bots : un LLM ecrit trop proprement pour
-// passer pour un humain. On repasse derriere lui pour y glisser les petits
-// defauts d'une vraie frappe (touche voisine tapee par erreur, etc.).
+// Post traitement des reponses des bots
 
-// Disposition physique d'un clavier QWERTY US. Chaque rangee est decalee vers
-// la droite comme sur un vrai clavier : c'est ce decalage qui donne les bons
-// voisins en diagonale (sous le f il y a c et v, pas seulement v).
 const KEYBOARD_ROWS = [
 	{ offset: 0.00, keys: 'qwertyuiop' },
 	{ offset: 0.25, keys: 'asdfghjkl' },
@@ -14,27 +9,29 @@ const KEYBOARD_ROWS = [
 const TYPO_RATE = 0.003;         // probabilite qu'une lettre donnee soit ratee
 const MAX_SWAPS_PER_MESSAGE = 2; // au dela ce n'est plus une faute de frappe
 
-const DOUBLE_RATE = 0.002;          // probabilite de rester appuye sur une touche
-const MAX_DOUBLES_PER_MESSAGE = 1;
-
 const MISS_RATE = 0.002;            // probabilite de ne pas enfoncer une touche
 const MAX_MISSES_PER_MESSAGE = 1;
 
-// Table des voisins : { f: ['d','d','d','g','g','g','r','t','c','v'], ... }
-// Les voisins de la meme rangee sont repetes 3 fois : le doigt derape a cote
-// plus souvent qu'il ne tape la rangee du dessus ou du dessous.
+// Lettres qui se doublent
+const FRENCH_DOUBLES = new Set('bcdefglmnoprstz');
+
 const KEYBOARD_NEIGHBORS = buildNeighbors();
-// Point d'entree unique : tout ce qui doit passer par dessus la reponse brute
-// de l'agent se branche ici (voir les #TODO en bas de bot.js).
 
 export function postTreatment(reply)
 {
 	if (typeof reply !== 'string')
 		return reply;
 	let text = randomSwap(reply);
-	text = randomDouble(text);
 	text = randomMiss(text);
 	return text;
+}
+
+// Mise en forme commune a tous les messages du chat, humains comme bots (voir
+// Room.addMessage) : si seul le bot etait normalise, un "AAAAH" ou un accent
+// suffirait a reconnaitre un humain.
+export function normalizeMessage(text)
+{
+	return trimRepeats(keepPlainChars(normalizeCase(text))).trim();
 }
 
 function buildNeighbors()
@@ -64,6 +61,33 @@ function buildNeighbors()
 	return neighbors;
 }
 
+// Tout en minuscules et sans accents
+export function normalizeCase(text)
+{
+	return text.toLowerCase().normalize('NFD').replace(/\p{M}/gu, '');
+}
+
+// Ne garde que ce qui se tape sans chercher sur un clavier : lettres minuscules,
+// chiffres, ponctuation courante et + - * / ( ) = %. Emojis et symboles
+// disparaissent, un retour a la ligne devient un espace. L'apostrophe courbe et
+// le œ des LLM sont ramenes a leur version clavier plutot que supprimes.
+export function keepPlainChars(text)
+{
+	return text
+		.replace(/\s/g, ' ')
+		.replace(/’/g, "'")
+		.replace(/œ/g, 'oe')
+		.replace(/[^a-z0-9 .,;:!?'"+\-*/()=%]/g, '');
+}
+
+// Ecrase les caracteres repetes "aaaa     bbbbbb" => "a b"
+
+export function trimRepeats(text)
+{
+	return text.replace(/([^\d.])\1+/gu, (run, char) =>
+		run.length === 2 && FRENCH_DOUBLES.has(char) ? run : char);
+}
+
 // Remplace de temps en temps une lettre par une touche voisine du clavier.
 // Seules les minuscules sont touchees.
 export function randomSwap(text, rate = TYPO_RATE, maxSwaps = MAX_SWAPS_PER_MESSAGE)
@@ -80,25 +104,6 @@ export function randomSwap(text, rate = TYPO_RATE, maxSwaps = MAX_SWAPS_PER_MESS
 		swaps++;
 	}
 	return chars.join('');
-}
-
-// Double de temps en temps une lettre : on est reste appuye sur la touche.
-export function randomDouble(text, rate = DOUBLE_RATE, maxDoubles = MAX_DOUBLES_PER_MESSAGE)
-{
-	const out = [];
-	let doubles = 0;
-
-	for (const char of text)
-	{
-		out.push(char);
-		if (doubles >= maxDoubles || !KEYBOARD_NEIGHBORS[char])
-			continue;
-		if (Math.random() >= rate)
-			continue;
-		out.push(char);
-		doubles++;
-	}
-	return out.join('');
 }
 
 // Enleve de temps en temps une lettre : la touche n'a pas ete enfoncee assez fort.

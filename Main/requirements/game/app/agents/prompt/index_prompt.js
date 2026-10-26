@@ -8,6 +8,8 @@
 //
 //Contrat d'un prompt : { name, buildSystemPrompt, buildInstruction,
 //buildUserPrompt, buildTranscript, buildContextPrompt, sampling }.
+//buildInstruction et buildUserPrompt recoivent (history, character) : le nom du
+//personnage du bot pour cette manche, libre a chaque prompt de s'en servir.
 //
 //Tout est fourni par prompt/context.js, et un prompt ne redefinit que ce qui
 //le distingue :
@@ -28,6 +30,8 @@ import { prompt_default } from './prompt_default.js';
 import { prompt_easy } from './prompt_easy.js';
 import { prompt_basic } from './prompt_basic.js';
 import { prompt_advanced } from './prompt_advanced.js';
+import { prompt_test } from './prompt_test.js';
+import { prompt_test_advanced } from './prompt_test_advanced.js';
 
 const prompts =
 {
@@ -35,6 +39,8 @@ const prompts =
 	[prompt_easy.name]: prompt_easy,
 	[prompt_basic.name]: prompt_basic,
 	[prompt_advanced.name]: prompt_advanced,
+	[prompt_test.name]: prompt_test,
+	[prompt_test_advanced.name]: prompt_test_advanced,
 };
 
 //Les cles du registre, c'est-a-dire les seules valeurs acceptees dans le champ

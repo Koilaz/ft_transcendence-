@@ -11,7 +11,7 @@ const HEALTHCHECK_TIMEOUT_MS = 5000;
 //Valeurs par defaut, qu'un prompt peut redefinir par son champ `sampling`.
 const MISTRAL_DEFAULTS =
 {
-	temperature: 0.80,
+	temperature: 0.85,
 	max_tokens: 70,
 };
 
@@ -60,13 +60,13 @@ export function createMistralAgent({ name, model })
 
 //Le contexte arrive en deux morceaux parce que l'agent local en a besoin pour
 //son KV cache (voir ollama_local.js). Ici rien a optimiser : on recolle.
-function buildMessages(history, { shared = '', perBot = '' }, prompt)
+function buildMessages(history, { shared = '', perBot = '', character }, prompt)
 {
 	const additionalContext = [shared, perBot].filter(Boolean).join('\n');
 
 	return [
 		{ role: 'system', content: `${prompt.buildSystemPrompt()}\n${additionalContext}` },
-		{ role: 'user', content: prompt.buildUserPrompt(history) },
+		{ role: 'user', content: prompt.buildUserPrompt(history, character) },
 	];
 }
 
