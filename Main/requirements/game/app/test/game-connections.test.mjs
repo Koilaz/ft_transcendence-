@@ -173,6 +173,19 @@ try
 	// Le compte signe est obligatoire pour reprendre sa session ; le nom ne
 	// l'est pas. Une tentative invalide ne deconnecte pas le titulaire.
 	const alice = await connect({ token: 'alice' });
+	// Deux JWT du meme compte ne donnent pas deux places, meme dans le lobby.
+	const queueDuplicate = await connect({ token: 'alice-renamed' });
+	assert.ok(queueDuplicate.messages.some((msg) => msg.code === 'account_in_use'));
+	assert.equal(waiting.size, 1);
+	assert.equal(alice.socket.readyState, WebSocket.OPEN);
+	await close(queueDuplicate);
+	// Les autres comptes et les invites peuvent toujours jouer ensemble.
+	const bob = await connect({ token: 'bob' });
+	const anotherGuest = await connect();
+	assert.equal(waiting.size, 3);
+	await close(bob);
+	await close(anotherGuest);
+	await until(() => waiting.size === 1);
 	const aliceRoom = putInRoom(alice);
 	for (const token of ['bob', 'expired-jwt'])
 	{
@@ -187,19 +200,32 @@ try
 	assert.equal(aliceRoom.reconnections.length, 1);
 	assert.equal(aliceRoom.entry.displayName, 'Alice');
 	const otherTab = await connect({ token: 'alice' });
-	assert.notEqual(otherTab.token, renamed.token);
-	assert.notEqual(serverSocket(otherTab).playerId, serverSocket(renamed).playerId);
-	await close(otherTab);
-	await until(() => waiting.size === 0);
+	assert.ok(otherTab.messages.some((msg) => msg.code === 'account_in_use'));
+	assert.equal(waiting.size, 0);
+	assert.equal(renamed.socket.readyState, WebSocket.OPEN);
+	// « Rejouer » ne contourne pas le refus, pas plus qu'un message « Pret ».
+	otherTab.socket.send(JSON.stringify({ type: 'replay' }));
+	otherTab.socket.send(JSON.stringify({ type: 'ready' }));
+	await until(() => otherTab.messages.filter((msg) => msg.code === 'account_in_use').length === 2);
+	assert.equal(waiting.size, 0);
 
 	// Une room devenue non reprenable ne relance jamais la recherche seule.
 	await close(renamed);
 	await until(() => aliceRoom.disconnections.length === 1);
+	// La place reservee pendant une coupure interdit aussi un second joueur.
+	otherTab.socket.send(JSON.stringify({ type: 'replay' }));
+	await until(() => otherTab.messages.filter((msg) => msg.code === 'account_in_use').length === 3);
+	assert.equal(waiting.size, 0);
 	aliceRoom.acceptResume = false;
 	const rejected = await connect({ token: 'alice', resumeToken: renamed.token });
 	assert.ok(rejected.messages.some((msg) => msg.code === 'reconnect_expired'));
 	assert.equal(waiting.size, 0);
 	await close(rejected);
+	// Une fois la reservation liberee, l'onglet refuse peut enfin entrer.
+	otherTab.socket.send(JSON.stringify({ type: 'replay' }));
+	await until(() => waiting.size === 1);
+	await close(otherTab);
+	await until(() => waiting.size === 0);
 
 	// Le lobby ne conserve pas indefiniment les sessions deconnectees.
 	const queued = await connect();
@@ -211,12 +237,22 @@ try
 	await close(staleQueue);
 
 	// Une fin de partie recue en ligne renouvelle aussi le token sur Rejouer.
-	const finished = await connect();
+	const finished = await connect({ token: 'alice' });
 	const finishedRoom = putInRoom(finished);
 	finishedRoom.entry.sendFn({ type: 'roomClosed', code: 'game_finished' });
+	// Une ancienne socket apres fin de partie ne peut pas concurrencer une
+	// nouvelle session du compte en utilisant « Rejouer ».
+	const nextGame = await connect({ token: 'alice-renamed' });
+	assert.equal(waiting.size, 1);
 	finished.socket.send(JSON.stringify({ type: 'replay' }));
-	await until(() => finished.messages.filter((msg) => msg.type === 'session').length === 2);
-	assert.notEqual(finished.messages.filter((msg) => msg.type === 'session')[1].token, finished.token);
+	await until(() => finished.messages.some((msg) => msg.code === 'account_in_use'));
+	assert.equal(waiting.size, 1);
+	assert.ok(waiting.has(serverSocket(nextGame).playerId));
+	await close(nextGame);
+	await until(() => waiting.size === 0);
+	finished.socket.send(JSON.stringify({ type: 'replay' }));
+	await until(() => finished.messages.filter((msg) => msg.type === 'session').length === 3);
+	assert.notEqual(finished.messages.filter((msg) => msg.type === 'session').at(-1).token, finished.token);
 	assert.equal(waiting.size, 1);
 	await close(finished);
 	await until(() => waiting.size === 0);

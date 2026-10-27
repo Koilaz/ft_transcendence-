@@ -8,9 +8,9 @@ function cleanDisplayName(raw)
 	return raw.replace(/\p{C}/gu, '').trim().slice(0, 20) || null;
 }
 
-// Une session appartient a son token de reprise, pas au pseudo ni au compte :
-// un meme compte peut donc ouvrir plusieurs joueurs. Les dependances sont injectees
-// pour verifier le transport sans serveur HTTP ni appel aux agents.
+// Le token de reprise retrouve le meme joueur ; un compte ne peut avoir
+// qu'un joueur en file ou en partie. Les dependances sont injectees pour
+// verifier le transport sans serveur HTTP ni appel aux agents.
 export function attachGameConnections(wss, {
 	enqueue,
 	dequeue,
@@ -58,6 +58,15 @@ export function attachGameConnections(wss, {
 
 	function enqueueSession(session)
 	{
+		// Comparer les comptes issus du JWT verifie : deux JWT peuvent designer
+		// le meme compte. Ce point d'entree couvre aussi « Rejouer » ; une place
+		// reservee en room compte encore, mais pas les invites ni la session reprise.
+		if (session.userId !== null && [...sessions.values()].some((other) =>
+			other !== session && other.userId === session.userId && (other.queued || other.room)))
+		{
+			session.sendFn({ type: 'roomClosed', code: 'account_in_use' });
+			return;
+		}
 		// Une reprise dans le lobby demande de confirmer a nouveau « Pret ».
 		if (session.queued)
 			dequeue(session.playerId);
