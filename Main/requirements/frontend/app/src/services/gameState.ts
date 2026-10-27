@@ -98,8 +98,6 @@ export function gameReducer(state: GameUIState, action: GameAction): GameUIState
         aiCharacter: null,
         debriefWait: null,
         hasVoted: false,
-        disconnectedCharacters: [],
-        leftCharacters: [],
         messages: [
           { id: nextMessageId(), kind: 'system', text: `>>> nouvelle manche, tu incarnes ${action.character}` },
         ],
@@ -179,15 +177,23 @@ export function gameReducer(state: GameUIState, action: GameAction): GameUIState
         })),
       };
     }
-    case 'playerDisconnected':
+    case 'playerDisconnected': {
+      // Dans les deux cas le personnage quitte la liste des absents
+      // temporaires : sa place est reservee (temporaire) ou il est parti
+      // definitivement (il rejoint alors la liste des partis).
+      const disconnected = state.disconnectedCharacters.filter((c) => c !== action.character);
       return {
         ...state,
-        disconnectedCharacters: [...state.disconnectedCharacters, action.character],
+        disconnectedCharacters: action.temporary ? [...disconnected, action.character] : disconnected,
+        leftCharacters: action.temporary
+          ? state.leftCharacters
+          : [...state.leftCharacters.filter((c) => c !== action.character), action.character],
         messages: [
           ...state.messages,
           { id: nextMessageId(), kind: 'system', text: `${action.character} est déconnecté. Sa place reste réservée.` },
         ],
       };
+    }
     case 'playerReconnected':
       return {
         ...state,

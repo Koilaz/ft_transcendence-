@@ -29,8 +29,9 @@ export type GameUIState = {
   debriefWait: { attempt: number; max: number } | null;
   // Vote deja depose cette manche : restaure par l'instantane de reprise.
   hasVoted: boolean;
-  // Personnages momentanement debranches (place reserveee) ou definitivement
-  // partis : ni l'un ni l'autre ne sont des cibles de vote honnetes.
+  // Absents suivis en direct : place reservee (temporaire) ou depart definitif.
+  // Peuples par l'instantane de reprise, tenus a jour par playerDisconnected
+  // et playerReconnected.
   disconnectedCharacters: string[];
   leftCharacters: string[];
   messages: FeedMessage[];
@@ -52,7 +53,7 @@ export type GameMessage =
   | { type: 'state'; status: string; room_number: number | null; countdown: number | null; players?: number; min_players?: number; ready_players?: number; ready?: boolean; current_manche?: number; max_manches?: number }
   | { type: 'debriefWait'; attempt: number; max: number }
   | { type: 'session'; token: string }
-  | { type: 'reconnected'; state: { status: string; players: number; room_number: number; countdown: number | null; current_manche?: number; max_manches?: number }; character: string; history: { sender: string; text: string }[]; turn: { character: string; turnOrder: string[]; turnCycle: number; countdown: number } | null; roundPhase: string; hasVoted: boolean; disconnectedCharacters: string[]; leftCharacters: string[]; debriefWaiting: boolean }
+  | { type: 'reconnected'; state: { status: string; players: number; room_number: number; countdown: number | null; current_manche?: number; max_manches?: number }; character: string; history: { sender: string; text: string }[]; turn: { character: string; turnOrder: string[]; turnCycle: number; countdown: number } | null; roundPhase: string; hasVoted: boolean; debriefWaiting: boolean; disconnectedCharacters: string[]; leftCharacters: string[] }
   | { type: 'playerDisconnected'; character: string; temporary: boolean }
   | { type: 'playerReconnected'; character: string }
   | { type: 'agentsDown'; agents: AgentStatus[] }

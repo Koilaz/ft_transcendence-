@@ -1,7 +1,5 @@
 import { useEffect, useSyncExternalStore } from 'react';
 import AppRouter from './router/AppRouter';
-import { ModalProvider } from './contexts/ModalContext';
-import GlobalModals from './components/GlobalModals';
 import { connectPresenceSocket } from './services/presenceSocket';
 import { getAccessToken, subscribeSession } from './services/session';
 
@@ -19,12 +17,7 @@ function App() {
     return () => socket.close(1000, 'Session ended');
   }, [accessToken]);
 
-  return (
-    <ModalProvider>
-      <GlobalModals />
-      <AppRouter />
-    </ModalProvider>
-  );
+  return <AppRouter />;
 }
 
 export default App;
