@@ -36,7 +36,6 @@ export function useGame() {
     const abortController = new AbortController();
     let reconnectTimer: ReturnType<typeof setTimeout> | undefined = undefined;
     let handshakeTimer: ReturnType<typeof setTimeout> | undefined = undefined;
-    let reconnectExpiredTimer: ReturnType<typeof setTimeout> | undefined = undefined;
     let attempts = 0;
     let currentSocket: WebSocket | null = null;
 
@@ -61,12 +60,13 @@ export function useGame() {
           return;
         }
         if (message.type === 'roomClosed') {
-          // Si la session a expiré, on nettoie et on relance sans afficher l'erreur
+          // Si la session a expire, on repart en file sans afficher l'erreur,
+          // sur cette meme socket : en ouvrir une autre laisserait celle-ci
+          // ouverte, avec sa session cote serveur. Le serveur renvoie au
+          // besoin un nouveau jeton avant de remettre le joueur en file.
           if (message.code === 'reconnect_expired') {
-            discardResumeToken();
-            terminalRef.current = false; // Permet la reconnexion
             dispatch({ type: 'resetGame' });
-            reconnectExpiredTimer = setTimeout(() => reconnectRef.current?.(), 100);
+            sendReplayMessage(socket);
             return; // Ne pas transmettre ce message au reducer (évite l'affichage de l'erreur)
           }
           
@@ -102,11 +102,11 @@ export function useGame() {
         dispatch({ type: 'connection', text: 'deconnecte' });
         scheduleReconnect();
       });
+      // Un echec declenche error puis close : la relance part de close
+      // seulement, sinon chaque echec programmerait deux tentatives.
       socket.addEventListener('error', () => {
-        if (!disposed) {
+        if (!disposed)
           setConnectionOpen(false);
-          scheduleReconnect();
-        }
       });
 
       // Poignee de main muette : une socket ouverte mais silencieuse depuis
@@ -144,8 +144,6 @@ export function useGame() {
         clearTimeout(reconnectTimer);
       if (handshakeTimer)
         clearTimeout(handshakeTimer);
-      if (reconnectExpiredTimer)
-        clearTimeout(reconnectExpiredTimer);
       // Ne fermer la socket que si elle est ouverte ou en cours d'ouverture
       // Sinon on risque de déclencher une erreur "closed before established"
       if (socketRef.current && socketRef.current.readyState !== WebSocket.CLOSING && socketRef.current.readyState !== WebSocket.CLOSED) {
@@ -253,6 +251,7 @@ export function useGame() {
     roomClosedCode: state.roomClosedCode,
     turnOrder: state.turnOrder,
     turnCycle: state.turnCycle,
+    totalTurns: state.totalTurns,
     currentTurnCharacter: state.currentTurnCharacter,
     myCharacter: state.myCharacter,
     countdown: state.countdown,

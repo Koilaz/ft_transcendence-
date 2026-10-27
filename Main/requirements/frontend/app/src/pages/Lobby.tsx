@@ -188,6 +188,11 @@ export function Lobby({
           {!connected && (
             <p className="text-xs text-red-400">Liaison interrompue…</p>
           )}
+          {agentsDown.length > 0 && (
+            <p className="text-xs text-red-400">
+              Agent hors service — la partie ne peut pas démarrer
+            </p>
+          )}
         </div>
 
         <div className="text-right">

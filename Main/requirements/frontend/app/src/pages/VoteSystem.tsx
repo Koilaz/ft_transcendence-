@@ -173,6 +173,7 @@ const MOTIFS: Record<string, string> = {
   empty_room: 'La séance a été levée, plus aucun membre n\'était présent.',
   agent_failure: 'La séance a été interrompue pour raison technique.',
   reconnect_expired: "Ta place était réservée jusqu'à la fin de la manche : elle vient d'expirer.",
+  account_in_use: "Ce compte a déjà un joueur en attente ou en partie dans une autre session. Termine cette partie avant de rejouer ici.",
   session_replaced: "Cette session a été reprise dans un autre onglet : celui-ci s'est mis en retrait pour éviter le ping-pong. « Rejouer » repart proprement.",
 };
 
