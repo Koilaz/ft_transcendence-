@@ -1,6 +1,13 @@
 @import url("https://fonts.googleapis.com/css2?family=Bangers&family=Black+Ops+One&family=Cinzel:wght@400..900&family=MedievalSharp&family=Mochiy+Pop+P+One&family=Orbitron:wght@400..900&family=Parisienne&display=swap");
 @import "tailwindcss";
 
+@layer base {
+  html {
+    -webkit-text-size-adjust: auto;
+    text-size-adjust: 100%;
+  }
+}
+
 @theme {
   --font-ketchup: "Black Ops One", cursive;
   --font-moutarde: "Cinzel", serif;

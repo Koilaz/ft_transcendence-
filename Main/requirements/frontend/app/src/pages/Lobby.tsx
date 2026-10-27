@@ -179,7 +179,7 @@ export function Lobby({
                          disabled:opacity-40 disabled:cursor-not-allowed
                          text-white text-sm font-bold uppercase tracking-[0.15em]
                          transition-colors"
-              disabled={!connected || waiting < Math.max(minPlayers, 1)}
+              disabled={!connected || waiting < Math.max(minPlayers, 1) || agentsDown.length > 0}
               onClick={onReady}
             >
               Confirmer ma présence
