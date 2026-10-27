@@ -139,6 +139,12 @@ export type GameRoundTransitionMessage = {
   aiCharacter: string;
 };
 
+// Le bot ne repond plus : la manche s'arrete sans points, le temps que le
+// serveur reverifie les agents (voir room.js : cancelRound).
+export type GameRoundCancelledMessage = {
+  type: 'roundCancelled';
+};
+
 export type GameEndMessage = {
   type: 'gameEnd';
   winnerId: string;
@@ -166,6 +172,7 @@ export type GameMessage =
   | GameSilenceMessage
   | GameVoteRegisteredMessage
   | GameRoundTransitionMessage
+  | GameRoundCancelledMessage
   | GameEndMessage
   | GameRoomClosedMessage;
 
@@ -213,6 +220,9 @@ function getGameWebSocketUrl(): string {
   // le JWT d'un compte donne displayName = username, sinon le pseudo d'invite.
   // Sans rien, le classement final affiche « joueur-N ».
   const params = new URLSearchParams();
+  const accessToken = localStorage.getItem('accessToken');
+  if (accessToken)
+    params.set('token', accessToken);
   //const guestName = localStorage.getItem('guestName');
   //if (guestName)
     //params.set('name', guestName);
@@ -252,6 +262,7 @@ export function connectGameSocket(
         message.type !== 'silence' &&
         message.type !== 'voteRegistered' &&
         message.type !== 'roundTransition' &&
+        message.type !== 'roundCancelled' &&
         message.type !== 'gameEnd' &&
         message.type !== 'roomClosed'
       ) {

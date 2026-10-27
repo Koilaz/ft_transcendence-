@@ -47,6 +47,15 @@ export function attachGameConnections(wss, {
 		session.sendFn({ type: 'session', token: session.token });
 	}
 
+	// Le lobby signale les bots hors service. Le front l'oublie a chaque retour
+	// en file (resetGame) : on le redit a la connexion comme au replay.
+	function sendAgentsDown(session)
+	{
+		const brokenAgents = unavailableBots();
+		if (brokenAgents.length)
+			session.sendFn({ type: 'agentsDown', agents: brokenAgents });
+	}
+
 	function enqueueSession(session)
 	{
 		// Une reprise dans le lobby demande de confirmer a nouveau « Pret ».
@@ -129,6 +138,7 @@ export function attachGameConnections(wss, {
 				if (!session.room)
 				{
 					register(session);
+					sendAgentsDown(session);
 					if (!session.queued)
 						enqueueSession(session);
 				}
@@ -180,9 +190,7 @@ export function attachGameConnections(wss, {
 		if (oldSocket && oldSocket !== socket)
 			oldSocket.close(4001, 'Connexion remplacée');
 		register(session);
-		const brokenAgents = unavailableBots();
-		if (brokenAgents.length)
-			session.sendFn({ type: 'agentsDown', agents: brokenAgents });
+		sendAgentsDown(session);
 
 		if (resuming && session.room)
 		{

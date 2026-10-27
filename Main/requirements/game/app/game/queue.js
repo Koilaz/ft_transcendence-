@@ -30,6 +30,17 @@ function humansNeeded()
 	};
 }
 
+//Tous les bots configures sont hors service : il n'y aurait personne a
+//demasquer, la partie perdrait son mecanisme central. On garde les joueurs
+//en file plutot que de lancer une partie vide de son sens ; le front les a
+//deja prevenus par le message agentsDown.
+//Le rapport de sante peut tomber en cours de route : une room dont le bot ne
+//repond plus relance le healthcheck (voir Room.cancelRound).
+function noBotAvailable()
+{
+	return gameConfig.bots.length > 0 && usableBots().length === 0;
+}
+
 //On reutilise le message `state` existant plutot que d'en inventer un. Le front
 //connait ainsi le seuil humain effectif, qui tient compte des bots disponibles.
 function broadcastQueue()
@@ -80,6 +91,8 @@ function startCountdown()
 function launch()
 {
 	stopCountdown();
+	if (noBotAvailable())
+		return broadcastQueue();// le rapport est tombe pendant le compte a rebours
 	//Les premiers arrives, dans la limite du plafond. L'ordre d'insertion d'une
 	//Map est garanti par la specification : c'est ce qui rend ce point
 	//remplacable par une selection anti-affinite sans rien changer autour.
@@ -107,16 +120,6 @@ export function enqueue(playerId, sendFn, onRoomJoined, displayName = null)
 		stopCountdown();
 	waiting.set(playerId, { sendFn, onRoomJoined, displayName, ready: false });
 
-	//Tous les bots configures sont hors service : il n'y aurait personne a
-	//demasquer, la partie perdrait son mecanisme central. On garde les joueurs
-	//en file plutot que de lancer une partie vide de son sens ; le front les a
-	//deja prevenus par le message agentsDown recu a la connexion.
-	if (gameConfig.bots.length > 0 && usableBots().length === 0)
-	{
-		broadcastQueue();
-		return;
-	}
-
 	// Atteindre le seuil rend le bouton « Prêt » disponible ; un clic explicite
 	// est nécessaire pour lancer la partie, même si la room est pleine.
 	broadcastQueue();
@@ -138,7 +141,7 @@ export function ready(playerId)
 		return;
 	entry.ready = true;
 	const { min } = humansNeeded();
-	if (waiting.size >= min && [...waiting.values()].every((waitingEntry) => waitingEntry.ready))
+	if (!noBotAvailable() && waiting.size >= min && [...waiting.values()].every((waitingEntry) => waitingEntry.ready))
 		startCountdown();
 	else
 		broadcastQueue();

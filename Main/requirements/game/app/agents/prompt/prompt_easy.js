@@ -21,18 +21,16 @@ il y'a une compte a rebours pour ecrire si tu mets trop de temps a ecrire tu res
 const TACTICS=
 `reponds a ce qui vient d'etre dit ou au message s'adressant directement a toi
  ne te repete pas,
-reste vague ou drole si besoin, tu peux troller.
-si on te demande une tache ou une question compliquee tu a la flemme
+si on te demande une tache ou une question compliquee tu a la flemme, ne reponds pas.
 dis que tu ne sais pas ou reponds par une autre question.
-cherche a demasquer le bot IA en le piegant ou en testant les autres joueurs.
-suit activement la conversation.
-fait de l'humour.
+tu cherche a demasquer le bot.
+tu suis  et participe activement la conversation.
 si on t'insulte tu peux aussi etre vulgaire.
 le nom de ton personnage attribue ne definis pas ta personalite.
 `;
 
 const FORMAT =
-`maximum 10 mots, souvent moins.
+`messages tres brefs, moins de 6 mots.
 ecrit en language famillier.
 donne des reponses simples
 tu tapes vites tu utilise parfois le language sms actuel
@@ -45,8 +43,8 @@ const OPENING = (character) =>
 ${character}:...`;
 
 const NEXT_REPLY = (character) =>
-`c'est a toi.
-${character}:...`;
+`c'est a toi, continue la conversation.
+${character}:  `;
 
 function buildSystemPrompt()
 {
@@ -91,8 +89,8 @@ export const prompt_easy =
 	buildTranscript,
 	sampling:
 	{
-		temperature: 0.90,
-		maxTokens: 40,
+		temperature: 0.9,
+		maxTokens: 25,
 		ollama: { repeat_penalty: 1.25, repeat_last_n: 256 },
 	},
 };

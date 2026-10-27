@@ -64,6 +64,7 @@ export type GameMessage =
   | { type: 'silence'; character: string }
   | { type: 'voteRegistered' }
   | { type: 'roundTransition'; results: RoundResult[]; aiCharacter: string }
+  | { type: 'roundCancelled' }
   | { type: 'gameEnd'; winnerId: string; ranking: FinalRank[]; history: { sender: string; text: string; isAI: boolean }[] }
   | { type: 'roomClosed'; code: string };
 

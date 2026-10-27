@@ -78,9 +78,6 @@ export const contextParts =
 		build: (room) => `il y'a ${room.numberOfPlayer} joueur dans cette partie.`,
 	},
 
-	//publicTurnOrder() rend deja les personnages dans l'ordre de jeu : il suffit
-	//de le dire. Numerote et sur une ligne chacun, parce qu'une enumeration
-	//separee par des virgules se lit comme une liste sans ordre.
 	speakingOrder:
 	{
 		scope: 'shared',

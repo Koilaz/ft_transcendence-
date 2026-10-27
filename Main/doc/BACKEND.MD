@@ -364,14 +364,16 @@ commettre. Details dans [Game/VOTING_TODO.md](Game/VOTING_TODO.md).
 | `roundState` | broadcast | `{ status }` | entree en phase de vote |
 | `voteRegistered` | prive | `{}` | vote pris en compte |
 | `roundEnd` | broadcast | `{ aiCharacter, results[] }` | fin de manche |
+| `roundCancelled` | broadcast | `{}` | le bot ne repond plus : manche annulee sans points, healthcheck relance |
 | `gameEnd` | broadcast | `{ ranking[], winnerId }` | fin de partie. `ranking[].name` est le pseudo, ou « L'AImpostor » pour l'agent |
 | `playerDisconnected` | broadcast | `{ character }` | un joueur a quitte la partie |
 | `roomClosed` | broadcast | `{ code }` | la room ferme definitivement |
+| `agentsDown` | prive | `{ agents[] }` | a la connexion et a chaque `replay`, si des bots de `gameConfig.bots` sont hors service |
 
 Codes de `roomClosed` : `game_finished` (envoye juste apres `gameEnd`),
-`not_enough_players`, `empty_room`.
-`agent_failure` est prevu mais pas encore emis. Ce sont des chaines machine :
-le front choisit le texte et la langue.
+`not_enough_players`, `empty_room`, `agent_failure` (un bot de la partie est
+KO au healthcheck relance apres une manche annulee). Ce sont des chaines
+machine : le front choisit le texte et la langue.
 
 **Client → serveur**
 
@@ -427,7 +429,7 @@ a ne pas casser :
   le debut fait repayer l'integralite du prefill a chaque tour. Les metriques
   `[ollama] prefill … | decode …` servent a le verifier, voir README_TMP.md § 6.
 
-**Comportement d'un bot** — `game/bot.js` : `createBotSendFn(room, botId,
+**Comportement d'un bot** — `agents/bot.js` : `createBotSendFn(room, botId,
 agentName)` renvoie un `sendFn` qui ne reagit qu'aux messages `yourTurn`. Un
 delai aleatoire imite une frappe humaine, et peut volontairement depasser le
 tour pour que le bot reste parfois muet. Disjoncteur : 3 echecs consecutifs et
