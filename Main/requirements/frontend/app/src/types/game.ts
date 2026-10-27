@@ -14,6 +14,9 @@ export type GameUIState = {
   currentTurnCharacter: string | null;
   turnOrder: string[];
   turnCycle: number | null;
+  // Nombre total de tours par manche, envoye par le serveur (round.js :
+  // publicTurn). La config serveur fait foi, plus de total code en dur.
+  totalTurns: number;
   countdown: number | null;
   // File d'attente : peuples par le 'state' de la queue, remis a zero au reset.
   waitingPlayers: number;
@@ -53,13 +56,13 @@ export type GameMessage =
   | { type: 'state'; status: string; room_number: number | null; countdown: number | null; players?: number; min_players?: number; ready_players?: number; ready?: boolean; current_manche?: number; max_manches?: number }
   | { type: 'debriefWait'; attempt: number; max: number }
   | { type: 'session'; token: string }
-  | { type: 'reconnected'; state: { status: string; players: number; room_number: number; countdown: number | null; current_manche?: number; max_manches?: number }; character: string; history: { sender: string; text: string }[]; turn: { character: string; turnOrder: string[]; turnCycle: number; countdown: number } | null; roundPhase: string; hasVoted: boolean; debriefWaiting: boolean; disconnectedCharacters: string[]; leftCharacters: string[] }
+  | { type: 'reconnected'; state: { status: string; players: number; room_number: number; countdown: number | null; current_manche?: number; max_manches?: number }; character: string; history: { sender: string; text: string }[]; turn: { character: string; turnOrder: string[]; turnCycle: number; totalTurns: number; countdown: number } | null; roundPhase: string; hasVoted: boolean; debriefWaiting: boolean; disconnectedCharacters: string[]; leftCharacters: string[] }
   | { type: 'playerDisconnected'; character: string; temporary: boolean }
   | { type: 'playerReconnected'; character: string }
   | { type: 'agentsDown'; agents: AgentStatus[] }
   | { type: 'assignment'; character: string }
   | { type: 'yourTurn'; countdown: number }
-  | { type: 'turn'; character: string; turnOrder: string[]; turnCycle: number; countdown: number }
+  | { type: 'turn'; character: string; turnOrder: string[]; turnCycle: number; totalTurns: number; countdown: number }
   | { type: 'chat'; sender: string; text: string }
   | { type: 'silence'; character: string }
   | { type: 'voteRegistered' }

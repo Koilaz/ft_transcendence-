@@ -242,6 +242,15 @@ class Room
 		this.globalHistory.push({ sender: 'Systeme', text, isAI: false});
 	}
 
+	//Un joueur muet apparait dans le fil comme « ... » : ce message doit etre
+	//dans l'historique pour etre restitue au refresh, exactement comme un chat.
+	addSilenceMessage(character)
+	{
+		const msgData = { sender: character, text: '...', isAI: false };
+		this.history.push(msgData);
+		this.globalHistory.push(msgData);
+	}
+
 	addMessage(sender, text)
 	{
 		if (!this.currentRound || this.currentRound.status !== 'chatting')
@@ -336,7 +345,8 @@ class Room
 		const round = new Round([...this.players.values()],
 								(msg) => this.broadcast(msg),
 								(text) => this.addSystemMessage(text),
-								(results) => this.handleRoundEnd(results));
+								(results) => this.handleRoundEnd(results),
+								(character) => this.addSilenceMessage(character));
 		this.currentRound = round;
 		this.rounds.push(round);
 

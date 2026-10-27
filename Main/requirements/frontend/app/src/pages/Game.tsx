@@ -20,6 +20,8 @@ export default function Game() {
     roundPhase,
     turnOrder,
     turnCycle,
+    totalTurns,
+    maxManches,
     currentTurnCharacter,
     myCharacter,
     countdown,
@@ -91,6 +93,8 @@ export default function Game() {
           roomNumber={roomNumber}
           roundIndicator={roundIndicator}
           turnCycle={turnCycle}
+          totalTurns={totalTurns}
+          maxManches={maxManches}
           countdown={countdown}
           timerVisible={timerVisible}
           onQuit={handleQuit}

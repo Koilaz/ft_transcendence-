@@ -3,11 +3,12 @@ import { gameConfig } from './config.js';
 
 // Une manche : personnage + ordre de jeu tirés au sort, jamais réutilisés d'une manche à l'autre.
 export class Round {
-	constructor(players, broadcastFn, addSystemMessageFn, onRoundEndedFn)
+	constructor(players, broadcastFn, addSystemMessageFn, onRoundEndedFn, addSilenceFn)
 	{
 		this.players = players;
 		this.broadcast = broadcastFn; // injectee par la Room : Round ignore tout du transport
 		this.addSystemMessage = addSystemMessageFn; // idem, pour ecrire dans l'historique
+		this.addSilence = addSilenceFn; // idem, pour les « ... » dans l'historique
 		this.assignments = new Map(); // playerId -> personnage (secret interne)
 		this.turnOrder = [];          // playerId dans l'ordre de jeu, apres shuffle
 		this.playerById = new Map(players.map((player) => [player.id, player])); //acces a l'objet player via son ID
@@ -104,6 +105,9 @@ export class Round {
 		const character = this.caracterOf(this.currentPlayer.id);
 		this.broadcast({ type: 'silence', character });
 		this.addSystemMessage(`${character} est resté muet ce tour...`);
+		//Persiste le « ... » dans l'historique pour le refresh. Optionnel :
+		//les tests instancient Round sans ce callback.
+		this.addSilence?.(character);
 		this.endTurn();
 	}
 

@@ -55,6 +55,7 @@ export type GameReconnectedMessage = {
     character: string;
     turnOrder: string[];
     turnCycle: number;
+    totalTurns: number;
     countdown: number;
   } | null;
   roundPhase: string;
@@ -99,6 +100,7 @@ export type GameTurnMessage = {
   character: string;
   turnOrder: string[];
   turnCycle: number;
+  totalTurns: number;
   countdown: number;
 };
 

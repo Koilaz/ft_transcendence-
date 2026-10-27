@@ -251,6 +251,7 @@ export function useGame() {
     roomClosedCode: state.roomClosedCode,
     turnOrder: state.turnOrder,
     turnCycle: state.turnCycle,
+    totalTurns: state.totalTurns,
     currentTurnCharacter: state.currentTurnCharacter,
     myCharacter: state.myCharacter,
     countdown: state.countdown,

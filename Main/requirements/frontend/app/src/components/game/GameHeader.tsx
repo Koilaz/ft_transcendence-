@@ -5,6 +5,8 @@ type GameHeaderProps = {
   roomNumber: number | null;
   roundIndicator: string;
   turnCycle: number | null;
+  totalTurns: number;
+  maxManches: number | null;
   countdown: number | null;
   timerVisible: boolean;
   onQuit: () => void;
@@ -14,6 +16,8 @@ export function GameHeader({
   roomNumber,
   roundIndicator,
   turnCycle,
+  totalTurns,
+  maxManches,
   countdown,
   timerVisible,
   onQuit,
@@ -24,7 +28,9 @@ export function GameHeader({
     return match ? parseInt(match[1]) : 0;
   };
   const currentManche = getMancheNumber(roundIndicator);
-  const currentTour = 4 - (turnCycle ?? 3);
+  // turnCycle demarre a totalTurns et decremente a chaque cycle complet :
+  // tour 1 au depart, tour totalTurns au dernier cycle avant la fin.
+  const currentTour = totalTurns - (turnCycle ?? totalTurns) + 1;
 
   return (
     <motion.header
@@ -61,7 +67,7 @@ export function GameHeader({
             >
               <span className="text-white text-[9px] sm:text-xs md:text-sm font-semibold font-bangers">Manche</span>
               <div className="flex items-center gap-0 sm:gap-1">
-                {[1, 2, 3, 4].map((i) => (
+                {Array.from({ length: maxManches ?? 0 }, (_, i) => i + 1).map((i) => (
                   <span
                     key={i}
                     className="text-[10px] sm:text-lg md:text-2xl text-white font-bangers"
@@ -111,7 +117,7 @@ export function GameHeader({
             >
               <span className="text-white text-[9px] sm:text-xs md:text-sm font-semibold font-bangers">Tour</span>
               <div className="flex items-center gap-0 sm:gap-1">
-                {[1, 2, 3].map((i) => (
+                {Array.from({ length: totalTurns }, (_, i) => i + 1).map((i) => (
                   <span
                     key={i}
                     className="text-[10px] sm:text-base md:text-xl text-white font-bangers"

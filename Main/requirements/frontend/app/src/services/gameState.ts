@@ -18,6 +18,7 @@ export const initialState: GameUIState = {
   currentTurnCharacter: null,
   turnOrder: [],
   turnCycle: null,
+  totalTurns: 4,
   countdown: null,
   waitingPlayers: 0,
   minPlayers: 0,
@@ -115,6 +116,7 @@ export function gameReducer(state: GameUIState, action: GameAction): GameUIState
         currentTurnCharacter: action.character,
         turnOrder: action.turnOrder,
         turnCycle: action.turnCycle,
+        totalTurns: action.totalTurns,
         roundPhase: 'chatting',
         countdown: action.countdown,
       };
@@ -158,6 +160,7 @@ export function gameReducer(state: GameUIState, action: GameAction): GameUIState
         currentTurnCharacter: turn ? turn.character : null,
         turnOrder: turn ? turn.turnOrder : [],
         turnCycle: turn ? turn.turnCycle : null,
+        totalTurns: turn ? turn.totalTurns : state.totalTurns,
         countdown: turn ? turn.countdown : action.state.countdown,
         currentManche: action.state.current_manche ?? state.currentManche,
         maxManches: action.state.max_manches ?? state.maxManches,

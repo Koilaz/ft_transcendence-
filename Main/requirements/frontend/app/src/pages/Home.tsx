@@ -4,6 +4,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 
 import { MatrixRain } from '../components/MatrixRain';
 import { setAccessToken } from '../services/session';
+import { discardResumeToken } from '../services/gameSocket';
 import { Button, ButtonLink, Modal } from '../components/ui';
 
 export default function Home() {
@@ -33,6 +34,9 @@ export default function Home() {
   const handleGuestSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (guestName.trim().length >= 2) {
+      // Nouveau pseudo = nouvelle identite : on jette le jeton de reprise,
+      // sinon le serveur recollerait le joueur dans son ancienne room.
+      discardResumeToken();
       localStorage.setItem('guestName', guestName.trim());
       navigate('/game');
       setShowMenu(false);
