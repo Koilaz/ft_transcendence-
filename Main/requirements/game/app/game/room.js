@@ -170,6 +170,9 @@ class Room
 			turn: round.status === 'chatting' ? round.publicTurn() : null,
 			roundPhase: round.status,
 			hasVoted: round.votes.has(playerId),
+			// Le joueur a vote pour ce personnage : c'est son propre choix,
+			// pas un secret (isCorrect reste cote serveur).
+			votedFor: round.votes.get(playerId)?.targetCharacter ?? null,
 			disconnectedCharacters: [...this.players.values()]
 				.filter((p) => !p.connected).map((p) => round.caracterOf(p.id)),
 			leftCharacters: [...round.leftPlayers].map((id) => round.caracterOf(id)),

@@ -164,8 +164,10 @@ export class Round {
         // 5. Sauvegarde du vote
         this.votes.set(playerId, { targetCharacter, isCorrect, timeElapsed, score });
 
-        // 6. Feedback silencieux au joueur
-        player.send({ type: 'voteRegistered' });
+        // 6. Feedback silencieux au joueur : la cible accompagne le
+        // accusé de reception, pour que le front restaure le badge « vote
+        // enregistré » meme apres un refresh (voir l'instantané de reprise).
+        player.send({ type: 'voteRegistered', target: targetCharacter });
     }
 
     endRound()

@@ -18,7 +18,7 @@ const colorClasses: Record<BadgeColor, string> = {
 export function Badge({ color = 'stone', children, className = '' }: BadgeProps) {
   return (
     <span
-      className={`font-bangers text-[clamp(0.625rem,1vw,0.875rem)] px-2 py-0.5 rounded-md ${colorClasses[color]} ${className}`}
+      className={`font-bangers text-[clamp(0.75rem,1.3vw,1.125rem)] px-2.5 py-1 rounded-md ${colorClasses[color]} ${className}`}
     >
       {children}
     </span>

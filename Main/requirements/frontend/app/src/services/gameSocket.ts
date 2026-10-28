@@ -60,6 +60,9 @@ export type GameReconnectedMessage = {
   } | null;
   roundPhase: string;
   hasVoted: boolean;
+  // Personnage pour qui le joueur a voté cette manche : restaure le badge
+  // « vote enregistré » après un refresh (c'est son propre vote, pas un secret).
+  votedFor: string | null;
   debriefWaiting: boolean;
   // Absents suivis en direct : place reservee (temporaire) ou depart definitif
   // (voir room.js : reconnectPlayer).
@@ -117,6 +120,9 @@ export type GameSilenceMessage = {
 
 export type GameVoteRegisteredMessage = {
   type: 'voteRegistered';
+  // Cible du vote : le serveur la renvoie pour que le front affiche le badge
+  // « vote enregistré » sur le bon personnage.
+  target: string;
 };
 
 export type RoundResult = {

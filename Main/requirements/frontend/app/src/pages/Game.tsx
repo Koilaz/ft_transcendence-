@@ -22,6 +22,7 @@ export default function Game() {
     turnCycle,
     totalTurns,
     maxManches,
+    currentManche,
     currentTurnCharacter,
     myCharacter,
     countdown,
@@ -42,6 +43,7 @@ export default function Game() {
     roomClosedCode,
     debriefWait,
     hasVoted,
+    votedFor,
     waitingPlayers,
     minPlayers,
     readyPlayers,
@@ -134,6 +136,8 @@ export default function Game() {
           myCharacter={myCharacter}
           roundPhase={roundPhase}
           hasVoted={hasVoted}
+          votedFor={votedFor}
+          currentManche={currentManche}
           onVote={handleVote}
         />
       </div>

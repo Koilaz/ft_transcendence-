@@ -12,6 +12,8 @@ type VoteAreaProps = {
   myCharacter: string | null;     // Mon personnage
   roundPhase: string | null;      // Phase actuelle : 'chatting', 'voting', etc.
   hasVoted: boolean;                // True si j'ai déjà voté
+  votedFor: string | null;          // Personnage pour qui on a voté cette manche
+  currentManche: number | null;     // Numéro de la manche en cours
   onVote?: (character: string) => void;  // Callback pour envoyer le vote
 };
 
@@ -25,11 +27,24 @@ export function VoteArea({
   myCharacter,
   roundPhase,
   hasVoted,
+  votedFor,
+  currentManche,
   onVote,
 }: VoteAreaProps) {
   // --- ETAT LOCAL ---
+  // Seule la sélection en cours est locale : le vote déposé (votedFor) vit
+  // dans l'état global du jeu, restauré par l'instantané de reprise au
+  // refresh et remis à zéro par le reducer à chaque nouvelle manche.
   const [selectedVote, setSelectedVote] = useState<string | null>(null); // Personnage sélectionné pour le vote
-  const [votedFor, setVotedFor] = useState<string | null>(null); // Personnage pour qui on a voté
+
+  // A chaque nouvelle manche, on efface la sélection en cours : sinon le
+  // « CONFIRMER VOTE » de la manche précédente réapparaîtrait. Ajustement
+  // pendant le rendu (pattern recommandé par React quand une prop change).
+  const [previousManche, setPreviousManche] = useState(currentManche);
+  if (previousManche !== currentManche) {
+    setPreviousManche(currentManche);
+    setSelectedVote(null);
+  }
 
   // --- LOGIQUE DE VOTE ---
   // Le backend collecte les votes en temps reel pendant la phase de
@@ -45,10 +60,11 @@ export function VoteArea({
     if (!canVote) return; // Bloque si on ne peut pas voter
     if (character === myCharacter) return; // Ne peut pas voter pour soi
 
-    // Reclic sur le même personnage → confirme le vote
+    // Reclic sur le même personnage → confirme le vote. Le badge vert
+    // apparaît à l'accusé de réception du serveur (voteRegistered), comme
+    // le verrouillage de la zone (hasVoted).
     if (selectedVote === character) {
       if (onVote) onVote(character);
-      setVotedFor(character);
       setSelectedVote(null);
     } else {
       // Premier clic → sélectionne
@@ -113,7 +129,7 @@ export function VoteArea({
               <motion.button
                 key={character}
                 // Styles : fond normal, bordure selon l'état, ratio 1:2 pour les images body
-                className={`group relative flex flex-col items-center justify-start rounded-xl transition-all border-2 ${bgColor} ${borderColor} overflow-hidden max-h-full aspect-[1/2] pb-2 flex-1 ${
+                className={`relative flex flex-col items-center justify-start rounded-xl transition-all border-2 ${bgColor} ${borderColor} overflow-hidden max-h-full aspect-[1/2] pb-2 flex-1 ${
                   isVotable ? 'cursor-pointer' : 'cursor-not-allowed'
                 }`}
                 style={{ maxWidth: `calc(100% / ${turnOrder.length})` }}
@@ -162,9 +178,9 @@ export function VoteArea({
                   </>
                 )}
                 
-                {/* Badge au survol ou sélectionné */}
+                {/* Badge de vote, toujours visible dès qu'on peut voter */}
                 {isVotable && (
-                  <div className={`absolute bottom-0 left-0 right-0 z-20 flex justify-center pb-1 pointer-events-none transition-opacity duration-200 ${isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                  <div className="absolute bottom-0 left-0 right-0 z-20 flex justify-center pb-1 pointer-events-none">
                     <Badge color="red">
                       {isSelected ? 'CONFIRMER VOTE' : 'VOTER POUR LUI'}
                     </Badge>

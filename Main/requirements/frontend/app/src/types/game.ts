@@ -32,6 +32,10 @@ export type GameUIState = {
   debriefWait: { attempt: number; max: number } | null;
   // Vote deja depose cette manche : restaure par l'instantane de reprise.
   hasVoted: boolean;
+  // Personnage pour qui on a vote cette manche : pilote le badge vert, lui
+  // aussi restaure par l'instantane de reprise (refresh) et remis a zero a
+  // chaque nouvelle manche (assignment).
+  votedFor: string | null;
   // Absents suivis en direct : place reservee (temporaire) ou depart definitif.
   // Peuples par l'instantane de reprise, tenus a jour par playerDisconnected
   // et playerReconnected.
@@ -56,7 +60,7 @@ export type GameMessage =
   | { type: 'state'; status: string; room_number: number | null; countdown: number | null; players?: number; min_players?: number; ready_players?: number; ready?: boolean; current_manche?: number; max_manches?: number }
   | { type: 'debriefWait'; attempt: number; max: number }
   | { type: 'session'; token: string }
-  | { type: 'reconnected'; state: { status: string; players: number; room_number: number; countdown: number | null; current_manche?: number; max_manches?: number }; character: string; history: { sender: string; text: string }[]; turn: { character: string; turnOrder: string[]; turnCycle: number; totalTurns: number; countdown: number } | null; roundPhase: string; hasVoted: boolean; debriefWaiting: boolean; disconnectedCharacters: string[]; leftCharacters: string[] }
+  | { type: 'reconnected'; state: { status: string; players: number; room_number: number; countdown: number | null; current_manche?: number; max_manches?: number }; character: string; history: { sender: string; text: string }[]; turn: { character: string; turnOrder: string[]; turnCycle: number; totalTurns: number; countdown: number } | null; roundPhase: string; hasVoted: boolean; votedFor: string | null; debriefWaiting: boolean; disconnectedCharacters: string[]; leftCharacters: string[] }
   | { type: 'playerDisconnected'; character: string; temporary: boolean }
   | { type: 'playerReconnected'; character: string }
   | { type: 'agentsDown'; agents: AgentStatus[] }
@@ -65,7 +69,7 @@ export type GameMessage =
   | { type: 'turn'; character: string; turnOrder: string[]; turnCycle: number; totalTurns: number; countdown: number }
   | { type: 'chat'; sender: string; text: string }
   | { type: 'silence'; character: string }
-  | { type: 'voteRegistered' }
+  | { type: 'voteRegistered'; target: string }
   | { type: 'roundTransition'; results: RoundResult[]; aiCharacter: string }
   | { type: 'roundCancelled' }
   | { type: 'gameEnd'; winnerId: string; ranking: FinalRank[]; history: { sender: string; text: string; isAI: boolean }[] }

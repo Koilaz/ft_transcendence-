@@ -29,6 +29,7 @@ export const initialState: GameUIState = {
   maxManches: null,
   debriefWait: null,
   hasVoted: false,
+  votedFor: null,
   disconnectedCharacters: [],
   leftCharacters: [],
   messages: [],
@@ -99,6 +100,7 @@ export function gameReducer(state: GameUIState, action: GameAction): GameUIState
         aiCharacter: null,
         debriefWait: null,
         hasVoted: false,
+        votedFor: null,
         messages: [
           { id: nextMessageId(), kind: 'system', text: `>>> nouvelle manche, tu incarnes ${action.character}` },
         ],
@@ -140,6 +142,7 @@ export function gameReducer(state: GameUIState, action: GameAction): GameUIState
       return {
         ...state,
         hasVoted: true,
+        votedFor: action.target,
         messages: [
           ...state.messages,
           { id: nextMessageId(), kind: 'system', text: '>>> ton vote est enregistré' },
@@ -166,6 +169,7 @@ export function gameReducer(state: GameUIState, action: GameAction): GameUIState
         maxManches: action.state.max_manches ?? state.maxManches,
         waitingPlayers: action.state.players ?? state.waitingPlayers,
         hasVoted: action.hasVoted,
+        votedFor: action.votedFor ?? null,
         disconnectedCharacters: action.disconnectedCharacters,
         leftCharacters: action.leftCharacters,
         roundResults: null,

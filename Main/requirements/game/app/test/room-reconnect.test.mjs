@@ -98,6 +98,8 @@ try
 		room.addSystemMessage('Une ligne systeme');
 		room.submitVote(id, round.caracterOf('private-bot'));
 		const vote = round.votes.get(id);
+		check('A. la confirmation de vote porte sa cible',
+			messages.get(id).some((message) => message.type === 'voteRegistered' && message.target === round.caracterOf('private-bot')));
 		const character = round.caracterOf(id);
 		advance(1000);
 		const timer = round.turnTimerId;
@@ -122,8 +124,9 @@ try
 		check('A. le retour n ajoute ni tour ni temps',
 			round.turnTimerId === timer && round.turnIndex === turnIndex && round.countdown === 1
 			&& snapshot?.turn?.character === character && snapshot.turn.countdown === 1);
-		check('A. le snapshot restaure le vote et la phase courante',
-			snapshot?.hasVoted === true && snapshot.roundPhase === 'chatting' && round.votes.get(id) === vote);
+		check('A. le snapshot restaure le vote, sa cible et la phase courante',
+			snapshot?.hasVoted === true && snapshot.roundPhase === 'chatting' && round.votes.get(id) === vote
+			&& snapshot?.votedFor === round.caracterOf('private-bot'));
 		check('A. le chat est restaure une seule fois avec ses seuls champs publics',
 			JSON.stringify(snapshot?.history) === JSON.stringify(room.history.map(({ sender, text }) => ({ sender, text })))
 			&& received.filter((message) => message.type === 'reconnected').length === 1

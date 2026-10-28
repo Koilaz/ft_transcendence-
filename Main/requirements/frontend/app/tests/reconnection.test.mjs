@@ -61,10 +61,12 @@ test('le state de la room garde le tour en cours et suit la manche serveur', () 
 });
 
 test("l'assignment ouvre la manche et remet les votes a zero", () => {
-  const voted = gameReducer(playing(initialState), { type: 'voteRegistered' });
+  const voted = gameReducer(playing(initialState), { type: 'voteRegistered', target: 'Marechal Cocktail' });
   assert.equal(voted.hasVoted, true);
+  assert.equal(voted.votedFor, 'Marechal Cocktail');
   const nextRound = gameReducer(voted, { type: 'assignment', character: 'Major Wasabi' });
   assert.equal(nextRound.hasVoted, false);
+  assert.equal(nextRound.votedFor, null);
   assert.equal(nextRound.myCharacter, 'Major Wasabi');
   assert.equal(nextRound.roundResults, null);
   assert.ok(nextRound.messages.at(-1).text.includes('Major Wasabi'));
@@ -94,15 +96,18 @@ test("l'instantane de reprise remplace l'etat sans reveler l'imposteur", () => {
     turn: { character: 'Marechal Cocktail', turnOrder: ['Marechal Cocktail'], turnCycle: 2, countdown: 14 },
     roundPhase: 'chatting',
     hasVoted: true,
+    votedFor: 'Lieutenant Mayo',
     disconnectedCharacters: ['Colonel Moutarde'],
     leftCharacters: [],
     debriefWaiting: false,
   };
-  const before = gameReducer(playing(initialState), { type: 'voteRegistered' });
+  const before = gameReducer(playing(initialState), { type: 'voteRegistered', target: 'Marechal Cocktail' });
   const next = gameReducer(before, snapshot);
   assert.equal(next.myCharacter, 'Caporal Poivre');
   assert.equal(next.roomNumber, 12);
   assert.equal(next.hasVoted, true);
+  // le vote de la manche en cours est restauré, badge vert au refresh
+  assert.equal(next.votedFor, 'Lieutenant Mayo');
   assert.equal(next.currentTurnCharacter, 'Marechal Cocktail');
   assert.equal(next.countdown, 14);
   assert.equal(next.currentManche, 2);
@@ -146,7 +151,7 @@ test("une manche annulee l'annonce dans le fil", () => {
 });
 
 test('resetGame remet la page dans son etat de depart', () => {
-  const state = gameReducer(playing(initialState), { type: 'voteRegistered' });
+  const state = gameReducer(playing(initialState), { type: 'voteRegistered', target: 'Marechal Cocktail' });
   const next = gameReducer(state, { type: 'resetGame' });
   assert.deepEqual(next, initialState);
 });
