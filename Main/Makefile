@@ -22,6 +22,10 @@ all: up
 up:
 	$(COMPOSE) up --build
 
+# Reconstruire et relancer un seul service, en arriere-plan.
+game backend frontend nginx:
+	$(COMPOSE) up -d --build $@
+
 # Arrêter et supprimer les containers.
 # --remove-orphans : supprime aussi les containers du projet qui ne sont plus
 # declares dans le compose file (service renomme ou retire). Sans ca ils
@@ -63,10 +67,11 @@ logs:
 ps:
 	$(COMPOSE) ps
 
-# Arrêter les containers et supprimer les volumes.
-# C'est ce down-la qui tourne dans re (re -> fclean -> clean).
-clean:
-	$(COMPOSE) down -v --remove-orphans
+# Arrêter les containers et supprimer les images construites par le projet.
+# Le filtre sur le label compose epargne les autres projets de la machine
+# et ollama/ollama (telechargee, pas construite). Les volumes restent.
+clean: down
+	docker image prune -af --filter label=com.docker.compose.project=$(COMPOSE_PROJECT_NAME)
 
 # Supprimer les poids du modele (garde-fou sur le chemin).
 ollama-clean:
@@ -75,16 +80,16 @@ ollama-clean:
 		rm -rf "$(OLLAMA_DATA_DIR)/models"; \
 	fi
 
-# Nettoyage complet de Docker.
-fclean: clean
-	docker system prune -af
+# clean + suppression des volumes (base Postgres + avatars).
+# Confirmation avant tout : tout autre reponse que y arrete la chaine
+# (ffclean compris).
+fclean:
+	@printf "Supprimer les volumes (utilisateurs, avatars, parties) ? [y/N] " && read ans && [ "$$ans" = y ]
+	$(COMPOSE) down -v --remove-orphans
+	@$(MAKE) --no-print-directory clean
 
 ffclean: fclean ollama-clean
 
-# Reconstruction complète du projet.
-install:
-	cd requirements/frontend/app && npm install
+re: clean  up
 
-re: fclean install up
-
-.PHONY: all up down start stop restart game-re game-logs ollama-pull ollama-list logs ps clean ollama-clean fclean ffclean re
+.PHONY: all up game backend frontend nginx down start stop restart game-re game-logs ollama-pull ollama-list logs ps clean ollama-clean fclean ffclean re
