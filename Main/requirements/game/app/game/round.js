@@ -194,12 +194,12 @@ export class Round {
             if (vote && vote.isCorrect)
 			{
 				const speedRatio = Math.max(0, 1 - (vote.timeElapsed / maxTimeMs));
-                humanScore = 1000 + Math.floor(speedRatio * 1000);
+                humanScore = 500 + Math.floor(speedRatio * 1000);
             }
 			else
 			{
 				humanScore = 0;
-                aiRoundScore += 1000;
+                aiRoundScore += 1500;
             }
 			results.push({
                 playerId: human.id,
