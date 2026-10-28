@@ -193,7 +193,7 @@ export class Round {
 			else
 			{
 				humanScore = 0;
-                aiRoundScore += 1500;
+                aiRoundScore += 2500;
             }
 			results.push({
                 playerId: human.id,
