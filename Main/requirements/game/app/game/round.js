@@ -74,7 +74,6 @@ export class Round {
 			return;
 		const playerId = this.turnOrder[this.turnIndex];
 
-		//O4 : on saute le tour d'un joueur parti.
 		if (this.leftPlayers.has(playerId))
 			return this.advanceTurn();
 
@@ -91,15 +90,13 @@ export class Round {
 		}, 1000);
 	}
 
-	// événement A : le joueur courant a parlé (appelé par Room.addMessage)
 	onPlayerMessage(playerId)
 	{
 		if (this.turnOrder[this.turnIndex] !== playerId)
-			return;// une machine à états ne fait confiance à personne
+			return;
 		this.endTurn();
 	}
 
-	// événement B : son chrono a expiré
 	onTurnTimeout()
 	{
 		const character = this.caracterOf(this.currentPlayer.id);
@@ -115,7 +112,7 @@ export class Round {
 	{
 		if (this.turnTimerId)
 		{
-			clearInterval(this.turnTimerId);   // annule le perdant de la course A/B
+			clearInterval(this.turnTimerId);
 			this.turnTimerId = null;
 		}
 		this.advanceTurn();
@@ -164,9 +161,6 @@ export class Round {
         // 5. Sauvegarde du vote
         this.votes.set(playerId, { targetCharacter, isCorrect, timeElapsed, score });
 
-        // 6. Feedback silencieux au joueur : la cible accompagne le
-        // accusé de reception, pour que le front restaure le badge « vote
-        // enregistré » meme apres un refresh (voir l'instantané de reprise).
         player.send({ type: 'voteRegistered', target: targetCharacter });
     }
 
