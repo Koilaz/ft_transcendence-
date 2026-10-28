@@ -4,7 +4,7 @@ import { createRoom } from './room.js';
 //present au registre et repondant au healthCheck, prompt present au registre.
 //Recalcule a chaque appel, comme le reste : la config bouge et le rapport de
 //sante n'existe qu'apres le boot.
-import { usableBots } from '../agents/index_agent.js';
+import { usableBots, unavailableBots, recheckDownAgents } from '../agents/index_agent.js';
 
 //File d'attente unique. Les joueurs y patientent jusqu'a ce qu'un groupe
 //complet puisse etre forme, puis la room nait avec son effectif definitif.
@@ -14,6 +14,7 @@ import { usableBots } from '../agents/index_agent.js';
 const waiting = new Map(); // playerId -> { sendFn, onRoomJoined, displayName }
 let timerId = null;
 let countdown = null;
+let recheckTimer = null;
 
 //Calcule a l'appel et non au chargement du module : gameConfig est ajuste
 //souvent, et les tests le modifient.
@@ -39,6 +40,14 @@ function humansNeeded()
 function noBotAvailable()
 {
 	return gameConfig.bots.length > 0 && usableBots().length === 0;
+}
+
+//Les conditions du compte a rebours : un imposteur disponible, le seuil humain
+//atteint, et un « Prêt » explicite de chaque joueur en file.
+function canStart()
+{
+	return !noBotAvailable() && waiting.size >= humansNeeded().min
+		&& [...waiting.values()].every((entry) => entry.ready);
 }
 
 //On reutilise le message `state` existant plutot que d'en inventer un. Le front
@@ -112,6 +121,39 @@ function launch()
 	return room;
 }
 
+//Un agent tombe puis revient (conteneur ollama relance, quota retrouve) : sans
+//nouveau healthcheck, la file le croirait mort jusqu'au redemarrage de game.
+//On ne reverifie que tant que quelqu'un attend et qu'un bot manque : personne
+//d'autre n'a besoin de la reponse.
+function scheduleRecheck()
+{
+	if (recheckTimer || !waiting.size || !unavailableBots().length)
+		return;
+	recheckTimer = setTimeout(async () =>
+	{
+		const recovered = await recheckDownAgents();
+		recheckTimer = null;
+		if (recovered.length)
+			onAgentsRecovered();
+		scheduleRecheck();
+	}, gameConfig.agentRecheckDelay * 1000);
+	recheckTimer.unref();// une verification en attente ne doit pas retenir le processus
+}
+
+//Le front garde la derniere liste agentsDown recue : une liste vide efface
+//l'alerte et rend le bouton « Prêt » de nouveau cliquable. Des joueurs deja
+//prets ne recliqueront pas : c'est ici que leur compte a rebours repart.
+function onAgentsRecovered()
+{
+	const agents = unavailableBots();
+	for (const entry of waiting.values())
+		entry.sendFn({ type: 'agentsDown', agents });
+	if (canStart())
+		startCountdown();
+	else
+		broadcastQueue();
+}
+
 //onRoomJoined(room) previent l'appelant quand le joueur passe en partie :
 //server.js s'en sert pour raccrocher la room a la socket.
 export function enqueue(playerId, sendFn, onRoomJoined, displayName = null)
@@ -123,6 +165,7 @@ export function enqueue(playerId, sendFn, onRoomJoined, displayName = null)
 	// Atteindre le seuil rend le bouton « Prêt » disponible ; un clic explicite
 	// est nécessaire pour lancer la partie, même si la room est pleine.
 	broadcastQueue();
+	scheduleRecheck();
 }
 
 export function dequeue(playerId)
@@ -140,8 +183,7 @@ export function ready(playerId)
 	if (!entry || entry.ready)
 		return;
 	entry.ready = true;
-	const { min } = humansNeeded();
-	if (!noBotAvailable() && waiting.size >= min && [...waiting.values()].every((waitingEntry) => waitingEntry.ready))
+	if (canStart())
 		startCountdown();
 	else
 		broadcastQueue();

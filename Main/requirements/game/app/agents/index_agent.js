@@ -122,6 +122,27 @@ export async function checkAllAgents()
 	return healthReport;
 }
 
+//Un agent hors service peut revenir : conteneur ollama relance, quota de
+//nouveau disponible. Sans nouveau passage, la file le croirait mort jusqu'au
+//redemarrage de game (voir game/queue.js). On ne revoit que les agents KO des
+//bots configures, en un seul essai : un agent qui repond n'a rien a apprendre,
+//et la sonde Mistral coute quelques tokens. Renvoie les agents revenus.
+export async function recheckDownAgents()
+{
+	const names = new Set(unavailableBots().map((b) => b.agent));
+	const down = [...names].filter((name) => healthReport.get(name)?.ok === false).map((name) => agents[name]);
+	const results = await Promise.all(down.map(async (a) => ({ name: a.name, ...(await a.healthCheck()) })));
+	healthReport = new Map([...healthReport, ...results.map((r) => [r.name, r])]);
+
+	const recovered = results.filter((r) => r.ok);
+	for (const { name, detail } of recovered)
+	{
+		console.log(`  ${green('[ OK ]')} ${name} de nouveau disponible — ${detail}`);
+		agents[name].warmup?.().catch((err) => console.error(`[${name}] prechargement echoue :`, err.message));
+	}
+	return recovered.map((r) => r.name);
+}
+
 //Les agents que le healthCheck a vus repondre. C'est la seule liste utile a
 //qui doit corriger gameConfig.bots : lui proposer un nom du registre qui ne
 //repond pas le ferait tourner en rond.

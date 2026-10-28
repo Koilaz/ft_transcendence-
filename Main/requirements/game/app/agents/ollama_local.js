@@ -155,6 +155,13 @@ export const local_agent =
 
 		return prefill(messages, `prechauffage de la manche (${prompt.name})`, resolveOptions(prompt));
 	},
+
+	//Rappele quand l'agent revient apres une panne (voir recheckDownAgents) :
+	//un conteneur ollama relance a perdu le modele charge en RAM.
+	warmup()
+	{
+		return warmupOllama();
+	},
 };
 
 //Le premier prompt attribue a cet agent dans game/config.js, toutes manches
