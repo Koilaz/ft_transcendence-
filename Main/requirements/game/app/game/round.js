@@ -138,10 +138,10 @@ export class Round {
     {
         // 1. Sécurités de base
         if (this.status !== 'chatting') return;
-        if (this.votes.has(playerId)) return; // Le joueur a déjà voté
+        if (this.votes.has(playerId)) return;
 
         const player = this.playerById.get(playerId);
-        if (!player || player.agentName) return; // L'IA ne vote pas
+        if (!player || player.agentName) return;
 
         // 2. Retrouver l'ID de la cible désignée
         let targetId = null;
@@ -211,22 +211,22 @@ export class Round {
             });
         }
 
-        // Retrouver l'IA pour l'afficher
         const aiPlayer = this.players.find(p => p.agentName);
         const aiCharacter = this.caracterOf(aiPlayer.id);
+        const bestHumanScore = Math.max(0, ...results.map(result => result.score));
 
         results.push({
             playerId: aiPlayer.id,
             character: aiCharacter,
-            target: "A dupé les humains", // Texte stylisé pour le tableau
+            target: aiRoundScore > bestHumanScore ? "A dupé les humains" : "Les humains ont résisté",
             score: aiRoundScore,
-            isCorrect: true, // Pour l'afficher en vert
+            isCorrect: true,
             isAI: true
         });
 
         results.sort((a, b) => b.score - a.score);
 
-        // Diffuser les résultats à tous les joueurs
+        // diffuse les résultats à tous les joueurs
         this.broadcast({
 			type: 'roundTransition',
 			results,
@@ -239,8 +239,6 @@ export class Round {
 
         console.log(`[room] Fin de la manche. (Calcul des scores secret terminé)`);
 
-        // (Optionnel) ajouter ici un appel à la Room si on
-        // veux enchaîner sur un autre round automatiquement.
     }
 
 	canSpeak(playerId)
