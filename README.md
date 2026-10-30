@@ -294,11 +294,13 @@ ihas been completly removed from the current version
 |---|---|---|---|
 | lmarck |Claude opus 5.5, Chat GPT, Mistral studio|Code Review, Debugging, Testing, Research bainstorming, redondant Tasks | Game backend, room logic, LLM API and prompts, Ollama container, Makefile |
 | cnamoune | <!-- TODO --> | <!-- TODO --> | <!-- TODO --> |
-| radubos | <!-- TODO --> | <!-- TODO --> | <!-- TODO --> |
+| radubos | Mistral (Le Chat, Mistral Studio), Nano Banana 2 (Google Gemini image generation) | Code generation, Debugging, Brainstorming, Testing, Image generation | Frontend (React application, UI components, animations, reconnection), illustrations of the characters and the timer bunny |
 | mwallis | <!-- TODO --> | <!-- TODO --> | <!-- TODO --> |
 | mlavry | <!-- TODO --> | <!-- TODO --> | <!-- TODO --> |
 
-<!-- TODO: expliquer comment les productions de l'IA ont ete verifiees (relecture en PR, tests, explication entre pairs) ; le sujet insiste sur « only use AI-generated content that you fully understand ». Preciser aussi l'origine des illustrations des personnages et du lapin-chronometre (dessinees ? generees ?). -->
+The character portraits and the timer bunny illustrations were generated with Nano Banana 2 (Google Gemini), then retouched by hand with GIMP.
+
+<!-- TODO: expliquer comment les productions de l'IA ont ete verifiees (relecture en PR, tests, explication entre pairs) ; le sujet insiste sur « only use AI-generated content that you fully understand ». -->
 
 ---
 
@@ -308,7 +310,7 @@ ihas been completly removed from the current version
 |---|---|---|
 | `lmarck` | Product Owner |integration of the backend skeleton and presence, architecture of the game service, AI agents and prompts, team documentation, merges of the team branches, Makefile, integration of the Ollama container |
 | `cnamoune` | <!-- TODO --> | Voting and scoring system, round transitions and endgame screen, lobby Ready flow, |
-| `radubos` | <!-- TODO --> | Frontend (UI components, game screen, animations, responsive design, legal pages), reconnection, multi-tab presence, integration of the team branches |
+| `radubos` | developers | Frontend (UI components, game screen, animations, responsive design, legal pages), reconnection, multi-tab presence, integration of the team branches |
 | `mwallis` | <!-- TODO --> | Initial `core/` skeleton: NestJS backend (authentication, users, friends), Prisma schema, Docker Compose setup <!-- TODO: a confirmer --> |
 | `mlavry` | <!-- TODO --> | <!-- TODO --> |
 
