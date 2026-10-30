@@ -2,6 +2,16 @@ import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { changePassword, verifyCurrentPassword } from '../services/api';
+import { Input } from '../components/ui';
+import {
+  STEP_CHANGE_FIELDS,
+  STEP_VERIFY_FIELDS,
+  validateAll,
+  validateField,
+  type FieldName,
+  type FormErrors,
+  type FormValues,
+} from '../services/passwordChangeValidation';
 
 // Changement de mot de passe en deux etapes, comme le veut le backend :
 // 1. l'ancien mot de passe est verifie par le serveur (POST .../password/verify)
@@ -13,23 +23,47 @@ export function PasswordChangeForm() {
   const navigate = useNavigate();
 
   const [step, setStep] = useState<1 | 2>(1);
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-
-  const [error, setError] = useState('');
+  const [values, setValues] = useState<FormValues>({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
+  // Seuls les champs "touches" (blur ou submit) affichent leur erreur :
+  // pas de rouge agressif des le premier rendu de la page.
+  const [touched, setTouched] = useState<Partial<Record<FieldName, boolean>>>({});
+  const [errors, setErrors] = useState<FormErrors>({});
+  // L'alerte globale ne sert qu'aux erreurs serveur (mauvais mot de passe
+  // actuel, reseau indisponible) : les erreurs de saisie vivent sur les champs.
+  const [serverError, setServerError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [isChecking, setIsChecking] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
   function resetFields() {
-    setCurrentPassword('');
-    setNewPassword('');
-    setConfirmPassword('');
+    setValues({ currentPassword: '', newPassword: '', confirmPassword: '' });
+    setTouched({});
+    setErrors({});
   }
 
   function getAccessToken(): string | null {
     return localStorage.getItem('accessToken');
+  }
+
+  function setValue(name: FieldName, value: string) {
+    const next = { ...values, [name]: value };
+    setValues(next);
+    // Champ deja en erreur : on revalide en direct, le rouge disparait
+    // des que la saisie redevient correcte.
+    if (touched[name]) {
+      const message = validateField(name, next);
+      setErrors((previous) => ({ ...previous, [name]: message || undefined }));
+    }
+  }
+
+  function handleBlur(name: FieldName) {
+    setTouched((previous) => ({ ...previous, [name]: true }));
+    const message = validateField(name, values);
+    setErrors((previous) => ({ ...previous, [name]: message || undefined }));
   }
 
   async function handleVerifySubmit(event: FormEvent<HTMLFormElement>) {
@@ -42,18 +76,25 @@ export function PasswordChangeForm() {
       return;
     }
 
-    setError('');
+    setServerError('');
     setSuccessMessage('');
+
+    // Etape 1 : seul le mot de passe actuel est valide.
+    const nextErrors = validateAll(values, STEP_VERIFY_FIELDS);
+    setTouched({ currentPassword: true });
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) return;
+
     setIsChecking(true);
 
     try {
-      await verifyCurrentPassword(accessToken, currentPassword);
+      await verifyCurrentPassword(accessToken, values.currentPassword);
       setStep(2);
     } catch (error) {
       if (error instanceof Error) {
-        setError(error.message);
+        setServerError(error.message);
       } else {
-        setError('An unexpected error occurred');
+        setServerError('An unexpected error occurred');
       }
     } finally {
       setIsChecking(false);
@@ -70,25 +111,28 @@ export function PasswordChangeForm() {
       return;
     }
 
-    if (newPassword !== confirmPassword) {
-      setError('Passwords do not match');
-      return;
-    }
-
-    setError('');
+    setServerError('');
     setSuccessMessage('');
+
+    // Etape 2 : nouveau mot de passe et confirmation. Une confirmation
+    // incorrecte vit sur le champ de confirmation, pas en alerte globale.
+    const nextErrors = validateAll(values, STEP_CHANGE_FIELDS);
+    setTouched({ newPassword: true, confirmPassword: true });
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) return;
+
     setIsSaving(true);
 
     try {
-      await changePassword(accessToken, currentPassword, newPassword);
+      await changePassword(accessToken, values.currentPassword, values.newPassword);
       setStep(1);
       resetFields();
       setSuccessMessage('Password updated successfully');
     } catch (error) {
       if (error instanceof Error) {
-        setError(error.message);
+        setServerError(error.message);
       } else {
-        setError('An unexpected error occurred');
+        setServerError('An unexpected error occurred');
       }
     } finally {
       setIsSaving(false);
@@ -98,7 +142,7 @@ export function PasswordChangeForm() {
   function handleCancel() {
     setStep(1);
     resetFields();
-    setError('');
+    setServerError('');
     setSuccessMessage('');
   }
 
@@ -106,14 +150,15 @@ export function PasswordChangeForm() {
     <form
       className="border-t border-stone-700 pt-8"
       onSubmit={step === 1 ? handleVerifySubmit : handleChangeSubmit}
+      noValidate
     >
       <h2 className="mb-5 text-2xl font-semibold text-white">
         Change password
       </h2>
 
-      {error && (
+      {serverError && (
         <p className="mb-6 rounded-lg border border-red-900 bg-red-950 px-4 py-3 text-sm text-red-300">
-          {error}
+          {serverError}
         </p>
       )}
 
@@ -126,23 +171,18 @@ export function PasswordChangeForm() {
       {step === 1 ? (
         <>
           <div>
-            <label
-              className="mb-2 block text-sm font-medium text-stone-300"
-              htmlFor="current-password"
-            >
-              Current password
-            </label>
-
-            <input
+            <Input
               id="current-password"
               type="password"
-              value={currentPassword}
-              onChange={(event) => setCurrentPassword(event.target.value)}
+              label="Current password"
+              value={values.currentPassword}
+              onChange={(event) => setValue('currentPassword', event.target.value)}
+              onBlur={() => handleBlur('currentPassword')}
+              error={touched.currentPassword ? errors.currentPassword : undefined}
               minLength={8}
               maxLength={100}
               required
               autoComplete="current-password"
-              className="w-full rounded-lg border border-stone-700 bg-stone-950 px-4 py-3 text-white outline-none transition focus:border-blue-500"
             />
           </div>
 
@@ -157,23 +197,18 @@ export function PasswordChangeForm() {
       ) : (
         <>
           <div>
-            <label
-              className="mb-2 block text-sm font-medium text-stone-300"
-              htmlFor="new-password"
-            >
-              New password
-            </label>
-
-            <input
+            <Input
               id="new-password"
               type="password"
-              value={newPassword}
-              onChange={(event) => setNewPassword(event.target.value)}
+              label="New password"
+              value={values.newPassword}
+              onChange={(event) => setValue('newPassword', event.target.value)}
+              onBlur={() => handleBlur('newPassword')}
+              error={touched.newPassword ? errors.newPassword : undefined}
               minLength={8}
               maxLength={72}
               required
               autoComplete="new-password"
-              className="w-full rounded-lg border border-stone-700 bg-stone-950 px-4 py-3 text-white outline-none transition focus:border-blue-500"
             />
 
             <p className="mt-2 text-sm text-stone-500">
@@ -182,23 +217,18 @@ export function PasswordChangeForm() {
           </div>
 
           <div className="mt-5">
-            <label
-              className="mb-2 block text-sm font-medium text-stone-300"
-              htmlFor="confirm-password"
-            >
-              Confirm new password
-            </label>
-
-            <input
+            <Input
               id="confirm-password"
               type="password"
-              value={confirmPassword}
-              onChange={(event) => setConfirmPassword(event.target.value)}
+              label="Confirm new password"
+              value={values.confirmPassword}
+              onChange={(event) => setValue('confirmPassword', event.target.value)}
+              onBlur={() => handleBlur('confirmPassword')}
+              error={touched.confirmPassword ? errors.confirmPassword : undefined}
               minLength={8}
               maxLength={72}
               required
               autoComplete="new-password"
-              className="w-full rounded-lg border border-stone-700 bg-stone-950 px-4 py-3 text-white outline-none transition focus:border-blue-500"
             />
           </div>
 
