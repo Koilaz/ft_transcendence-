@@ -88,7 +88,7 @@ type GameEndModalProps = {
 export function GameEndModal({ winnerId, ranking, history, onReplay }: GameEndModalProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 p-4 backdrop-blur-md">
-      <div className="flex h-[85vh] w-full max-w-6xl gap-6 rounded-xl border border-warning-600 bg-abyss-900 p-6 shadow-2xl">
+      <div className="flex h-[85vh] w-full max-w-6xl gap-6 rounded-xl border border-abyss-700 bg-abyss-900 p-6 shadow-2xl">
         
         {/* COLONNE GAUCHE : SCOREBOARD */}
         <div className="flex w-1/3 flex-col border-r border-abyss-700 pr-6">
@@ -180,7 +180,7 @@ const MOTIFS: Record<string, string> = {
 export function RoomClosedModal({ code, onReplay }: { code: string; onReplay: () => void }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md">
-      <div className="w-full max-w-md rounded-xl border border-abyss-600 bg-abyss-900 p-8 text-center">
+      <div className="w-full max-w-md rounded-xl border border-abyss-700 bg-abyss-900 p-8 text-center">
         <h2 className="text-2xl font-bold text-white mb-3">Séance levée</h2>
         <p className="text-abyss-400 mb-6">
           {MOTIFS[code] ?? 'La séance a pris fin.'}
