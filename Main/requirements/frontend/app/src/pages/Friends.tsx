@@ -482,7 +482,7 @@ export default function Friends() {
 
   if (loading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-abyss-950 text-abyss-200">
+      <main className="flex min-h-screen items-center justify-center bg-abyss-950 text-abyss-300">
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -495,7 +495,7 @@ export default function Friends() {
   }
 
   return (
-    <main className="min-h-screen bg-abyss-950 px-4 py-12 text-abyss-200">
+    <main className="min-h-screen bg-abyss-950 px-4 py-12 text-abyss-300">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

@@ -141,7 +141,7 @@ export default function Home() {
                 maxLength={20}
                 required
                 autoComplete="off"
-                className="flex-1 rounded-lg border border-abyss-600 bg-abyss-800/80 px-4 py-2 text-azur-400 font-mono text-sm outline-none transition focus:border-azur-400 placeholder:text-abyss-500"
+                className="flex-1 rounded-lg border border-abyss-600 bg-abyss-800/80 px-4 py-2 text-azur-400 font-mono text-sm outline-none transition focus:border-azur-500 placeholder:text-abyss-500"
               />
               <Button type="submit" variant="secondary" size="md" icon={Play} className="font-mono text-azur-400">
                 Play

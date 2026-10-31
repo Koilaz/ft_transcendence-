@@ -26,7 +26,7 @@ export function ScoreboardModal({ aiCharacter, results, countdown, debriefWait }
         
         {/* Affichage dynamique du gagnant */}
         {aiWon ? (
-          <h2 className="text-3xl font-bold text-center text-danger-500 mb-2">L'IA a dupé tout le monde !</h2>
+          <h2 className="text-3xl font-bold text-center text-danger-400 mb-2">L'IA a dupé tout le monde !</h2>
         ) : (
           <h2 className="text-3xl font-bold text-center text-success-400 mb-2">L'IA a été démasquée !</h2>
         )}
@@ -92,7 +92,7 @@ export function GameEndModal({ winnerId, ranking, history, onReplay }: GameEndMo
         
         {/* COLONNE GAUCHE : SCOREBOARD */}
         <div className="flex w-1/3 flex-col border-r border-abyss-700 pr-6">
-          <h2 className="mb-2 text-3xl font-bold text-warning-500">Partie Terminée !</h2>
+          <h2 className="mb-2 text-3xl font-bold text-warning-400">Partie Terminée !</h2>
           <p className="mb-6 text-sm text-abyss-300">
             Gagnant : <span className="font-bold text-white">{winnerId}</span>
           </p>
@@ -142,7 +142,7 @@ export function GameEndModal({ winnerId, ranking, history, onReplay }: GameEndMo
 
         {/* COLONNE DROITE : HISTORIQUE DU CHAT */}
         <div className="flex w-2/3 flex-col">
-          <h3 className="mb-4 text-xl font-bold text-abyss-200">Débriefing (Replay du chat)</h3>
+          <h3 className="mb-4 text-xl font-bold text-white">Débriefing (Replay du chat)</h3>
           
           <div className="flex flex-1 flex-col gap-3 overflow-y-auto rounded-lg border border-abyss-800 bg-abyss-950 p-4">
             {history.map((msg, idx) => {
@@ -153,7 +153,7 @@ export function GameEndModal({ winnerId, ranking, history, onReplay }: GameEndMo
                   <span className={`mb-1 text-xs font-bold ${isAI ? 'text-azur-400' : 'text-abyss-400'}`}>
                     {msg.sender} {isAI && "(L'IMPOSTEUR)"}
                   </span>
-                  <span className="text-sm text-abyss-200">{msg.text}</span>
+                  <span className="text-sm text-abyss-300">{msg.text}</span>
                 </div>
               );
             })}
@@ -181,7 +181,7 @@ export function RoomClosedModal({ code, onReplay }: { code: string; onReplay: ()
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md">
       <div className="w-full max-w-md rounded-xl border border-abyss-600 bg-abyss-900 p-8 text-center">
-        <h2 className="text-2xl font-bold text-abyss-200 mb-3">Séance levée</h2>
+        <h2 className="text-2xl font-bold text-white mb-3">Séance levée</h2>
         <p className="text-abyss-400 mb-6">
           {MOTIFS[code] ?? 'La séance a pris fin.'}
         </p>

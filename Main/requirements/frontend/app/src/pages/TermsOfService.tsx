@@ -12,7 +12,7 @@ export default function TermsOfService() {
         <div className="flex justify-between items-center mb-8">
           <Link
             to="/"
-            className="rounded-lg bg-azur-500 hover:bg-azur-600 text-white py-2 px-6 font-semibold transition-colors text-sm"
+            className="rounded-lg bg-azur-500 hover:bg-azur-400 text-white py-2 px-6 font-semibold transition-colors text-sm"
           >
             ← Back to Home
           </Link>
@@ -121,7 +121,7 @@ export default function TermsOfService() {
           <div className="mt-12">
             <Link
               to="/"
-              className="rounded-lg bg-azur-500 hover:bg-azur-600 text-white py-3 px-8 font-semibold transition-colors text-lg inline-block"
+              className="rounded-lg bg-azur-500 hover:bg-azur-400 text-white py-3 px-8 font-semibold transition-colors text-lg inline-block"
             >
               Return to Home
             </Link>

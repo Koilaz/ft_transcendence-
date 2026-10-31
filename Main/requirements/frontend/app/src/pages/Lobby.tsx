@@ -43,12 +43,12 @@ export function Lobby({
   onReady,
 }: LobbyProps) {
   return (
-    <main className="min-h-screen bg-abyss-950 text-abyss-200 p-6 flex flex-col items-center">
+    <main className="min-h-screen bg-abyss-950 text-abyss-300 p-6 flex flex-col items-center">
       <header className="w-full max-w-3xl flex items-center justify-between mb-6">
         <span className="text-xs uppercase tracking-[0.2em] text-abyss-500">
           AImpostor
         </span>
-        <Link to="/" className="text-xs text-abyss-400 hover:text-abyss-200">
+        <Link to="/" className="text-xs text-abyss-400 hover:text-abyss-300">
           ← Accueil
         </Link>
       </header>
@@ -66,7 +66,7 @@ export function Lobby({
             </span>
           </div>
 
-          <p className="text-abyss-200 mb-4">{loreAgentsDownIntro}</p>
+          <p className="text-abyss-300 mb-4">{loreAgentsDownIntro}</p>
 
           <ul className="space-y-3 mb-4">
             {agentsDown.map((agent) => (
@@ -121,7 +121,7 @@ export function Lobby({
               key={resolution.numero}
               className="border-l-2 border-abyss-600 pl-4"
             >
-              <span className="text-abyss-200 font-bold">
+              <span className="text-white font-bold">
                 {resolution.numero}
               </span>
               <span className="text-abyss-400"> — {resolution.texte}</span>
@@ -132,7 +132,7 @@ export function Lobby({
         <p className="mb-4 text-warning-200/80">{loreAvertissement}</p>
         <p className="mb-6 text-abyss-300">{loreConsequence}</p>
 
-        <p className="text-abyss-200 font-bold">{loreSignature}</p>
+        <p className="text-white font-bold">{loreSignature}</p>
       </article>
 
       {/* Les regles sont donnees avant la partie : le joueur doit savoir
@@ -157,7 +157,7 @@ export function Lobby({
           <p className="text-xs uppercase tracking-[0.2em] text-abyss-500">
             Membres présents
           </p>
-          <p className="text-3xl font-bold text-abyss-200 tabular-nums">
+          <p className="text-3xl font-bold text-white tabular-nums">
             {waiting}
           </p>
           <p className="text-xs text-abyss-500 tabular-nums">

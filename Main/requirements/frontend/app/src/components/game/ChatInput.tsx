@@ -16,7 +16,7 @@ export const ChatInput = forwardRef<HTMLInputElement, ChatInputProps>(
       <div className="flex gap-3 backdrop-blur-sm rounded-xl px-3 h-full">
         <input
           ref={ref}
-          className={`min-w-0 flex-1 bg-abyss-900/50 border rounded-lg px-4 py-1 text-abyss-200 text-base transition-colors focus:outline-none ${
+          className={`min-w-0 flex-1 bg-abyss-900/50 border rounded-lg px-4 py-1 text-abyss-300 text-base transition-colors focus:outline-none ${
             inputState.myTurn ? 'border-azur-500 ring-2 ring-azur-500' : 'border-abyss-700'
           }`}
           value={draft}
