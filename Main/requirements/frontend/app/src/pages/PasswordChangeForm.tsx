@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { changePassword, verifyCurrentPassword } from '../services/api';
-import { Input } from '../components/ui';
+import { Alert, Input } from '../components/ui';
 import {
   STEP_CHANGE_FIELDS,
   STEP_VERIFY_FIELDS,
@@ -19,7 +19,7 @@ import {
 //    (PATCH .../password) : le serveur reverifie l'ancien a l'ecriture.
 // Les champs sont vides apres succes, annulation ou retour a l'etape 1, et
 // rien n'est stocke : ni mot de passe, ni hash.
-export function PasswordChangeForm() {
+export function PasswordChangeForm({ email }: { email: string }) {
   const navigate = useNavigate();
 
   const [step, setStep] = useState<1 | 2>(1);
@@ -148,7 +148,7 @@ export function PasswordChangeForm() {
 
   return (
     <form
-      className="border-t border-stone-700 pt-8"
+      className="border-t border-abyss-700 pt-8"
       onSubmit={step === 1 ? handleVerifySubmit : handleChangeSubmit}
       noValidate
     >
@@ -156,16 +156,24 @@ export function PasswordChangeForm() {
         Change password
       </h2>
 
+      {/* Champ username masque : sans lui Chromium signale "Password forms
+          should have username fields" et les gestionnaires de mots de passe
+          ne peuvent pas rattacher le mot de passe au compte. */}
+      <input
+        type="text"
+        name="username"
+        value={email}
+        autoComplete="username"
+        hidden
+        readOnly
+      />
+
       {serverError && (
-        <p className="mb-6 rounded-lg border border-red-900 bg-red-950 px-4 py-3 text-sm text-red-300">
-          {serverError}
-        </p>
+        <Alert variant="error" className="mb-6">{serverError}</Alert>
       )}
 
       {successMessage && (
-        <p className="mb-6 rounded-lg border border-blue-900 bg-blue-950 px-4 py-3 text-sm text-blue-300">
-          {successMessage}
-        </p>
+        <Alert variant="success" className="mb-6">{successMessage}</Alert>
       )}
 
       {step === 1 ? (
@@ -189,7 +197,7 @@ export function PasswordChangeForm() {
           <button
             type="submit"
             disabled={isChecking}
-            className="mt-6 w-full rounded-lg bg-blue-500 px-4 py-3 font-semibold text-stone-900 transition hover:bg-blue-400 disabled:cursor-not-allowed disabled:opacity-50"
+            className="mt-6 w-full rounded-lg bg-azur-500 px-4 py-3 font-semibold text-abyss-900 transition hover:bg-azur-400 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isChecking ? 'Checking...' : 'Continue'}
           </button>
@@ -211,7 +219,7 @@ export function PasswordChangeForm() {
               autoComplete="new-password"
             />
 
-            <p className="mt-2 text-sm text-stone-500">
+            <p className="mt-2 text-sm text-abyss-500">
               8 to 72 characters.
             </p>
           </div>
@@ -235,7 +243,7 @@ export function PasswordChangeForm() {
           <button
             type="submit"
             disabled={isSaving}
-            className="mt-6 w-full rounded-lg bg-blue-500 px-4 py-3 font-semibold text-stone-900 transition hover:bg-blue-400 disabled:cursor-not-allowed disabled:opacity-50"
+            className="mt-6 w-full rounded-lg bg-azur-500 px-4 py-3 font-semibold text-abyss-900 transition hover:bg-azur-400 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isSaving ? 'Saving...' : 'Save new password'}
           </button>
@@ -243,7 +251,7 @@ export function PasswordChangeForm() {
           <button
             type="button"
             onClick={handleCancel}
-            className="mt-2 w-full rounded-lg border border-stone-700 px-4 py-3 font-semibold text-stone-300 transition hover:bg-stone-800"
+            className="mt-2 w-full rounded-lg border border-abyss-700 px-4 py-3 font-semibold text-abyss-300 transition hover:bg-abyss-800"
           >
             Cancel
           </button>

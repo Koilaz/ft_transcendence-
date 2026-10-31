@@ -80,12 +80,12 @@ export default function Register() {
   }
 
   return (
-    <main className="min-h-screen bg-stone-950 px-4 text-white">
+    <main className="min-h-screen bg-abyss-950 px-4 text-white">
       <div className="mx-auto flex min-h-screen max-w-md items-center">
         <Card className="w-full">
           <Title level={1} className="mb-2">Create account</Title>
 
-          <p className="mb-8 text-stone-400">
+          <p className="mb-8 text-abyss-400">
             Join AImpostor and create your profile.
           </p>
 
@@ -110,6 +110,7 @@ export default function Register() {
             <Input
               id="email"
               type="email"
+              spellCheck={false}
               label="Email"
               value={values.email}
               onChange={(event) => setValue('email', event.target.value)}
@@ -154,7 +155,7 @@ export default function Register() {
             </Button>
           </form>
 
-          <p className="mt-6 text-center text-sm text-stone-400">
+          <p className="mt-6 text-center text-sm text-abyss-400">
             Already registered?{' '}
             <AppLink to="/login">Log in</AppLink>
             {' | '}

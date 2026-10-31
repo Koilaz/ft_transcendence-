@@ -158,7 +158,7 @@ export default function Profile() {
 
   if (isLoading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-stone-950 text-white">
+      <main className="flex min-h-screen items-center justify-center bg-abyss-950 text-white">
         <Spinner />
       </main>
     );
@@ -166,12 +166,12 @@ export default function Profile() {
 
   if (!user) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-stone-950 px-4 text-white">
+      <main className="flex min-h-screen items-center justify-center bg-abyss-950 px-4 text-white">
         <Card className="w-full max-w-md" padding="md">
-          <Title level={1} className="mb-3 text-red-300">
+          <Title level={1} className="mb-3 text-danger-400">
             Unable to load profile
           </Title>
-          <p className="mb-6 text-red-300">
+          <p className="mb-6 text-danger-400">
             {error || 'User not found'}
           </p>
           <ButtonLink to="/login" variant="primary" size="lg">
@@ -183,12 +183,12 @@ export default function Profile() {
   }
 
   return (
-    <main className="min-h-screen bg-stone-950 px-4 py-12 text-white">
+    <main className="min-h-screen bg-abyss-950 px-4 py-12 text-white">
       <div className="mx-auto max-w-2xl">
         <Card>
           <div className="mb-8 flex items-start justify-between gap-4">
             <div>
-              <p className="mb-2 text-sm uppercase tracking-widest text-blue-400">
+              <p className="mb-2 text-sm uppercase tracking-widest text-azur-400">
                 Profile
               </p>
               <Title level={1} className="text-4xl">{user.username}</Title>
@@ -206,7 +206,7 @@ export default function Profile() {
                 to="/friends"
                 variant="outline"
                 size="sm"
-                className="border-blue-500 text-blue-300 hover:bg-blue-500/10"
+                className="border-azur-500 text-azur-400 hover:bg-azur-500/10"
               >
                 Friends
               </ButtonLink>
@@ -220,14 +220,14 @@ export default function Profile() {
             <StatBox label="User ID" value={String(user.id)} />
             <StatBox label="Email" value={user.email} />
 
-            <div className="rounded-xl border border-stone-700 bg-stone-950 p-4">
-              <p className="mb-3 text-sm text-stone-500">Avatar</p>
+            <div className="rounded-xl border border-abyss-700 bg-abyss-950 p-4">
+              <p className="mb-3 text-sm text-abyss-500">Avatar</p>
               <Avatar src={user.avatarUrl} alt={`Avatar de ${user.username}`} size="xl" />
             </div>
           </div>
 
           <form
-            className="mb-8 border-t border-stone-700 pt-8"
+            className="mb-8 border-t border-abyss-700 pt-8"
             onSubmit={handleAvatarSubmit}
           >
             <Title level={2} className="mb-5">Change avatar</Title>
@@ -240,10 +240,10 @@ export default function Profile() {
                   event.target.files?.[0] ?? null;
                 setAvatarFile(file);
               }}
-              className="block w-full rounded-lg border border-stone-700 bg-stone-950 px-4 py-3 text-sm text-stone-300"
+              className="block w-full rounded-lg border border-abyss-700 bg-abyss-950 px-4 py-3 text-sm text-abyss-300"
             />
 
-            <p className="mt-2 text-sm text-stone-500">
+            <p className="mt-2 text-sm text-abyss-500">
               JPEG, PNG or WebP — maximum 2 MB.
             </p>
 
@@ -253,14 +253,14 @@ export default function Profile() {
               size="lg"
               fullWidth
               disabled={!avatarFile || isUploadingAvatar}
-              className="mt-6 bg-blue-600 hover:bg-blue-500"
+              className="mt-6 bg-azur-600 hover:bg-azur-500"
             >
               {isUploadingAvatar ? 'Uploading...' : 'Upload avatar'}
             </Button>
           </form>
 
           <form
-            className="border-t border-stone-700 pt-8"
+            className="border-t border-abyss-700 pt-8"
             onSubmit={handleProfileSubmit}
           >
             <Title level={2} className="mb-5">Edit profile</Title>
@@ -289,7 +289,7 @@ export default function Profile() {
             </Button>
           </form>
 
-          <PasswordChangeForm />
+          <PasswordChangeForm email={user.email} />
         </Card>
       </div>
     </main>
