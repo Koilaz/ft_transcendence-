@@ -2,7 +2,7 @@ import { Link, type LinkProps } from 'react-router-dom';
 import type { LucideIcon } from 'lucide-react';
 import { Icon } from './Icon';
 
-type ButtonLinkVariant = 'primary' | 'secondary' | 'outline';
+type ButtonLinkVariant = 'primary' | 'secondary' | 'outline' | 'success';
 type ButtonLinkSize = 'sm' | 'md' | 'lg';
 
 type ButtonLinkProps = LinkProps & {
@@ -16,6 +16,7 @@ const variantClasses: Record<ButtonLinkVariant, string> = {
   primary: 'bg-azur-500 text-abyss-900 hover:bg-azur-400',
   secondary: 'bg-abyss-800 text-white hover:bg-abyss-700',
   outline: 'border border-abyss-600 bg-transparent text-white hover:bg-abyss-800/50',
+  success: 'bg-success-500 text-abyss-950 hover:bg-success-400',
 };
 
 const sizeClasses: Record<ButtonLinkSize, string> = {

@@ -1,4 +1,5 @@
 import type { RoundResult, FinalRank } from '../services/gameSocket';
+import { Button } from '../components/ui';
 
 // --- MODALE DE FIN DE ROUND ---
 
@@ -125,18 +126,22 @@ export function GameEndModal({ winnerId, ranking, history, onReplay }: GameEndMo
 
           {/* NOUVEAU : Les deux boutons d'action */}
           <div className="mt-4 flex flex-col gap-2">
-            <button 
-              onClick={onReplay} 
-              className="w-full rounded-lg bg-success-500 px-4 py-3 font-semibold text-abyss-950 transition hover:bg-success-400"
+            <Button
+              variant="success"
+              size="lg"
+              fullWidth
+              onClick={onReplay}
             >
               Rejouer
-            </button>
-            <button 
-              onClick={() => window.location.href = '/'} 
-              className="w-full rounded-lg border border-abyss-600 px-4 py-3 font-semibold text-abyss-300 transition hover:bg-abyss-800"
+            </Button>
+            <Button
+              variant="outline"
+              size="lg"
+              fullWidth
+              onClick={() => window.location.href = '/'}
             >
               Retour à l'accueil
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -186,19 +191,24 @@ export function RoomClosedModal({ code, onReplay }: { code: string; onReplay: ()
           {MOTIFS[code] ?? 'La séance a pris fin.'}
         </p>
 
-        <button
+        <Button
+          variant="success"
+          size="lg"
+          fullWidth
           onClick={onReplay}
-          className="w-full rounded-lg bg-success-500 px-6 py-3 font-semibold text-abyss-950 hover:bg-success-400 transition"
         >
           Rejouer
-        </button>
+        </Button>
 
-        <button
+        <Button
+          variant="outline"
+          size="lg"
+          fullWidth
+          className="mt-2"
           onClick={() => window.location.href = '/'}
-          className="mt-2 w-full rounded-lg border border-abyss-600 px-6 py-3 font-semibold text-abyss-300 hover:bg-abyss-800 transition"
         >
           Retour à l'accueil
-        </button>
+        </Button>
       </div>
     </div>
   );
