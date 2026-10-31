@@ -10,7 +10,10 @@ type AlertProps = {
 
 const variantClasses: Record<AlertVariant, string> = {
   error: 'border-danger-900 bg-danger-950 text-danger-400',
-  success: 'border-azur-900 bg-azur-950 text-azur-400',
+  // Le success est vert, comme partout ailleurs dans l'app (Rejouer, scores,
+  // statut en ligne) : les trois variantes suivent le meme motif sombre
+  // (bordure 900, fond 950, texte 400).
+  success: 'border-success-900 bg-success-950 text-success-400',
   info: 'border-abyss-700 bg-abyss-800 text-abyss-300',
 };
 

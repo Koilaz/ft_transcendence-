@@ -22,7 +22,7 @@ export function ScoreboardModal({ aiCharacter, results, countdown, debriefWait }
   const aiWon = roundWinner.isAI;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-abyss-950/80 backdrop-blur-sm">
       <div className="w-full max-w-2xl rounded-xl border border-abyss-700 bg-abyss-900 p-6 shadow-2xl">
         
         {/* Affichage dynamique du gagnant */}
@@ -88,7 +88,7 @@ type GameEndModalProps = {
 
 export function GameEndModal({ winnerId, ranking, history, onReplay }: GameEndModalProps) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 p-4 backdrop-blur-md">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-abyss-950/95 p-4 backdrop-blur-md">
       <div className="flex h-[85vh] w-full max-w-6xl gap-6 rounded-xl border border-abyss-700 bg-abyss-900 p-6 shadow-2xl">
         
         {/* COLONNE GAUCHE : SCOREBOARD */}
@@ -184,7 +184,7 @@ const MOTIFS: Record<string, string> = {
 
 export function RoomClosedModal({ code, onReplay }: { code: string; onReplay: () => void }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-abyss-950/90 backdrop-blur-md">
       <div className="w-full max-w-md rounded-xl border border-abyss-700 bg-abyss-900 p-8 text-center">
         <h2 className="text-2xl font-bold text-white mb-3">Séance levée</h2>
         <p className="text-abyss-400 mb-6">

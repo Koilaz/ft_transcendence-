@@ -49,7 +49,7 @@ export default function Home() {
   const isLoggedIn = !!localStorage.getItem('accessToken');
 
   return (
-    <main className="min-h-screen bg-black text-abyss-300 relative overflow-hidden">
+    <main className="min-h-screen bg-abyss-950 text-abyss-300 relative overflow-hidden">
       <MatrixRain />
       <div className="absolute inset-0 flex flex-col items-center justify-center p-6 md:p-12">
         <h1

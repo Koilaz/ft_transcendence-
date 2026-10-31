@@ -59,7 +59,7 @@ function DialogueBubble({ sender, text, align, isFirst }: DialogueBubbleProps) {
           </span>
         </div>
 
-        <div className={`text-[clamp(0.875rem,1.2vw,1.375rem)] text-white text-left leading-[1.5] backdrop-blur-sm bg-black/50 rounded-lg px-4 py-1 inline-block max-w-full break-words ${getCharacterFont(sender)}`}>
+        <div className={`text-[clamp(0.875rem,1.2vw,1.375rem)] text-white text-left leading-[1.5] backdrop-blur-sm bg-abyss-950/50 rounded-lg px-4 py-1 inline-block max-w-full break-words ${getCharacterFont(sender)}`}>
           {text}
         </div>
       </div>

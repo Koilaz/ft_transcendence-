@@ -82,6 +82,8 @@
   --color-success-400: oklch(76.5% 0.177 163.223);
   --color-success-500: oklch(69.6% 0.17 162.48);
   --color-success-700: oklch(50.8% 0.118 165.612);
+  --color-success-900: oklch(37.8% 0.077 168.94);
+  --color-success-950: oklch(26.2% 0.051 172.552);
   /* warning (ex-amber) */
   --color-warning-50: oklch(98.7% 0.022 95.277);
   --color-warning-200: oklch(92.4% 0.12 95.746);

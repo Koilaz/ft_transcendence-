@@ -85,7 +85,7 @@ export default function Game() {
   }
 
   return (
-    <div className="fixed inset-0 bg-black flex flex-col w-full overflow-hidden">
+    <div className="fixed inset-0 bg-abyss-950 flex flex-col w-full overflow-hidden">
       {/* MatrixRain global pour toute la page de jeu */}
       <MatrixRain className="absolute inset-0 -z-10" />
       

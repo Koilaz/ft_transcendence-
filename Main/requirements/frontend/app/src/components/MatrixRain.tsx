@@ -38,7 +38,7 @@ export function MatrixRain({ className = "" }: MatrixRainProps) {
 
     function draw() {
       // Fond semi-transparent pour l'effet de traînées
-      ctx!.fillStyle = 'rgba(0, 0, 0, 0.05)';
+      ctx!.fillStyle = 'rgba(12, 10, 9, 0.05)';
       ctx!.fillRect(0, 0, canvas!.width, canvas!.height);
 
       // Couleur des caractères (vert Matrix)
