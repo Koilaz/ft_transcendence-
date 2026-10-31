@@ -98,7 +98,7 @@ export function VoteArea({
                 style={{ maxWidth: `calc(100% / ${turnOrder.length})` }}
               >
                 <div
-                  className="rounded-lg px-3 py-1 bg-stone-900/80 text-white font-bold border-2 border-blue-500"
+                  className="rounded-lg px-3 py-1 bg-abyss-900/80 text-white font-bold border-2 border-azur-500"
                 >
                   <span className="font-bangers text-[clamp(0.875rem,1.5vw,1.125rem)]">
                     {character}
@@ -159,7 +159,7 @@ export function VoteArea({
                       return (
                         <motion.div
                           key={i}
-                          className="absolute text-red-500 text-[clamp(0.75rem,1.2vw,1rem)] font-bold pointer-events-none font-bangers"
+                          className="absolute text-danger-500 text-[clamp(0.75rem,1.2vw,1rem)] font-bold pointer-events-none font-bangers"
                           style={{ left: '50%', top: '50%', transform: 'translate(-50%, -50%)', WebkitTextStroke: '1px rgba(0,0,0,0.5)' }}
                           initial={{ x: startX, y: startY, opacity: 0, scale: 1.2 }}
                           animate={{ x: endX, y: endY, opacity: [0, 1, 1, 0], scale: [1.2, 3.8, 3.8, 1.2] }}

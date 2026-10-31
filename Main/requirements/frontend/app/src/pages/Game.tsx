@@ -90,7 +90,7 @@ export default function Game() {
       <MatrixRain className="absolute inset-0 -z-10" />
       
       {/* PARTIE 1 - Header (8%) */}
-      <div className="h-[8%] flex-shrink-0 bg-stone-950/50 backdrop-blur-sm">
+      <div className="h-[8%] flex-shrink-0 bg-abyss-950/50 backdrop-blur-sm">
         <GameHeader
           roomNumber={roomNumber}
           roundIndicator={roundIndicator}
@@ -104,12 +104,12 @@ export default function Game() {
       </div>
 
       {/* PARTIE 2 - Dialogue (62%) */}
-      <div className="h-[62%] relative min-h-0 bg-stone-950/30">
+      <div className="h-[62%] relative min-h-0 bg-abyss-950/30">
         <DialogueArea messages={messages} myCharacter={myCharacter} />
       </div>
 
       {/* PARTIE 3 - Input de chat (6%) */}
-      <div className="h-[6%] flex-shrink-0 bg-stone-950/50">
+      <div className="h-[6%] flex-shrink-0 bg-abyss-950/50">
         {inputState.enabled && (
           <motion.div
             className="w-[95%] max-w-[90vw] mx-auto h-full px-3 py-1"
@@ -129,7 +129,7 @@ export default function Game() {
       </div>
 
       {/* PARTIE 4 - Vote (24%) */}
-      <div className="h-[24%] flex-shrink-0 bg-stone-950/50">
+      <div className="h-[24%] flex-shrink-0 bg-abyss-950/50">
         <VoteArea
           turnOrder={turnOrder}
           currentTurnCharacter={currentTurnCharacter}

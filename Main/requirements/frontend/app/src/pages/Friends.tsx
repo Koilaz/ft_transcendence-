@@ -75,7 +75,7 @@ function PresenceDot({ isOnline }: { isOnline: boolean }) {
   return (
     <span
       className={`h-2 w-2 rounded-full ${
-        isOnline ? 'bg-blue-400 shadow-[0_0_8px_#3b82f6]' : 'bg-stone-600'
+        isOnline ? 'bg-azur-400 shadow-[0_0_8px_#3b82f6]' : 'bg-abyss-600'
       }`}
     />
   );
@@ -98,7 +98,7 @@ function RequestCard({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
       transition={{ duration: 0.3 }}
-      className="flex items-center justify-between gap-4 rounded-xl border border-stone-800 bg-stone-950 p-4"
+      className="flex items-center justify-between gap-4 rounded-xl border border-abyss-800 bg-abyss-950 p-4"
     >
       <div className="flex items-center gap-3">
         <img
@@ -108,7 +108,7 @@ function RequestCard({
         />
         <div>
           <p className="font-medium text-white">{user.username}</p>
-          <p className="text-xs text-stone-500">Wants to be your friend</p>
+          <p className="text-xs text-abyss-500">Wants to be your friend</p>
         </div>
       </div>
       <motion.button
@@ -117,7 +117,7 @@ function RequestCard({
         disabled={acceptLoading}
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
-        className="rounded-lg bg-blue-500 px-4 py-2 text-sm font-semibold text-stone-900 transition hover:bg-blue-400 disabled:cursor-not-allowed disabled:opacity-50"
+        className="rounded-lg bg-azur-500 px-4 py-2 text-sm font-semibold text-abyss-900 transition hover:bg-azur-400 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {acceptLoading ? 'Loading...' : 'Accept'}
       </motion.button>
@@ -141,7 +141,7 @@ function FriendCard({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
       transition={{ duration: 0.3 }}
-      className="flex items-center justify-between gap-4 rounded-xl border border-stone-800 bg-stone-950 p-4"
+      className="flex items-center justify-between gap-4 rounded-xl border border-abyss-800 bg-abyss-950 p-4"
     >
       <div className="flex items-center gap-3">
         <img
@@ -152,7 +152,7 @@ function FriendCard({
         <div>
           <p className="font-medium text-white">{user.username}</p>
           <p className={`flex items-center gap-2 text-xs ${
-            user.isOnline ? 'text-blue-300' : 'text-stone-500'
+            user.isOnline ? 'text-azur-400' : 'text-abyss-500'
           }`}>
             <PresenceDot isOnline={user.isOnline} />
             {getPresenceText(user)}
@@ -165,7 +165,7 @@ function FriendCard({
         disabled={removeLoading}
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
-        className="rounded-lg border border-red-500 px-4 py-2 text-sm font-medium text-red-300 transition hover:bg-red-500/10 disabled:cursor-not-allowed disabled:opacity-50"
+        className="rounded-lg border border-danger-500 px-4 py-2 text-sm font-medium text-danger-400 transition hover:bg-danger-500/10 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {removeLoading ? 'Loading...' : 'Remove'}
       </motion.button>
@@ -189,7 +189,7 @@ function UserCard({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
       transition={{ duration: 0.3 }}
-      className="flex items-center justify-between gap-4 rounded-xl border border-stone-800 bg-stone-950 p-4"
+      className="flex items-center justify-between gap-4 rounded-xl border border-abyss-800 bg-abyss-950 p-4"
     >
       <div className="flex items-center gap-3">
         <img
@@ -199,7 +199,7 @@ function UserCard({
         />
         <div>
           <p className="font-medium text-white">{user.username}</p>
-          <p className="text-xs text-stone-500">User</p>
+          <p className="text-xs text-abyss-500">User</p>
         </div>
       </div>
       <motion.button
@@ -208,7 +208,7 @@ function UserCard({
         disabled={addLoading}
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
-        className="rounded-lg bg-blue-500 px-4 py-2 text-sm font-semibold text-stone-900 transition hover:bg-blue-400 disabled:cursor-not-allowed disabled:opacity-50"
+        className="rounded-lg bg-azur-500 px-4 py-2 text-sm font-semibold text-abyss-900 transition hover:bg-azur-400 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {addLoading ? 'Loading...' : 'Add friend'}
       </motion.button>
@@ -233,10 +233,10 @@ function Section({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="mb-10 rounded-2xl border border-stone-800 bg-stone-900 p-6 shadow-xl"
+      className="mb-10 rounded-2xl border border-abyss-800 bg-abyss-900 p-6 shadow-xl"
     >
       <h2 className="mb-5 text-2xl font-semibold text-white">{title}</h2>
-      {hasContent ? children : <p className="text-sm text-stone-400">{emptyMessage}</p>}
+      {hasContent ? children : <p className="text-sm text-abyss-400">{emptyMessage}</p>}
     </motion.section>
   );
 }
@@ -245,14 +245,14 @@ function Section({
 function Notification({ message, type }: { message: string; type: 'error' | 'success' }) {
   const colors = {
     error: {
-      border: 'border-red-900',
-      bg: 'bg-red-950',
-      text: 'text-red-300',
+      border: 'border-danger-900',
+      bg: 'bg-danger-950',
+      text: 'text-danger-400',
     },
     success: {
-      border: 'border-blue-900',
-      bg: 'bg-blue-950',
-      text: 'text-blue-300',
+      border: 'border-azur-900',
+      bg: 'bg-azur-950',
+      text: 'text-azur-400',
     },
   };
 
@@ -482,11 +482,11 @@ export default function Friends() {
 
   if (loading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-stone-950 text-stone-200">
+      <main className="flex min-h-screen items-center justify-center bg-abyss-950 text-abyss-200">
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="text-stone-400"
+          className="text-abyss-400"
         >
           Loading friends...
         </motion.p>
@@ -495,7 +495,7 @@ export default function Friends() {
   }
 
   return (
-    <main className="min-h-screen bg-stone-950 px-4 py-12 text-stone-200">
+    <main className="min-h-screen bg-abyss-950 px-4 py-12 text-abyss-200">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -510,7 +510,7 @@ export default function Friends() {
           className="mb-8 flex items-center justify-between gap-4"
         >
           <div>
-            <p className="mb-2 text-sm uppercase tracking-widest text-blue-400">
+            <p className="mb-2 text-sm uppercase tracking-widest text-azur-400">
               Social
             </p>
             <h1 className="text-4xl font-bold text-white">Friends</h1>
@@ -518,7 +518,7 @@ export default function Friends() {
 
           <Link
             to="/profile"
-            className="rounded-lg border border-stone-700 px-4 py-2 text-sm font-medium text-stone-300 transition hover:border-blue-500 hover:text-blue-300"
+            className="rounded-lg border border-abyss-700 px-4 py-2 text-sm font-medium text-abyss-300 transition hover:border-azur-500 hover:text-azur-400"
           >
             Back to profile
           </Link>

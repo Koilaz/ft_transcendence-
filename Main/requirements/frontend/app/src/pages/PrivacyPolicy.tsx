@@ -7,19 +7,19 @@ export default function PrivacyPolicy() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-slate-950 p-8 md:p-16">
+    <div className="min-h-screen bg-abyss-950 p-8 md:p-16">
       <div className="max-w-4xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <Link
             to="/"
-            className="rounded-lg bg-blue-500 hover:bg-blue-600 text-white py-2 px-6 font-semibold transition-colors text-sm"
+            className="rounded-lg bg-azur-500 hover:bg-azur-600 text-white py-2 px-6 font-semibold transition-colors text-sm"
           >
             ← Back to Home
           </Link>
         </div>
         <h1 className="text-4xl font-bold text-white mb-8">Privacy Policy</h1>
         
-        <div className="space-y-6 text-slate-300">
+        <div className="space-y-6 text-abyss-300">
           <section>
             <h2 className="text-2xl font-semibold text-white mb-4">Introduction</h2>
             <p>
@@ -98,7 +98,7 @@ export default function PrivacyPolicy() {
           <div className="mt-12">
             <Link
               to="/"
-              className="rounded-lg bg-blue-500 hover:bg-blue-600 text-white py-3 px-8 font-semibold transition-colors text-lg inline-block"
+              className="rounded-lg bg-azur-500 hover:bg-azur-600 text-white py-3 px-8 font-semibold transition-colors text-lg inline-block"
             >
               Return to Home
             </Link>

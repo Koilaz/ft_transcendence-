@@ -24,7 +24,7 @@ export function Modal({ isOpen, onClose, children, className = '' }: ModalProps)
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className={`relative bg-stone-900 border border-stone-700 rounded-xl p-8 shadow-2xl shadow-stone-900/50 ${className}`}
+            className={`relative bg-abyss-900 border border-abyss-700 rounded-xl p-8 shadow-2xl shadow-abyss-900/50 ${className}`}
             onClick={(e) => e.stopPropagation()}
           >
             {children}

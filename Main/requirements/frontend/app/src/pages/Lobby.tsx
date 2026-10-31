@@ -43,12 +43,12 @@ export function Lobby({
   onReady,
 }: LobbyProps) {
   return (
-    <main className="min-h-screen bg-slate-950 text-slate-200 p-6 flex flex-col items-center">
+    <main className="min-h-screen bg-abyss-950 text-abyss-200 p-6 flex flex-col items-center">
       <header className="w-full max-w-3xl flex items-center justify-between mb-6">
-        <span className="text-xs uppercase tracking-[0.2em] text-slate-500">
+        <span className="text-xs uppercase tracking-[0.2em] text-abyss-500">
           AImpostor
         </span>
-        <Link to="/" className="text-xs text-slate-400 hover:text-slate-200">
+        <Link to="/" className="text-xs text-abyss-400 hover:text-abyss-200">
           ← Accueil
         </Link>
       </header>
@@ -56,31 +56,31 @@ export function Lobby({
       {/* Avant la convocation et non apres : sans imposteur, la suite du
           document promet une partie qui n'aura pas lieu. */}
       {agentsDown.length > 0 && (
-        <section className="w-full max-w-3xl mb-6 border border-red-900/60 bg-red-950/20 p-6 font-mono text-[13px] leading-relaxed">
-          <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 mb-4 pb-3 border-b border-red-900/60">
-            <span className="text-2xl font-bold tracking-[0.15em] text-red-400">
+        <section className="w-full max-w-3xl mb-6 border border-danger-900/60 bg-danger-950/20 p-6 font-mono text-[13px] leading-relaxed">
+          <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 mb-4 pb-3 border-b border-danger-900/60">
+            <span className="text-2xl font-bold tracking-[0.15em] text-danger-400">
               {loreAgentsDownCode}
             </span>
-            <span className="text-xs uppercase tracking-[0.2em] text-red-400/80">
+            <span className="text-xs uppercase tracking-[0.2em] text-danger-400/80">
               {loreAgentsDownTitre}
             </span>
           </div>
 
-          <p className="text-slate-200 mb-4">{loreAgentsDownIntro}</p>
+          <p className="text-abyss-200 mb-4">{loreAgentsDownIntro}</p>
 
           <ul className="space-y-3 mb-4">
             {agentsDown.map((agent) => (
               <li
                 key={agent.name}
-                className="border-l-2 border-red-900/60 pl-4"
+                className="border-l-2 border-danger-900/60 pl-4"
               >
-                <p className="text-slate-300">
+                <p className="text-abyss-300">
                   {loreAgentsDownMotifs[agent.reason] ?? loreAgentsDownDefaut}
                 </p>
 
                 {/* Le motif brut, pour celui qui doit le reparer : il n'a rien
                     a faire dans la fiction, mais tout a faire a l'ecran. */}
-                <p className="text-[11px] text-slate-500 mt-1 break-words">
+                <p className="text-[11px] text-abyss-500 mt-1 break-words">
                   {agent.name} — {agent.detail}
                 </p>
               </li>
@@ -90,16 +90,16 @@ export function Lobby({
       )}
 
       {/* La note de service : le joueur lit ce que son personnage a recu. */}
-      <article className="w-full max-w-3xl border border-amber-900/40 bg-amber-50/[0.03] p-8 font-mono text-[13px] leading-relaxed">
-        <div className="border-b border-amber-900/40 pb-4 mb-6">
-          <h1 className="text-amber-200/90 uppercase tracking-wider text-sm font-bold">
+      <article className="w-full max-w-3xl border border-warning-900/40 bg-warning-50/[0.03] p-8 font-mono text-[13px] leading-relaxed">
+        <div className="border-b border-warning-900/40 pb-4 mb-6">
+          <h1 className="text-warning-200/90 uppercase tracking-wider text-sm font-bold">
             {loreHeader.organisation}
           </h1>
-          <p className="text-slate-400">{loreHeader.cabinet}</p>
+          <p className="text-abyss-400">{loreHeader.cabinet}</p>
 
-          <dl className="mt-4 grid grid-cols-[7rem_1fr] gap-x-3 gap-y-1 text-xs text-slate-400">
-            <dt className="text-red-400/80">Classification</dt>
-            <dd className="text-red-400/80">{loreHeader.classification}</dd>
+          <dl className="mt-4 grid grid-cols-[7rem_1fr] gap-x-3 gap-y-1 text-xs text-abyss-400">
+            <dt className="text-danger-400/80">Classification</dt>
+            <dd className="text-danger-400/80">{loreHeader.classification}</dd>
             <dt>Date</dt>
             <dd>{loreHeader.date}</dd>
             <dt>Lieu</dt>
@@ -107,10 +107,10 @@ export function Lobby({
           </dl>
         </div>
 
-        <p className="mb-4 text-slate-300">Membres de l'état-major,</p>
+        <p className="mb-4 text-abyss-300">Membres de l'état-major,</p>
 
         {loreParagraphes.map((texte) => (
-          <p key={texte.slice(0, 24)} className="mb-4 text-slate-300">
+          <p key={texte.slice(0, 24)} className="mb-4 text-abyss-300">
             {texte}
           </p>
         ))}
@@ -119,29 +119,29 @@ export function Lobby({
           {loreResolutions.map((resolution) => (
             <li
               key={resolution.numero}
-              className="border-l-2 border-slate-600 pl-4"
+              className="border-l-2 border-abyss-600 pl-4"
             >
-              <span className="text-slate-100 font-bold">
+              <span className="text-abyss-200 font-bold">
                 {resolution.numero}
               </span>
-              <span className="text-slate-400"> — {resolution.texte}</span>
+              <span className="text-abyss-400"> — {resolution.texte}</span>
             </li>
           ))}
         </ul>
 
-        <p className="mb-4 text-amber-200/80">{loreAvertissement}</p>
-        <p className="mb-6 text-slate-300">{loreConsequence}</p>
+        <p className="mb-4 text-warning-200/80">{loreAvertissement}</p>
+        <p className="mb-6 text-abyss-300">{loreConsequence}</p>
 
-        <p className="text-slate-100 font-bold">{loreSignature}</p>
+        <p className="text-abyss-200 font-bold">{loreSignature}</p>
       </article>
 
       {/* Les regles sont donnees avant la partie : le joueur doit savoir
           comment designer l'imposteur avant de commencer. */}
-      <section className="w-full max-w-3xl mt-6 border border-slate-800 bg-slate-900/60 p-5">
-        <h2 className="text-xs uppercase tracking-[0.2em] text-slate-500 mb-3">
+      <section className="w-full max-w-3xl mt-6 border border-abyss-800 bg-abyss-900/60 p-5">
+        <h2 className="text-xs uppercase tracking-[0.2em] text-abyss-500 mb-3">
           Règles du jeu
         </h2>
-        <ul className="space-y-2 text-sm text-slate-300">
+        <ul className="space-y-2 text-sm text-abyss-300">
           <li>• Discutez entre vous pour découvrir qui est l'imposteur.</li>
           <li>• Désignez l'imposteur en cliquant sur son personnage en bas de l'écran.</li>
           <li>• Attention au temps imparti : sans désignation, la partie est perdue.</li>
@@ -150,17 +150,17 @@ export function Lobby({
 
       {/* Le decompte avant lancement sert d'autodestruction au message. */}
       <section
-        className="w-full max-w-3xl mt-6 border border-slate-800 bg-slate-900/60 p-5
+        className="w-full max-w-3xl mt-6 border border-abyss-800 bg-abyss-900/60 p-5
                    flex flex-wrap items-center justify-between gap-4"
       >
         <div>
-          <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
+          <p className="text-xs uppercase tracking-[0.2em] text-abyss-500">
             Membres présents
           </p>
-          <p className="text-3xl font-bold text-slate-100 tabular-nums">
+          <p className="text-3xl font-bold text-abyss-200 tabular-nums">
             {waiting}
           </p>
-          <p className="text-xs text-slate-500 tabular-nums">
+          <p className="text-xs text-abyss-500 tabular-nums">
             {readyPlayers}/{waiting} prêts — {minPlayers} requis
           </p>
         </div>
@@ -169,13 +169,13 @@ export function Lobby({
             game/queue.js : ready). Le bouton n'apparait qu'au seuil atteint. */}
         <div className="flex flex-col items-center gap-2">
           {isReady ? (
-            <p className="text-sm text-slate-400">
+            <p className="text-sm text-abyss-400">
               Présence confirmée — en attente des autres membres…
             </p>
           ) : (
             <button
               type="button"
-              className="px-8 py-3 rounded-lg bg-amber-600 hover:bg-amber-500
+              className="px-8 py-3 rounded-lg bg-warning-600 hover:bg-warning-500
                          disabled:opacity-40 disabled:cursor-not-allowed
                          text-white text-sm font-bold uppercase tracking-[0.15em]
                          transition-colors"
@@ -186,10 +186,10 @@ export function Lobby({
             </button>
           )}
           {!connected && (
-            <p className="text-xs text-red-400">Liaison interrompue…</p>
+            <p className="text-xs text-danger-400">Liaison interrompue…</p>
           )}
           {agentsDown.length > 0 && (
-            <p className="text-xs text-red-400">
+            <p className="text-xs text-danger-400">
               Agent hors service — la partie ne peut pas démarrer
             </p>
           )}
@@ -197,17 +197,17 @@ export function Lobby({
 
         <div className="text-right">
           {countdown === null ? (
-            <p className="text-sm text-slate-400">
+            <p className="text-sm text-abyss-400">
               {connected
                 ? "En attente d'autres membres…"
                 : 'Liaison interrompue…'}
             </p>
           ) : (
             <>
-              <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
+              <p className="text-xs uppercase tracking-[0.2em] text-abyss-500">
                 {loreAutodestruction}
               </p>
-              <p className="text-3xl font-bold text-red-400 tabular-nums">
+              <p className="text-3xl font-bold text-danger-400 tabular-nums">
                 {countdown}
               </p>
             </>

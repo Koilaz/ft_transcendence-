@@ -212,9 +212,9 @@ export function useGame() {
 
   const bannerStyle = (() => {
     switch (banner.variant) {
-      case 'myturn': return 'bg-green-500/10 border-green-500 text-green-400 font-bold';
-      case 'voting': return 'bg-amber-500/10 border-amber-500 text-amber-400 font-semibold';
-      default: return 'text-stone-500';
+      case 'myturn': return 'bg-success-500/10 border-success-500 text-success-400 font-bold';
+      case 'voting': return 'bg-warning-500/10 border-warning-500 text-warning-400 font-semibold';
+      default: return 'text-abyss-500';
     }
   })();
 

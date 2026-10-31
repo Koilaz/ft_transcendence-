@@ -9,9 +9,9 @@ type AlertProps = {
 };
 
 const variantClasses: Record<AlertVariant, string> = {
-  error: 'border-red-900 bg-red-950 text-red-300',
-  success: 'border-blue-900 bg-blue-950 text-blue-300',
-  info: 'border-stone-700 bg-stone-800 text-stone-300',
+  error: 'border-danger-900 bg-danger-950 text-danger-400',
+  success: 'border-azur-900 bg-azur-950 text-azur-400',
+  info: 'border-abyss-700 bg-abyss-800 text-abyss-300',
 };
 
 export function Alert({ variant = 'info', children, className = '' }: AlertProps) {

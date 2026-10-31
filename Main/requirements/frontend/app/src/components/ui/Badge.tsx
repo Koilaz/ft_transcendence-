@@ -9,10 +9,10 @@ type BadgeProps = {
 };
 
 const colorClasses: Record<BadgeColor, string> = {
-  red: 'bg-red-500 text-white',
-  blue: 'bg-blue-500 text-white',
-  green: 'bg-emerald-500 text-white',
-  stone: 'bg-stone-700 text-white',
+  red: 'bg-danger-500 text-white',
+  blue: 'bg-azur-500 text-white',
+  green: 'bg-success-500 text-white',
+  stone: 'bg-abyss-700 text-white',
 };
 
 export function Badge({ color = 'stone', children, className = '' }: BadgeProps) {

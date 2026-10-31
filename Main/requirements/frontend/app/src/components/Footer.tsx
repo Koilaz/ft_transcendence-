@@ -12,13 +12,13 @@ export default function Footer() {
         <nav className="flex gap-6">
           <Link
             to="/terms-of-service"
-            className="text-sm hover:text-gray-300 transition-colors"
+            className="text-sm hover:text-abyss-300 transition-colors"
           >
             Terms of Service
           </Link>
           <Link
             to="/privacy-policy"
-            className="text-sm hover:text-gray-300 transition-colors"
+            className="text-sm hover:text-abyss-300 transition-colors"
           >
             Privacy Policy
           </Link>

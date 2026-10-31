@@ -9,7 +9,7 @@
 
   /* Chromium/WebKit imposent leur propre fond et leur propre couleur de texte
      internes sur input:-webkit-autofill (suggestions d'email / mot de passe),
-     qui ecrasent le bg-stone-950 du champ. La transition quasi infinie gele le
+     qui ecrasent le bg-abyss-950 du champ. La transition quasi infinie gele le
      fond interne de Chromium (son changement de fond est anime sur 3600 s, donc
      invisible), -webkit-text-fill-color garde le texte blanc. Pas de box-shadow
      inset geant : il provoque un artefact de paint en etat autofill+focus (le
@@ -69,6 +69,9 @@
   --color-azur-500: oklch(62.3% 0.214 259.815);
   --color-azur-600: oklch(54.6% 0.245 262.881);
   --color-azur-700: oklch(48.8% 0.243 264.376);
+  --color-azur-800: oklch(42.4% 0.199 265.638);
+  --color-azur-900: oklch(37.9% 0.146 265.522);
+  --color-azur-950: oklch(28.2% 0.091 267.935);
   /* danger (ex-red) */
   --color-danger-400: oklch(70.4% 0.191 22.216);
   --color-danger-500: oklch(63.7% 0.237 25.331);
@@ -80,6 +83,7 @@
   --color-success-500: oklch(69.6% 0.17 162.48);
   --color-success-700: oklch(50.8% 0.118 165.612);
   /* warning (ex-amber) */
+  --color-warning-50: oklch(98.7% 0.022 95.277);
   --color-warning-200: oklch(92.4% 0.12 95.746);
   --color-warning-400: oklch(82.8% 0.189 84.429);
   --color-warning-500: oklch(76.9% 0.188 70.08);

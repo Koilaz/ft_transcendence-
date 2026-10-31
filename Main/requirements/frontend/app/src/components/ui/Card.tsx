@@ -14,7 +14,7 @@ const paddingClasses = {
 export function Card({ children, className = '', padding = 'lg' }: CardProps) {
   return (
     <section
-      className={`rounded-2xl border border-stone-700 bg-stone-900 shadow-xl ${paddingClasses[padding]} ${className}`}
+      className={`rounded-2xl border border-abyss-700 bg-abyss-900 shadow-xl ${paddingClasses[padding]} ${className}`}
     >
       {children}
     </section>

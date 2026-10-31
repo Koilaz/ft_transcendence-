@@ -15,8 +15,8 @@ export type CharacterAnimation = {
 export const CHARACTERS = {
   'General Ketchup': {
     bodyImage: '/game/bodies/bodyGeneralKetchup.webp',
-    color: 'bg-red-400',
-    border: 'border-red-700',
+    color: 'bg-ketchup-400',
+    border: 'border-ketchup-700',
     font: 'font-ketchup',
     animation: {
       images: [
@@ -37,8 +37,8 @@ export const CHARACTERS = {
   },
   'Colonel Moutarde': {
     bodyImage: '/game/bodies/bodyColonelMoutarde.webp',
-    color: 'bg-amber-300',
-    border: 'border-amber-600',
+    color: 'bg-moutarde-300',
+    border: 'border-moutarde-600',
     font: 'font-moutarde',
     animation: {
       images: [
@@ -59,8 +59,8 @@ export const CHARACTERS = {
   },
   'Major Wasabi': {
     bodyImage: '/game/bodies/bodyMajorWasabi.webp',
-    color: 'bg-emerald-400',
-    border: 'border-emerald-700',
+    color: 'bg-wasabi-400',
+    border: 'border-wasabi-700',
     font: 'font-wasabi',
     animation: {
       images: [
@@ -82,8 +82,8 @@ export const CHARACTERS = {
   },
   'Marechal Cocktail': {
     bodyImage: '/game/bodies/bodyMarechalCocktail.webp',
-    color: 'bg-blue-400',
-    border: 'border-blue-700',
+    color: 'bg-cocktail-400',
+    border: 'border-cocktail-700',
     font: 'font-cocktail',
     animation: {
       images: [
@@ -101,8 +101,8 @@ export const CHARACTERS = {
   },
   'Lieutenant Mayo': {
     bodyImage: '/game/bodies/bodyLieutenantMayo.webp',
-    color: 'bg-stone-300',
-    border: 'border-stone-500',
+    color: 'bg-abyss-300',
+    border: 'border-abyss-500',
     font: 'font-mayo',
     animation: {
       images: [
@@ -127,8 +127,8 @@ export const CHARACTERS = {
   },
   'Caporal Poivre': {
     bodyImage: '/game/bodies/bodyCaporalPoivre.webp',
-    color: 'bg-violet-400',
-    border: 'border-violet-700',
+    color: 'bg-poivre-400',
+    border: 'border-poivre-700',
     font: 'font-poivre',
     animation: {
       images: [
@@ -162,11 +162,11 @@ export function getBodyImagePath(character: string): string {
 }
 
 export function getCharacterColor(character: string): string {
-  return getCharacterInfo(character)?.color ?? 'bg-stone-800/50';
+  return getCharacterInfo(character)?.color ?? 'bg-abyss-800/50';
 }
 
 export function getCharacterBorder(character: string): string {
-  return getCharacterInfo(character)?.border ?? 'border-stone-600';
+  return getCharacterInfo(character)?.border ?? 'border-abyss-600';
 }
 
 export function getCharacterFont(character: string): string {

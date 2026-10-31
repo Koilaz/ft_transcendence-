@@ -48,7 +48,7 @@ export default function Home() {
   const isLoggedIn = !!localStorage.getItem('accessToken');
 
   return (
-    <main className="min-h-screen bg-black text-stone-300 relative overflow-hidden">
+    <main className="min-h-screen bg-black text-abyss-300 relative overflow-hidden">
       <MatrixRain />
       <div className="absolute inset-0 flex flex-col items-center justify-center p-6 md:p-12">
         <h1
@@ -57,8 +57,8 @@ export default function Home() {
         >
           AImpostor
         </h1>
-        <p className="mt-2 text-stone-400 text-lg">
-          Appuie sur <span className="text-blue-400 font-semibold">Espace</span> pour jouer
+        <p className="mt-2 text-abyss-400 text-lg">
+          Appuie sur <span className="text-azur-400 font-semibold">Espace</span> pour jouer
         </p>
       </div>
 
@@ -81,7 +81,7 @@ export default function Home() {
                 setAccessToken(null);
                 navigate('/');
               }}
-              className="text-red-400"
+              className="text-danger-400"
             >
               Logout
             </Button>
@@ -101,7 +101,7 @@ export default function Home() {
       <Modal isOpen={showMenu} onClose={() => setShowMenu(false)} className="max-w-md w-full">
         <button
           onClick={() => setShowMenu(false)}
-          className="absolute top-2 right-4 text-stone-400 hover:text-white text-2xl transition bg-stone-800/50 rounded-full w-8 h-8 flex items-center justify-center"
+          className="absolute top-2 right-4 text-abyss-400 hover:text-white text-2xl transition bg-abyss-800/50 rounded-full w-8 h-8 flex items-center justify-center"
           aria-label="Close menu"
         >
           ×
@@ -138,9 +138,9 @@ export default function Home() {
                 maxLength={20}
                 required
                 autoComplete="off"
-                className="flex-1 rounded-lg border border-stone-600 bg-stone-800/80 px-4 py-2 text-blue-400 font-mono text-sm outline-none transition focus:border-blue-400 placeholder:text-stone-500"
+                className="flex-1 rounded-lg border border-abyss-600 bg-abyss-800/80 px-4 py-2 text-azur-400 font-mono text-sm outline-none transition focus:border-azur-400 placeholder:text-abyss-500"
               />
-              <Button type="submit" variant="secondary" size="md" className="font-mono text-blue-400">
+              <Button type="submit" variant="secondary" size="md" className="font-mono text-azur-400">
                 Play
               </Button>
             </form>
