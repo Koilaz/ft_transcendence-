@@ -90,9 +90,9 @@ export function Lobby({
       )}
 
       {/* La note de service : le joueur lit ce que son personnage a recu. */}
-      <article className="w-full max-w-3xl border border-warning-900/40 bg-warning-50/[0.03] p-8 font-mono text-[13px] leading-relaxed">
-        <div className="border-b border-warning-900/40 pb-4 mb-6">
-          <h1 className="text-warning-200/90 uppercase tracking-wider text-sm font-bold">
+      <article className="w-full max-w-3xl border border-abyss-800 bg-abyss-900/60 p-8 font-mono text-[13px] leading-relaxed">
+        <div className="border-b border-abyss-800 pb-4 mb-6">
+          <h1 className="text-abyss-500 uppercase tracking-wider text-sm font-bold">
             {loreHeader.organisation}
           </h1>
           <p className="text-abyss-400">{loreHeader.cabinet}</p>
@@ -129,7 +129,7 @@ export function Lobby({
           ))}
         </ul>
 
-        <p className="mb-4 text-warning-200/80">{loreAvertissement}</p>
+        <p className="mb-4 text-warning-400">{loreAvertissement}</p>
         <p className="mb-6 text-abyss-300">{loreConsequence}</p>
 
         <p className="text-white font-bold">{loreSignature}</p>
