@@ -1,5 +1,6 @@
 export { Button } from './Button';
 export { ButtonLink } from './ButtonLink';
+export { Icon } from './Icon';
 export { Input } from './Input';
 export { Badge } from './Badge';
 export { Card } from './Card';

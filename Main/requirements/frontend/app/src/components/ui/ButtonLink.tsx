@@ -1,4 +1,6 @@
 import { Link, type LinkProps } from 'react-router-dom';
+import type { LucideIcon } from 'lucide-react';
+import { Icon } from './Icon';
 
 type ButtonLinkVariant = 'primary' | 'secondary' | 'outline';
 type ButtonLinkSize = 'sm' | 'md' | 'lg';
@@ -7,6 +9,7 @@ type ButtonLinkProps = LinkProps & {
   variant?: ButtonLinkVariant;
   size?: ButtonLinkSize;
   fullWidth?: boolean;
+  icon?: LucideIcon;
 };
 
 const variantClasses: Record<ButtonLinkVariant, string> = {
@@ -25,15 +28,17 @@ export function ButtonLink({
   variant = 'primary',
   size = 'md',
   fullWidth = false,
+  icon,
   className = '',
   children,
   ...props
 }: ButtonLinkProps) {
   return (
     <Link
-      className={`inline-block rounded-lg font-medium text-center transition-colors ${variantClasses[variant]} ${sizeClasses[size]} ${fullWidth ? 'w-full' : ''} ${className}`}
+      className={`rounded-lg font-medium transition-colors ${icon ? 'inline-flex items-center justify-center gap-2' : 'inline-block text-center'} ${variantClasses[variant]} ${sizeClasses[size]} ${fullWidth ? 'w-full' : ''} ${className}`}
       {...props}
     >
+      {icon && <Icon icon={icon} size="sm" />}
       {children}
     </Link>
   );

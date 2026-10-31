@@ -1,4 +1,5 @@
 import { forwardRef } from 'react';
+import { Send } from 'lucide-react';
 import type { InputState } from '../../types/game';
 import { Button } from '../ui';
 
@@ -27,6 +28,7 @@ export const ChatInput = forwardRef<HTMLInputElement, ChatInputProps>(
           onKeyDown={(e) => e.key === 'Enter' && onSend()}
         />
         <Button
+          icon={Send}
           variant="primary"
           size="md"
           disabled={!inputState.enabled || !draft.trim()}

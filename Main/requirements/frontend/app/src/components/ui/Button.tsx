@@ -1,4 +1,6 @@
 import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from 'react';
+import type { LucideIcon } from 'lucide-react';
+import { Icon } from './Icon';
 
 type ButtonVariant = 'primary' | 'secondary' | 'outline';
 type ButtonSize = 'sm' | 'md' | 'lg';
@@ -7,6 +9,7 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: ButtonVariant;
   size?: ButtonSize;
   fullWidth?: boolean;
+  icon?: LucideIcon;
   children: ReactNode;
 };
 
@@ -23,13 +26,14 @@ const sizeClasses: Record<ButtonSize, string> = {
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ variant = 'primary', size = 'md', fullWidth = false, className = '', children, ...props }, ref) => {
+  ({ variant = 'primary', size = 'md', fullWidth = false, icon, className = '', children, ...props }, ref) => {
     return (
       <button
         ref={ref}
-        className={`rounded-lg font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${variantClasses[variant]} ${sizeClasses[size]} ${fullWidth ? 'w-full' : ''} ${className}`}
+        className={`rounded-lg font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${icon ? 'inline-flex items-center justify-center gap-2' : ''} ${variantClasses[variant]} ${sizeClasses[size]} ${fullWidth ? 'w-full' : ''} ${className}`}
         {...props}
       >
+        {icon && <Icon icon={icon} size="sm" />}
         {children}
       </button>
     );

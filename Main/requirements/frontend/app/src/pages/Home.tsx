@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState, type FormEvent } from 'react';
+import { Ghost, LogIn, LogOut, Play, UserRound, UserRoundPlus } from 'lucide-react';
 
 import { MatrixRain } from '../components/MatrixRain';
 import { setAccessToken } from '../services/session';
@@ -53,7 +54,7 @@ export default function Home() {
       <div className="absolute inset-0 flex flex-col items-center justify-center p-6 md:p-12">
         <h1
           className="text-5xl md:text-7xl font-['Bangers'] text-white tracking-wider"
-          style={{ WebkitTextStroke: '2px #3b82f6' }}
+          style={{ WebkitTextStroke: '2px var(--color-azur-500)' }}
         >
           AImpostor
         </h1>
@@ -71,12 +72,13 @@ export default function Home() {
       >
         {isLoggedIn ? (
           <>
-            <ButtonLink to="/profile" variant="secondary" size="md">
+            <ButtonLink to="/profile" variant="secondary" size="md" icon={UserRound}>
               Profile
             </ButtonLink>
             <Button
               variant="secondary"
               size="md"
+              icon={LogOut}
               onClick={() => {
                 setAccessToken(null);
                 navigate('/');
@@ -88,10 +90,10 @@ export default function Home() {
           </>
         ) : (
           <>
-            <ButtonLink to="/login" variant="secondary" size="md">
+            <ButtonLink to="/login" variant="secondary" size="md" icon={LogIn}>
               Login
             </ButtonLink>
-            <ButtonLink to="/register" variant="secondary" size="md">
+            <ButtonLink to="/register" variant="secondary" size="md" icon={UserRoundPlus}>
               Register
             </ButtonLink>
           </>
@@ -108,18 +110,19 @@ export default function Home() {
         </button>
         <div className="flex flex-col gap-3 w-full">
           {isLoggedIn ? (
-            <ButtonLink to="/game" variant="outline" size="md" fullWidth onClick={() => setShowMenu(false)}>
+            <ButtonLink to="/game" variant="outline" size="md" fullWidth icon={Play} onClick={() => setShowMenu(false)}>
               Quick Game
             </ButtonLink>
           ) : (
             <>
-              <ButtonLink to="/login" variant="outline" size="md" fullWidth onClick={() => setShowMenu(false)}>
+              <ButtonLink to="/login" variant="outline" size="md" fullWidth icon={LogIn} onClick={() => setShowMenu(false)}>
                 Login
               </ButtonLink>
               <Button
                 variant="outline"
                 size="md"
                 fullWidth
+                icon={Ghost}
                 onClick={() => setIsGuestFormOpen(true)}
               >
                 Play as Guest
@@ -140,7 +143,7 @@ export default function Home() {
                 autoComplete="off"
                 className="flex-1 rounded-lg border border-abyss-600 bg-abyss-800/80 px-4 py-2 text-azur-400 font-mono text-sm outline-none transition focus:border-azur-400 placeholder:text-abyss-500"
               />
-              <Button type="submit" variant="secondary" size="md" className="font-mono text-azur-400">
+              <Button type="submit" variant="secondary" size="md" icon={Play} className="font-mono text-azur-400">
                 Play
               </Button>
             </form>

@@ -1,4 +1,6 @@
 import { Link } from 'react-router-dom';
+import { FileText, ShieldCheck } from 'lucide-react';
+import { Icon } from './ui/Icon';
 
 export default function Footer() {
   return (
@@ -12,14 +14,16 @@ export default function Footer() {
         <nav className="flex gap-6">
           <Link
             to="/terms-of-service"
-            className="text-sm hover:text-abyss-300 transition-colors"
+            className="flex items-center gap-1.5 text-sm hover:text-abyss-300 transition-colors"
           >
+            <Icon icon={FileText} size="sm" />
             Terms of Service
           </Link>
           <Link
             to="/privacy-policy"
-            className="text-sm hover:text-abyss-300 transition-colors"
+            className="flex items-center gap-1.5 text-sm hover:text-abyss-300 transition-colors"
           >
+            <Icon icon={ShieldCheck} size="sm" />
             Privacy Policy
           </Link>
         </nav>
