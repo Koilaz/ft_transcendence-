@@ -1,29 +1,19 @@
 import { gameConfig } from './config.js';
 import { createRoom } from './room.js';
-//usableBots : les bots de gameConfig.bots reellement exploitables — agent
-//present au registre et repondant au healthCheck, prompt present au registre.
-//Recalcule a chaque appel, comme le reste : la config bouge et le rapport de
-//sante n'existe qu'apres le boot.
+//usableBots : les bots de gameConfig.bots reellement exploitables
 import { usableBots, unavailableBots, recheckDownAgents } from '../agents/index_agent.js';
 
-//File d'attente unique. Les joueurs y patientent jusqu'a ce qu'un groupe
-//complet puisse etre forme, puis la room nait avec son effectif definitif.
-//
-//Le lobby ne diffuse qu'un compteur : aucune information sur les autres
-//joueurs, aucune communication possible avant le debut de la partie.
+//File d'attente unique.
 const waiting = new Map(); // playerId -> { sendFn, onRoomJoined, displayName }
 let timerId = null;
 let countdown = null;
 let recheckTimer = null;
 
-//Calcule a l'appel et non au chargement du module : gameConfig est ajuste
-//souvent, et les tests le modifient.
+
 //Les bots comptent dans minPlayers et maxPlayers
-//il faut donc les soustraire pour obtenir le nombre d'humains attendus.
 function humansNeeded()
 {
-	//On compte les bots utilisables, pas ceux configures : si deux des trois
-	//sont hors service, il faut un humain de plus pour atteindre le seuil.
+
 	const bots = usableBots().length;
 	return {
 		min: Math.max(1, gameConfig.minPlayers - bots),
@@ -31,12 +21,7 @@ function humansNeeded()
 	};
 }
 
-//Tous les bots configures sont hors service : il n'y aurait personne a
-//demasquer, la partie perdrait son mecanisme central. On garde les joueurs
-//en file plutot que de lancer une partie vide de son sens ; le front les a
-//deja prevenus par le message agentsDown.
-//Le rapport de sante peut tomber en cours de route : une room dont le bot ne
-//repond plus relance le healthcheck (voir Room.cancelRound).
+//Tous les bots configures sont hors service
 function noBotAvailable()
 {
 	return gameConfig.bots.length > 0 && usableBots().length === 0;
@@ -46,8 +31,16 @@ function noBotAvailable()
 //atteint, et un « Prêt » explicite de chaque joueur en file.
 function canStart()
 {
-	return !noBotAvailable() && waiting.size >= humansNeeded().min
-		&& [...waiting.values()].every((entry) => entry.ready);
+	if (noBotAvailable())
+		return false;
+	if (waiting.size < humansNeeded().min)
+		return false;
+	for (const entry of waiting.values())
+	{
+		if (!entry.ready)
+			return false;
+	}
+	return true;
 }
 
 //On reutilise le message `state` existant plutot que d'en inventer un. Le front
@@ -55,7 +48,12 @@ function canStart()
 function broadcastQueue()
 {
 	const { min } = humansNeeded();
-	const readyPlayers = [...waiting.values()].filter((entry) => entry.ready).length;
+	let readyPlayers = 0;
+	for (const entry of waiting.values())
+	{
+		if (entry.ready)
+			readyPlayers++;
+	}
 	for (const entry of waiting.values())
 	{
 		entry.sendFn({
@@ -101,11 +99,18 @@ function launch()
 {
 	stopCountdown();
 	if (noBotAvailable())
-		return broadcastQueue();// le rapport est tombe pendant le compte a rebours
-	//Les premiers arrives, dans la limite du plafond. L'ordre d'insertion d'une
-	//Map est garanti par la specification : c'est ce qui rend ce point
-	//remplacable par une selection anti-affinite sans rien changer autour.
-	const group = [...waiting.entries()].slice(0, humansNeeded().max);
+	{
+		broadcastQueue();
+		return;
+	}
+	const max = humansNeeded().max;
+	const group = [];
+	for (const [playerId, entry] of waiting)
+	{
+		if (group.length === max)
+			break;
+		group.push([playerId, entry]);
+	}
 	for (const [playerId] of group)
 		waiting.delete(playerId);
 
@@ -121,10 +126,7 @@ function launch()
 	return room;
 }
 
-//Un agent tombe puis revient (conteneur ollama relance, quota retrouve) : sans
-//nouveau healthcheck, la file le croirait mort jusqu'au redemarrage de game.
-//On ne reverifie que tant que quelqu'un attend et qu'un bot manque : personne
-//d'autre n'a besoin de la reponse.
+//Healthcheck apres un agent down
 function scheduleRecheck()
 {
 	if (recheckTimer || !waiting.size || !unavailableBots().length)
@@ -172,7 +174,16 @@ export function dequeue(playerId)
 {
 	if (!waiting.delete(playerId))
 		return;
-	if (waiting.size < humansNeeded().min || ![...waiting.values()].every((entry) => entry.ready))
+	let allReady = true;
+	for (const entry of waiting.values())
+	{
+		if (!entry.ready)
+		{
+			allReady = false;
+			break;
+		}
+	}
+	if (waiting.size < humansNeeded().min || !allReady)
 		stopCountdown();
 	broadcastQueue();
 }

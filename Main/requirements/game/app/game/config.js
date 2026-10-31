@@ -10,7 +10,7 @@ export const gameConfig = {
 	//	                                                      vaut pour les manches suivantes
 	bots: [{
 		rounds: [
-			{ agent: 'mistral_medium', prompt: 'prompt_test_advanced' },
+			{ agent: 'local_agent', prompt: 'prompt_test' },
 			{ agent: 'mistral_medium', prompt: 'prompt_test_advanced' }, // manche 1
 			{ agent: 'mistral_medium', prompt: 'prompt_test_advanced' }, // manche 2
 			{ agent: 'mistral_medium', prompt: 'prompt_test_advanced' }, // manche 3
@@ -18,7 +18,7 @@ export const gameConfig = {
 		]
 	}],
 	turnPerRound: 4,   // nombre de tours par manche
-	turnDuration: 14,   // secondes par tour
+	turnDuration: 5,   // secondes par tour
 	maxMessageLength: 150, // caracteres par message de chat, au-dela le serveur tronque
 	maxPlayers: 6,
 	minPlayers: 3,          // seuil pour DEMARRER une partie
