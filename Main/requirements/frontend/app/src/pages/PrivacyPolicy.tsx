@@ -36,24 +36,43 @@ export default function PrivacyPolicy() {
               <li>Personal identification information (username, email address, etc.)</li>
               <li>Profile information and game statistics</li>
               <li>Authentication credentials</li>
-              <li>Chat messages you send during a game</li>
+              <li>In-game chat messages, shared with the AI provider as described below</li>
             </ul>
           </section>
 
           <section>
             <h2 className="text-2xl font-semibold text-white mb-4">Chat Messages and AI Processing</h2>
             <p>
-              Messages you send in the game chat may be stored by our servers, during the game and in server logs,
-              to run the game, display the conversation history and investigate issues.
+              One seat at the table is held by a language model that must pass for a
+              human player. Messages you send in the game chat may be stored by our
+              servers, during the game and in server logs, to run the game, display
+              the conversation history and investigate issues.
             </p>
             <p className="mt-4">
-              The AI player in each game is powered by the API of Mistral AI, a third-party provider.
-              To generate its replies and analyze each round, the conversation history of the game
-              (the messages of all players, along with their in-game character names) is sent to the Mistral AI API.
-              Your account username and email address are not included. This data is then handled under{' '}
-              <a href="https://mistral.ai/terms" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">
-                Mistral AI's terms and privacy policy
-              </a>.
+              To let the AI player talk and analyze each round, the game server sends
+              the content of the current round (the messages of all players, along
+              with their nicknames and in-game character names) to a large language
+              model:
+            </p>
+            <ul className="list-disc list-inside space-y-2 ml-4">
+              <li>
+                Mistral AI (api.mistral.ai), when the game runs a Mistral-backed
+                agent: the requests are processed on their side, under{' '}
+                <a href="https://mistral.ai/terms" target="_blank" rel="noopener noreferrer" className="text-azur-400 hover:underline">
+                  Mistral AI's terms and privacy policy
+                </a>
+                . Your account username and email address are not included in these
+                requests;
+              </li>
+              <li>
+                or a model running locally on our own server (Ollama), in which case
+                the conversation never leaves the machine.
+              </li>
+            </ul>
+            <p className="mt-4">
+              These messages are used only to generate the AI player's replies and
+              analyze each round. We do not send them anywhere else, and we do not
+              use them for advertising or profiling.
             </p>
             <p className="mt-4">
               Do not share personal or sensitive information in the game chat.
