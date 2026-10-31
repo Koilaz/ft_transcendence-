@@ -18,8 +18,10 @@ par fichier, pas de `KEY=`, pas de guillemets.
 ### postgres_password.txt
 Mot de passe de `POSTGRES_USER`. À générer soi-même :
 ```bash
-openssl rand -base64 24
+openssl rand -hex 24
 ```
+> En `-hex` et pas en `-base64` : le mot de passe est injecté tel quel dans
+> `DATABASE_URL`, et le base64 peut produire un `/` qui casse l'URL.
 
 ### jwt_secret.txt
 Clé de signature des JWT. À générer soi-même :
