@@ -93,9 +93,6 @@ export const prompt_test =
 	buildUserPrompt,
 	buildContextPrompt,
 	buildTranscript,
-	//C'est cette ligne qui fait travailler l'analyste a la fin de chaque manche.
-	//Sans elle, les deux blocs de contexte ci-dessus n'auraient jamais rien a
-	//afficher.
 		sampling:
 	{
 		temperature: 1,

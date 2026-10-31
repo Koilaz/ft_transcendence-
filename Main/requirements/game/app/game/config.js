@@ -10,7 +10,7 @@ export const gameConfig = {
 	//	                                                      vaut pour les manches suivantes
 	bots: [{
 		rounds: [
-			{ agent: 'mistral_medium', prompt: 'prompt_test_advanced' },
+			{ agent: 'local_agent', prompt: 'prompt_test' },
 			{ agent: 'mistral_medium', prompt: 'prompt_test_advanced' }, // manche 1
 			{ agent: 'mistral_medium', prompt: 'prompt_test_advanced' }, // manche 2
 			{ agent: 'mistral_medium', prompt: 'prompt_test_advanced' }, // manche 3
@@ -18,8 +18,8 @@ export const gameConfig = {
 		]
 	}],
 	turnPerRound: 4,   // nombre de tours par manche
-	turnDuration: 14,   // secondes par tour
-	maxMessageLength: 120, // caracteres par message de chat, au-dela le serveur tronque
+	turnDuration: 5,   // secondes par tour
+	maxMessageLength: 150, // caracteres par message de chat, au-dela le serveur tronque
 	maxPlayers: 6,
 	minPlayers: 3,          // seuil pour DEMARRER une partie
 	minPlayersToContinue: 3, // seuil pour CONTINUER une partie deja lancee
@@ -27,6 +27,7 @@ export const gameConfig = {
 	maxRounds: 5, // nombre de manche
 	roundTransitionDelay: 5,
 	debriefMaxWaits: 5,//Prolongations du tableau des scores accordees a l'analyse d'apres-manche
+	agentRecheckDelay: 15, // secondes entre deux verifications d'un agent hors service, tant que des joueurs attendent
 };
 /*
 available agents (cles du registre dans agents/index_agent.js) :

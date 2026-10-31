@@ -782,6 +782,7 @@ Modules candidats NON revendiques ci-dessus (a ajouter seulement s'ils sont defe
 - No internationalisation: the account pages are in English and the game screens in French.
 - The TLS certificate is self-signed, so the browser shows a warning on the first visit.
 - The local model runs on CPU: the first turns can be slow until its warm-up is over.
+- The AI player cannot call functions of the game code on its own (no tool calling): it only writes text from the conversation it is given. It cannot, for example, choose to simulate random keyboard mashing, or look up current events to reference the news.
 - JWTs are valid for one hour and there is no refresh token: users have to log in again after expiration.
 - `GET /api/users` is public, and CORS accepts every origin.
 - Replaced avatars are not deleted from the volume.

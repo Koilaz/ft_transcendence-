@@ -36,7 +36,28 @@ export default function PrivacyPolicy() {
               <li>Personal identification information (username, email address, etc.)</li>
               <li>Profile information and game statistics</li>
               <li>Authentication credentials</li>
+              <li>Chat messages you send during a game</li>
             </ul>
+          </section>
+
+          <section>
+            <h2 className="text-2xl font-semibold text-white mb-4">Chat Messages and AI Processing</h2>
+            <p>
+              Messages you send in the game chat may be stored by our servers, during the game and in server logs,
+              to run the game, display the conversation history and investigate issues.
+            </p>
+            <p className="mt-4">
+              The AI player in each game is powered by the API of Mistral AI, a third-party provider.
+              To generate its replies and analyze each round, the conversation history of the game
+              (the messages of all players, along with their in-game character names) is sent to the Mistral AI API.
+              Your account username and email address are not included. This data is then handled under{' '}
+              <a href="https://mistral.ai/terms" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">
+                Mistral AI's terms and privacy policy
+              </a>.
+            </p>
+            <p className="mt-4">
+              Do not share personal or sensitive information in the game chat.
+            </p>
           </section>
 
           <section>
@@ -46,6 +67,7 @@ export default function PrivacyPolicy() {
             </p>
             <ul className="list-disc list-inside space-y-2 ml-4">
               <li>Provide, operate, and maintain our service</li>
+              <li>Generate the AI player's replies through the Mistral AI API</li>
               <li>Improve and personalize your experience</li>
               <li>Communicate with you</li>
               <li>Enforce our Terms of Service</li>

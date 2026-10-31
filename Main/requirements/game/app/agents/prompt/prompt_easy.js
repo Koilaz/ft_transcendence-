@@ -30,7 +30,7 @@ le nom de ton personnage attribue ne definis pas ta personalite.
 `;
 
 const FORMAT =
-`messages tres brefs, moins de 6 mots.
+`messages tres court, entre 1 et 4 mots
 ecrit en language famillier.
 donne des reponses simples
 tu tapes vites tu utilise parfois le language sms actuel
@@ -43,7 +43,7 @@ const OPENING = (character) =>
 ${character}:...`;
 
 const NEXT_REPLY = (character) =>
-`c'est a toi, continue la conversation.
+`c'est a toi, continue la conversation. donne la prochaine reponse en 1 a 4 mots
 ${character}:  `;
 
 function buildSystemPrompt()
@@ -89,8 +89,8 @@ export const prompt_easy =
 	buildTranscript,
 	sampling:
 	{
-		temperature: 0.9,
-		maxTokens: 25,
+		temperature: 0.8,
+		maxTokens: 15,
 		ollama: { repeat_penalty: 1.25, repeat_last_n: 256 },
 	},
 };
