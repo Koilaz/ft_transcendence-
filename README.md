@@ -1,7 +1,6 @@
 Points à vérifier
 
 Nom et emplacement du fichier : le sujet exige README.md à la racine du dépôt évalué. Le fichier est actuellement Main/README.MD. Les chemins cités dans le README partent de la racine.
-Fichier d'exemple : le sujet demande .env.example, mais le fichier versionné s'appelle env.example.
 Mot de passe Postgres : secrets_example/README.md recommande openssl rand -base64 24. Or le mot de passe est injecté tel quel dans DATABASE_URL, et un / (fréquent en base64) casse la connexion. Le README recommande donc -hex.
 Privacy Policy : la page ne mentionne pas que les messages du chat partent vers l'API Mistral. Le sujet exige un contenu adapté au projet.
 Attributions : une partie du code est arrivée par des commits « sync » et « import » depuis le dépôt collectif. L'auteur d'un commit n'est donc pas toujours celui du code. Par exemple, le backend NestJS initial vient du squelette core/ de « mwallis ». Chaque membre doit relire sa section.
@@ -101,16 +100,14 @@ All the commands below are run from the `Main/` directory.
 ```bash
 git clone <repository-url> ft_transcendence
 cd ft_transcendence/Main
-cp env.example .env
+cp .env.example .env
 ```
-
-<!-- TODO: le sujet demande un fichier `.env.example`. Il s'appelle actuellement `env.example` (le .gitignore prevoit deja l'exception `!.env.example`). En cas de renommage, mettre a jour la commande ci-dessus. -->
 
 | Variable | Purpose | Default |
 |---|---|---|
 | `COMPOSE_PROJECT_NAME` | Docker Compose project name.
 | `DOMAIN_NAME` | Domain served by nginx, used as the CN of the TLS certificate. If it is not `localhost`, add it to `/etc/hosts` | `localhost` |
-| `NGINX_PORT` | Host port mapped to port 443 of nginx. Use e.g. `8443` if you cannot bind port 443 (no sudo) | `443` |
+| `NGINX_PORT` | Host port mapped to port 443 of nginx. `8443` works without sudo; use `443` if you can bind it | `8443` |
 | `POSTGRES_DB` | Database created on first start | `transcendencebdd` |
 | `POSTGRES_USER` | SQL user created on first start | `userbdd` |
 | `OLLAMA_DATA_DIR` | **Must be edited.** Existing, writable host directory where the model weights are stored. At 42, put it under `/sgoinfre`, not in `$HOME` | `/sgoinfre/goinfre/Perso/<login>/ollama` |
@@ -139,7 +136,7 @@ printf '%s' 'YOUR_MISTRAL_API_KEY' > secrets/mistral_api_key.txt
 | `secrets/jwt_secret.txt` | key used to sign the JWTs, shared by the `backend` and `game` services |
 | `secrets/mistral_api_key.txt` | Mistral API key |
 
-One raw value per file: no `KEY=`, no quotes. A hexadecimal database password is recommended, because the password is inserted as-is into the PostgreSQL connection URL and characters such as `/` would break it. `secrets/` and `.env` are git-ignored; only the templates `secrets_example/` and `env.example` are versioned.
+One raw value per file: no `KEY=`, no quotes. A hexadecimal database password is recommended, because the password is inserted as-is into the PostgreSQL connection URL and characters such as `/` would break it. `secrets/` and `.env` are git-ignored; only the templates `secrets_example/` and `.env.example` are versioned.
 
 ### 3. Download the local model (once)
 
