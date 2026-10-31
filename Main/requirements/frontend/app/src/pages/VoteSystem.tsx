@@ -89,7 +89,10 @@ type GameEndModalProps = {
 export function GameEndModal({ winnerId, ranking, history, onReplay }: GameEndModalProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-abyss-950/95 p-4 backdrop-blur-md">
-      <div className="flex h-[85vh] w-full max-w-6xl gap-6 rounded-xl border border-abyss-700 bg-abyss-900 p-6 shadow-2xl">
+      {/* Exception documentee aux regles d'usage : l'ecran de fin est LE moment
+          fort du jeu, sa bordure warning marque la celebration. Les autres
+          panneaux (scoreboard entre les manches, seance levee) restent neutres. */}
+      <div className="flex h-[85vh] w-full max-w-6xl gap-6 rounded-xl border border-warning-600 bg-abyss-900 p-6 shadow-2xl">
         
         {/* COLONNE GAUCHE : SCOREBOARD */}
         <div className="flex w-1/3 flex-col border-r border-abyss-700 pr-6">
