@@ -70,7 +70,7 @@ export const local_agent =
 		//Aucun modele a demander : ollama n'en choisit pas pour nous, /api/chat
 		//exige un nom explicite. Inutile d'aller jusqu'au reseau pour l'apprendre.
 		if (!OLLAMA_MODEL)
-			return { ok: false, reason: 'model_unavailable', detail: 'OLLAMA_MODEL non defini — voir env.example' };
+			return { ok: false, reason: 'model_unavailable', detail: 'OLLAMA_MODEL non defini — voir .env.example' };
 
 		const controller = new AbortController();
 		const timer = setTimeout(() => controller.abort(), HEALTHCHECK_TIMEOUT_MS);
