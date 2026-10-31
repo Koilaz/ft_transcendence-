@@ -512,7 +512,7 @@ class Room
 			}
 		}, 1000);
 	}
-	/* Ajoute systeme de vote */
+
 	submitVote(playerId, targetCharacter)
 	{
 		if (this.players.get(playerId)?.connected && this.currentRound?.status === 'chatting')

@@ -132,11 +132,12 @@ export class Round {
 	}
 
 
-	onPlayerVote(playerId, targetCharacter)
-	{
-        // 1. Sécurités de base
-        if (this.status !== 'chatting') return;
-        if (this.votes.has(playerId)) return;
+    onPlayerVote(playerId, targetCharacter)
+    {
+        if (this.status !== 'chatting')
+			return;
+        if (this.votes.has(playerId))
+			return;
 
         const player = this.playerById.get(playerId);
         if (!player || player.agentName) return;
@@ -151,7 +152,7 @@ export class Round {
         }
         if (!targetId) return;
 
-        // 3. Vérifier si c'était la bonne personne (l'IA)
+
         const targetPlayer = this.playerById.get(targetId);
         const isCorrect = !!targetPlayer.agentName; // True si c'est l'IA
 
