@@ -10,6 +10,11 @@ type ChatInputProps = {
   onSend: () => void;
 };
 
+// Miroir de game/app/game/config.js (maxMessageLength) : le serveur tronque
+// a 150 caracteres. Garder les deux valeurs synchronisees manuellement —
+// les deux services n'ont pas de module partage.
+const MAX_MESSAGE_LENGTH = 150;
+
 export const ChatInput = forwardRef<HTMLInputElement, ChatInputProps>(
   ({ draft, setDraft, inputState, onSend }, ref) => {
     return (
@@ -23,7 +28,7 @@ export const ChatInput = forwardRef<HTMLInputElement, ChatInputProps>(
           disabled={!inputState.enabled}
           placeholder={inputState.placeholder}
           autoComplete="off"
-          maxLength={500}
+          maxLength={MAX_MESSAGE_LENGTH}
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && onSend()}
         />
