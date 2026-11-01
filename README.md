@@ -284,7 +284,7 @@ ihas been completly removed from the current version
 | lmarck |Claude opus 5.5, Chat GPT, Mistral studio|Code Review, Debugging, Testing, Research bainstorming, redondant Tasks | Game backend, room logic, LLM API and prompts, Ollama container, Makefile |
 | cnamoune | <!-- TODO --> | <!-- TODO --> | <!-- TODO --> |
 | radubos | Mistral (Le Chat, Mistral Studio), Nano Banana 2 (Google Gemini image generation) | Code generation, Debugging, Brainstorming, Testing, Image generation | Frontend (React application, UI components, animations, reconnection), illustrations of the characters and the timer bunny |
-| mwallis | <!-- TODO --> | <!-- TODO --> | <!-- TODO --> |
+| mwallis | ChatGPT | Code review, debugging assistance, technical explanations, documentation drafting and verification of Docker/NestJS/Prisma concepts | Backend architecture, Docker infrastructure, NestJS, Prisma, PostgreSQL, nginx, JWT authentication, documentation |
 | mlavry | <!-- TODO --> | <!-- TODO --> | <!-- TODO --> |
 
 The character portraits and the timer bunny illustrations were generated with Nano Banana 2 (Google Gemini), then retouched by hand with GIMP.
@@ -300,7 +300,7 @@ The character portraits and the timer bunny illustrations were generated with Na
 | `lmarck` | Product Owner |integration of the backend skeleton and presence, architecture of the game service, AI agents and prompts, team documentation, merges of the team branches, Makefile, integration of the Ollama container |
 | `cnamoune` | <!-- TODO --> | Voting and scoring system, round transitions and endgame screen, lobby Ready flow, |
 | `radubos` | developers | Frontend (UI components, game screen, animations, responsive design, legal pages), reconnection, multi-tab presence, integration of the team branches |
-| `mwallis` | <!-- TODO --> | Initial `core/` skeleton: NestJS backend (authentication, users, friends), Prisma schema, Docker Compose setup <!-- TODO: a confirmer --> |
+| `mwallis` | Technical Lead / Architect, Developer | Initial `core/` architecture and infrastructure: Docker Compose setup and containerization of nginx, PostgreSQL, NestJS backend and React/Vite frontend; nginx reverse proxy and HTTPS configuration; PostgreSQL initialization, configuration and persistent storage; NestJS backend (authentication, users, friends), Prisma schema and migrations; frontend development environment with Node.js, Vite and ESLint |
 | `mlavry` | <!-- TODO --> | <!-- TODO --> |
 
 <!-- TODO: le sujet impose les roles Product Owner, Project Manager / Scrum Master, Tech Lead / Architect et Developers (cumul possible). Product Owner : lmarck. Chacun remplit lui-meme son role et ses responsabilites. -->
@@ -578,7 +578,7 @@ Modules candidats NON revendiques ci-dessus (a ajouter seulement s'ils sont defe
 
 - **Why:** a project shared by several developers needs conventions, a routing system and a structured way to expose an API; React and NestJS provide both, with a large ecosystem.
 - **How:** the frontend is a React 19 + TypeScript single-page application with React Router (`src/router/AppRouter.tsx`), built with Vite. The accounts backend is a NestJS 10 application split into modules (`AuthModule`, `UsersModule`, `FriendsModule`, `PresenceModule`, `PrismaModule`), protected by a `JwtAuthGuard` and validated by a global `ValidationPipe`. The game service runs on Express 5.
-- **Who:** mwallis and lmarck (backend),mwallis and cnamoune (password flows), radubos (frontend). <!-- TODO: a confirmer -->
+- **Who:** mwallis and lmarck (backend),mwallis and cnamoune (password flows), radubos (frontend).
 
 ### 2. Web, Major: real-time features with WebSockets (2 pts)
 
@@ -660,7 +660,7 @@ Modules candidats NON revendiques ci-dessus (a ajouter seulement s'ils sont defe
   - **Basic chat (send and receive messages between users):** players send messages that every other player of the room receives in real time over `/ws/game`. The server validates each message (it must be the sender's turn, and the length is limited) before broadcasting it, and the complete chat history of the game is shown on the endgame screen. Hiding the players behind characters is a rule of the game; the messages are still exchanged between users.
   - **Profile system (view user information):** the `/profile` page shows the account information (username, email, avatar) returned by `GET /api/auth/me`, and the friends page shows the username, avatar and online or last-seen status of the other users.
   - **Friends system (add and remove friends, see the friends list):** friend requests can be sent, accepted, cancelled or removed (`/api/friends/*`), the friends and pending requests are listed, and the online status of friends is updated live through `/ws/presence`.
-- **Who:** lmarck (game chat, server side), mwallis (profile and friends backend), mwallis, cnamoune and radubos (online status), radubos (whole frontend: chat, profile and friends pages). <!-- TODO: a confirmer -->
+- **Who:** lmarck (game chat, server side), mwallis (profile and friends backend), mwallis, cnamoune and radubos (online status), radubos (whole frontend: chat, profile and friends pages).
 
 ### 10. Devops, Major: backend as microservices (2 pts)
 
@@ -681,7 +681,7 @@ Modules candidats NON revendiques ci-dessus (a ajouter seulement s'ils sont defe
   - **Clear interfaces:** REST routes listed in the [API overview](#api-overview), a typed WebSocket protocol (`Main/requirements/frontend/app/src/types/game.ts`), and a single contract for every LLM provider (`{ name, healthCheck, generate }`, registered in `Main/requirements/game/app/agents/index_agent.js`), which makes the local Ollama service and the hosted Mistral API interchangeable.
   - **Communication:** REST between services (game → Ollama, game → Mistral, browser → backend through nginx) and WebSockets for the real-time channels.
   - **Independent lifecycle:** each service runs in its own container with its own image (built from `Main/requirements/<service>/Dockerfile`, or the official `ollama/ollama` image), entrypoint and restart policy; a single service can be rebuilt with `docker compose -p ft_transcendence up -d --build game`; the backend, the game service and the frontend each have their own test suite.
-- **Who:** lmarck (architecture of the stack, game and ollama services), mwallis (skeleton of the backend service). <!-- TODO: a confirmer -->
+- **Who:** lmarck (architecture of the game and Ollama services), mwallis (initial Docker Compose architecture, nginx, PostgreSQL, backend and frontend containerization, and accounts backend foundation).
 
 <!-- TODO: point faible attendu en evaluation : game et backend ne s'appellent pas (aucun appel REST entre eux). Reponse : c'est voulu, leur couplage se limite a la cle de signature des JWT. Si les stats de partie sont ajoutees, les envoyer au backend par une route interne renforcerait l'argument. -->
 
@@ -770,8 +770,43 @@ Modules candidats NON revendiques ci-dessus (a ajouter seulement s'ils sont defe
 
 ### mwallis
 
-- **Initial skeleton** (`core/`, July 2026): NestJS backend (authentication, users, friends), Prisma schema and first migrations, Docker Compose setup, technical notes (`Main/doc/DTO.txt`, `jwt.txt`, `prisma.txt`). <!-- TODO: a confirmer et completer -->
-- **Challenges:** <!-- TODO -->
+- **Role:** Tech Lead / Architect and backend developer.
+
+- **Architecture and technical foundation:** designed the initial `core/` architecture of the project and established the technical foundation used by the team, with a Docker Compose stack separating nginx, PostgreSQL, the NestJS backend and the React/Vite frontend into dedicated containers.
+
+- **Containerization and Docker infrastructure:** created and configured the initial containers for nginx, PostgreSQL, the backend and the frontend, including the private Docker network, persistent volumes, environment variables, mounted secrets and service dependencies.
+
+- **nginx:** configured nginx as the single public entry point of the application, including HTTPS/TLS termination, reverse proxying to the frontend and backend, and access to uploaded avatar files through the shared uploads volume.
+
+- **PostgreSQL:** implemented the PostgreSQL container initialization, configuration and persistent storage, including automatic database/user creation, startup configuration and the `postgres_data` Docker volume.
+
+- **Backend environment:** set up the NestJS backend container with Node.js, Prisma generation, TypeScript/NestJS build, automatic database readiness checks and Prisma migrations before application startup.
+
+- **Frontend environment:** set up the React/Vite frontend container and its Node.js development environment, including dependency installation, Vite configuration and ESLint tooling.
+
+- **Backend architecture:** designed and implemented the initial NestJS accounts backend structure, organised into modules, controllers and services for authentication, users, friends and Prisma.
+
+- **Authentication:** implemented the foundations of account registration and login using bcrypt password hashing and JWT authentication, including protected backend routes.
+
+- **Users and profiles:** implemented the backend user model and profile-management foundations, including username handling and avatar upload support.
+
+- **Friends:** implemented the backend friendship system, including friend requests, acceptance, cancellation/removal and the retrieval of friends and pending requests.
+
+- **Database and ORM:** designed the initial Prisma schema for users and friendships, created the first database migrations and integrated Prisma with PostgreSQL through a reusable `PrismaService`.
+
+- **Security and configuration:** worked on JWT authentication, bcrypt password storage, DTO/input validation, Docker secrets mounted as files instead of committed credentials, and the isolation of internal services behind nginx and the private Docker network.
+
+- **Uploads and persistence:** integrated avatar uploads using a shared persistent Docker volume, writable by the backend and served read-only by nginx.
+
+- **Documentation:** wrote technical notes and hand-over documentation covering the backend structure, DTOs, JWT authentication and Prisma.
+
+- **Challenges:**
+  - defining an architecture that was clear enough for several developers to work independently while keeping the different parts of the application easy to integrate;
+  - designing and containerizing four different environments with different responsibilities while keeping communication between them simple and predictable;
+  - connecting NestJS, Prisma and PostgreSQL cleanly while automatically waiting for the database and applying migrations when the backend container starts;
+  - designing authentication and user-management flows while keeping passwords, JWT secrets and database credentials protected;
+  - ensuring that persistent data, especially the PostgreSQL database and uploaded avatars, survives container recreation through Docker volumes;
+  - configuring nginx as the only externally exposed entry point while keeping the backend, frontend and database communication inside the private Docker network.
 
 ### mlavry
 
