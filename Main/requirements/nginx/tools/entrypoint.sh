@@ -13,11 +13,16 @@ mkdir -p /etc/nginx/ssl
 if [ ! -f /etc/nginx/ssl/nginx.crt ] || [ ! -f /etc/nginx/ssl/nginx.key ]; then
 
     # Créer un certificat TLS auto-signé.
+    # -addext subjectAltName : les navigateurs modernes ignorent le CN et
+    # exigent un SAN. Sans lui, Chrome affiche ERR_CERT_COMMON_NAME_INVALID
+    # et fait revenir l'avertissement, ce qui casse aussi le WebSocket de
+    # presence (wss n'a pas de dialogue d'acceptation, cf. conf nginx).
     openssl req -x509 -nodes -days 365 \
         -newkey rsa:2048 \
         -keyout /etc/nginx/ssl/nginx.key \
         -out /etc/nginx/ssl/nginx.crt \
-        -subj "/C=FR/ST=France/L=Paris/O=42/OU=Transcendence/CN=$DOMAIN_NAME"
+        -subj "/C=FR/ST=France/L=Paris/O=42/OU=Transcendence/CN=$DOMAIN_NAME" \
+        -addext "subjectAltName=DNS:$DOMAIN_NAME,DNS:localhost,IP:127.0.0.1"
 fi
 
 # Vérifier que la configuration nginx est valide.
