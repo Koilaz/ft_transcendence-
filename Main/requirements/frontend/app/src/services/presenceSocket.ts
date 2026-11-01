@@ -31,6 +31,18 @@ export function subscribePresence(onMessage: PresenceMessageHandler): () => void
   };
 }
 
+// Singleton + fermeture differee. En dev, StrictMode monte, demonte puis
+// remonte aussitot chaque composant : fermer la socket au demontage la
+// tuerait pendant son etablissement, et le navigateur loggue alors deux
+// erreurs rouges (« WebSocket is closed before the connection is
+// established » / « connexion interrompue pendant le chargement de la
+// page »). La fermeture est donc differee : un remontage immediat
+// (StrictMode) l'annule et reutilise la socket vivante, un vrai depart
+// (deconnexion, changement de token) la laisse se produire.
+let socket: WebSocket | null = null;
+let currentToken: string | null = null;
+let closeTimer: ReturnType<typeof setTimeout> | null = null;
+
 function getPresenceWebSocketUrl(accessToken: string): string {
   const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
 
@@ -42,7 +54,26 @@ function getPresenceWebSocketUrl(accessToken: string): string {
 export function connectPresenceSocket(
   accessToken: string,
 ): WebSocket {
-  const socket = new WebSocket(
+  // Un remontage annule la fermeture programmee par le cleanup precedent.
+  if (closeTimer !== null) {
+    clearTimeout(closeTimer);
+    closeTimer = null;
+  }
+
+  // Meme session : on reutilise la socket, ouverte ou en cours d'ouverture.
+  if (
+    socket &&
+    currentToken === accessToken &&
+    (socket.readyState === WebSocket.OPEN ||
+      socket.readyState === WebSocket.CONNECTING)
+  ) {
+    return socket;
+  }
+
+  // Session differente : l'ancienne socket n'est plus la bonne.
+  socket?.close(1000, 'Replaced');
+  currentToken = accessToken;
+  socket = new WebSocket(
     getPresenceWebSocketUrl(accessToken),
   );
 
@@ -66,4 +97,20 @@ export function connectPresenceSocket(
   });
 
   return socket;
+}
+
+// Appele par le cleanup de App.tsx. Ne ferme pas tout de suite : en dev,
+// StrictMode redemonte le composant aussitot et connectPresenceSocket
+// annule alors la fermeture. La socket closee est comparee au singleton :
+// un cleanup d'une session deja remplacee ne doit pas tuer la nouvelle.
+export function schedulePresenceClose(closed: WebSocket): void {
+  if (!socket || socket !== closed || closeTimer !== null)
+    return;
+
+  closeTimer = setTimeout(() => {
+    socket?.close(1000, 'Session ended');
+    socket = null;
+    currentToken = null;
+    closeTimer = null;
+  }, 250);
 }

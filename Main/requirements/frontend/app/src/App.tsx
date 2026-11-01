@@ -1,6 +1,6 @@
 import { useEffect, useSyncExternalStore } from 'react';
 import AppRouter from './router/AppRouter';
-import { connectPresenceSocket } from './services/presenceSocket';
+import { connectPresenceSocket, schedulePresenceClose } from './services/presenceSocket';
 import { getAccessToken, subscribeSession } from './services/session';
 
 function App() {
@@ -14,7 +14,9 @@ function App() {
     if (!accessToken) return;
 
     const socket = connectPresenceSocket(accessToken);
-    return () => socket.close(1000, 'Session ended');
+    // Fermeture differee, annulee par un remontage immediat (StrictMode en
+    // dev) : fermer ici tuerait la socket pendant son etablissement.
+    return () => schedulePresenceClose(socket);
   }, [accessToken]);
 
   return <AppRouter />;
