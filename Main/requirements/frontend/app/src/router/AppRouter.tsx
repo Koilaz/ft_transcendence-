@@ -9,6 +9,7 @@ import PrivacyPolicy from '../pages/PrivacyPolicy';
 import TermsOfService from '../pages/TermsOfService';
 import Friends from '../pages/Friends';
 import Game from '../pages/Game';
+import NotFound from '../pages/NotFound';
 
 export default function AppRouter() {
   return (
@@ -31,6 +32,10 @@ export default function AppRouter() {
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
 
           <Route path="/terms-of-service" element={<TermsOfService />} />
+
+          {/* Attrape-tout : toute autre URL rend un vrai ecran, pas un
+              layout vide (voir pages/NotFound.tsx). */}
+          <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>
     </BrowserRouter>
