@@ -3,7 +3,6 @@ import {
   Delete,
   Get,
   Param,
-  ParseIntPipe,
   Patch,
   Post,
   Req,
@@ -11,6 +10,7 @@ import {
 } from '@nestjs/common';
 import type { Request } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { BoundedIntPipe } from '../common/pipes/bounded-int.pipe';
 import { FriendsService } from './friends.service';
 
 type AuthenticatedRequest = Request & {
@@ -28,7 +28,7 @@ export class FriendsController {
   @Post(':userId')
   sendFriendRequest(
     @Req() req: AuthenticatedRequest,
-    @Param('userId', ParseIntPipe) userId: number,
+    @Param('userId', BoundedIntPipe) userId: number,
   ) {
     return this.friendsService.sendFriendRequest(req.user.userId, userId);
   }
@@ -36,7 +36,7 @@ export class FriendsController {
   @Patch(':userId/accept')
   acceptFriendRequest(
     @Req() req: AuthenticatedRequest,
-    @Param('userId', ParseIntPipe) userId: number,
+    @Param('userId', BoundedIntPipe) userId: number,
   ) {
     return this.friendsService.acceptFriendRequest(req.user.userId, userId);
   }
@@ -44,7 +44,7 @@ export class FriendsController {
   @Delete(':userId')
   removeFriendship(
     @Req() req: AuthenticatedRequest,
-    @Param('userId', ParseIntPipe) userId: number,
+    @Param('userId', BoundedIntPipe) userId: number,
   ) {
     return this.friendsService.removeFriendship(req.user.userId, userId);
   }

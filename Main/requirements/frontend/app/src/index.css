@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Bangers&family=Black+Ops+One&family=Cinzel:wght@400..900&family=MedievalSharp&family=Mochiy+Pop+P+One&family=Orbitron:wght@400..900&family=Parisienne&display=swap");
+@import "./fonts.css";
 @import "tailwindcss";
 
 @layer base {

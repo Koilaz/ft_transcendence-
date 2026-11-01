@@ -17,7 +17,10 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { Prisma } from '@prisma/client';
 
 import { randomUUID } from 'node:crypto';
+import { unlink } from 'node:fs/promises';
+import { join } from 'node:path';
 import { diskStorage } from 'multer';
+import sharp from 'sharp';
 
 import { UpdateProfileDto } from '../users/dto/update-profile.dto';
 import { UsersService } from '../users/users.service';
@@ -34,6 +37,8 @@ type AuthenticatedRequest = {
     username: string;
   };
 };
+
+const AVATARS_DIR = '/app/uploads/avatars';
 
 const avatarExtensions: Record<string, string> = {
   'image/jpeg': '.jpg',
@@ -129,7 +134,7 @@ export class AuthController {
   @UseInterceptors(
     FileInterceptor('avatar', {
       storage: diskStorage({
-        destination: '/app/uploads/avatars',
+        destination: AVATARS_DIR,
 
         filename: (
           _request,
@@ -179,8 +184,33 @@ export class AuthController {
       );
     }
 
+    const processedFilename = `${randomUUID()}.webp`;
+
+    try {
+      // Le mimetype du multipart est declare par le client : il ne
+      // prouve rien. Le re-encodage decode l'image octets par octets
+      // puis la re-ecrit en WebP propre : tout payload cache dans un
+      // polyglot (metadonnees, EXIF, donnees apres l'EOF marker) est
+      // detruit, et le cap 512x512 arrete les decompression bombs.
+      await sharp(file.path)
+        .rotate()
+        .resize({
+          width: 512,
+          height: 512,
+          fit: 'inside',
+          withoutEnlargement: true,
+        })
+        .webp({ quality: 85 })
+        .toFile(join(AVATARS_DIR, processedFilename));
+    } catch {
+      throw new BadRequestException('Invalid image file');
+    } finally {
+      // Le fichier brut du client ne doit jamais survivre au traitement.
+      await unlink(file.path).catch(() => {});
+    }
+
     const avatarUrl =
-      `/uploads/avatars/${file.filename}`;
+      `/uploads/avatars/${processedFilename}`;
 
     return this.usersService.updateAvatar(
       request.user.userId,

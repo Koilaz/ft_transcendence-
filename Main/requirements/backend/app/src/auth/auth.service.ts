@@ -3,7 +3,7 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
+import { JwtService, JwtSignOptions } from '@nestjs/jwt';
 import { Prisma } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
@@ -28,14 +28,14 @@ export class AuthService {
       await this.usersService.findByUsername(username);
 
     if (existingUsername) {
-      throw new ConflictException('Username already in use');
+      throw new ConflictException('Username or email already in use');
     }
 
     const existingEmail =
       await this.usersService.findByEmail(email);
 
     if (existingEmail) {
-      throw new ConflictException('Email already in use');
+      throw new ConflictException('Username or email already in use');
     }
 
     const passwordHash = await bcrypt.hash(
@@ -82,10 +82,22 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const accessToken = await this.jwtService.signAsync({
-      sub: user.id,
-      username: user.username,
-    });
+    const accessToken = await this.jwtService.signAsync(
+      {
+        sub: user.id,
+        username: user.username,
+      },
+      // Un JWT sans expiration est valable pour toujours : un token
+      // vole (log, machine partagee, XSS residuel) ne meurt jamais.
+      // Le front n'a pas de refresh : l'utilisateur se reconnecte
+      // apres expiration. Configurable via JWT_EXPIRES_IN (.env).
+      {
+        // Le type de expiresIn est un literal ("24h", "7d", ...) :
+        // la valeur lue dans l'env est un string, d'ou le cast.
+        expiresIn: (process.env.JWT_EXPIRES_IN ??
+          '24h') as JwtSignOptions['expiresIn'],
+      },
+    );
 
     return {
       accessToken,

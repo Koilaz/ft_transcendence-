@@ -31,6 +31,14 @@ export class RegisterDto {
   @IsString()
   @MinLength(8)
   @MaxLength(100)
+  // Un mot de passe purement numerique ou purement alphabetique est
+  // trivial a brute-forcer : au moins une lettre et un chiffre.
+  @Matches(/[a-zA-Z]/, {
+    message: 'Password must contain at least one letter',
+  })
+  @Matches(/\d/, {
+    message: 'Password must contain at least one digit',
+  })
   password!: string;
 }
 

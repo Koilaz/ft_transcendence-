@@ -13,7 +13,8 @@ let token;
 let users;
 let initialHash;
 const currentPassword = 'current-password';
-const newPassword = 'new-password';
+// Conforme a la politique du backend : au moins une lettre et un chiffre.
+const newPassword = 'new-password-1';
 
 before(async () => {
   process.env.JWT_SECRET = 'password-change-test-secret';
@@ -127,10 +128,10 @@ test('a password changed after verification cannot be overwritten with the old p
 
 test('concurrent changes using the same old password cannot both succeed', async () => {
   const results = await Promise.all([
-    request('me/password', 'PATCH', { currentPassword, newPassword: 'candidate-one' }),
-    request('me/password', 'PATCH', { currentPassword, newPassword: 'candidate-two' }),
+    request('me/password', 'PATCH', { currentPassword, newPassword: 'candidate-one-1' }),
+    request('me/password', 'PATCH', { currentPassword, newPassword: 'candidate-two-2' }),
   ]);
   assert.deepEqual(results.map((result) => result.status).sort(), [204, 401]);
-  const winner = results[0].status === 204 ? 'candidate-one' : 'candidate-two';
+  const winner = results[0].status === 204 ? 'candidate-one-1' : 'candidate-two-2';
   assert.equal(await bcrypt.compare(winner, users[0].passwordHash), true);
 });

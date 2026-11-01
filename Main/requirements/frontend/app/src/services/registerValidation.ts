@@ -47,6 +47,9 @@ export function validateField(name: FieldName, values: FormValues): string {
     case 'password':
       if (!value) return 'Password is required';
       if (value.length < 8) return 'Password must be at least 8 characters';
+      // Alignes sur les @Matches du backend : au moins une lettre et un chiffre.
+      if (!/[a-zA-Z]/.test(value)) return 'Password must contain at least one letter';
+      if (!/\d/.test(value)) return 'Password must contain at least one digit';
       return '';
     case 'confirmPassword':
       if (!value) return 'Confirm your password';

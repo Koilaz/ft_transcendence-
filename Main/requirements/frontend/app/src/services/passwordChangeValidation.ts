@@ -44,6 +44,9 @@ export function validateField(name: FieldName, values: FormValues): string {
       // Le backend refuse au-dela de 72 octets (IsByteLength) : un accent
       // compte double, un mot de passe peut faire 72 caracteres mais plus.
       if (byteLength(value) > 72) return 'Password must be at most 72 bytes (accented characters count double)';
+      // Alignes sur les @Matches du backend : au moins une lettre et un chiffre.
+      if (!/[a-zA-Z]/.test(value)) return 'Password must contain at least one letter';
+      if (!/\d/.test(value)) return 'Password must contain at least one digit';
       return '';
     case 'confirmPassword':
       if (!value) return 'Confirm your password';
