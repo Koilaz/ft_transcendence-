@@ -110,7 +110,7 @@ export function useGame() {
       });
 
       // Poignee de main muette : une socket ouverte mais silencieuse depuis
-      // 10 s est consideree cassee — on la coupe, le close planifie la suite.
+      // 30 s est consideree cassee — on la coupe, le close planifie la suite.
       // Le serveur parle des l'ouverture (message 'session').
       handshakeTimer = setTimeout(() => {
         if (!disposed && socket === currentSocket)
