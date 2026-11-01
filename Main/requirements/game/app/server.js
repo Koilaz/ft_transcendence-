@@ -3,7 +3,7 @@ import express from 'express';
 import http from 'node:http';
 import { WebSocketServer } from 'ws';
 import { enqueue, dequeue, ready } from './game/queue.js';
-import { checkAllAgents, unavailableBots } from './agents/index_agent.js';
+import { checkAllAgents, recheckDownAgents, unavailableBots } from './agents/index_agent.js';
 import { warmupOllama } from './agents/ollama_local.js';
 import { verifyToken } from './auth.js';
 import { attachGameConnections } from './gameConnections.js';
@@ -25,3 +25,31 @@ server.listen(3000, () => console.log('serveur sur :3000'));
 
 //prechargement du modele local : lent, on ne bloque pas le demarrage
 warmupOllama().catch((err) => console.error('[ollama] prechargement echoue :', err.message));
+
+//Filet apres le boot : le check initial peut echouer parce que le reseau de
+//l'hote n'etait pas encore pret (machine tout juste demarree), et le recheck
+//de queue.js ne s'active que si des joueurs attendent en file. Sans ce filet,
+//un demarrage rate laisse les bots morts jusqu'au prochain restart du
+//conteneur. On ne re-teste que les agents des bots indisponibles, on s'arrete
+//des que tout est revenu ou apres BOOT_RECHECK_ATTEMPTS : la sonde Mistral
+//coute ~17 tokens, la serie complete reste negligeable.
+const BOOT_RECHECK_DELAY_S = 30;
+const BOOT_RECHECK_ATTEMPTS = 10;
+
+function recheckDownAgentsAfterBoot()
+{
+	let attempts = 0;
+	const timer = setInterval(() =>
+	{
+		attempts++;
+		recheckDownAgents().finally(() =>
+		{
+			if (attempts >= BOOT_RECHECK_ATTEMPTS || !unavailableBots().length)
+				clearInterval(timer);
+		});
+	}, BOOT_RECHECK_DELAY_S * 1000);
+	timer.unref();
+}
+
+if (unavailableBots().length)
+	recheckDownAgentsAfterBoot();

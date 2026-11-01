@@ -85,7 +85,10 @@ const bold = paint('1');
 //se pose a chaque joueur qui se connecte.
 let healthReport = new Map(); // name -> { ok, reason, detail }
 
-const BOOT_ATTEMPTS = 10;   // un essai par seconde
+//30 essais : le boot d'une machine peut mettre 20-30 s a rendre le reseau
+//sortant operationnel, et le check initial tombe exactement dans cette
+//fenetre (fetch failed sur toute l'API, cf. server.js pour le filet apres boot).
+const BOOT_ATTEMPTS = 30;   // un essai par seconde
 
 //Les conteneurs demarrent ensemble : ollama n'ecoute souvent pas encore quand
 //game fait son premier essai. Seule l'absence de reponse merite d'insister,
