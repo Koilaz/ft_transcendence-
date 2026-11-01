@@ -15,11 +15,9 @@ const CANNED_REPLIES = [
 	'comment est votre blanquette ?',
 	'est ce qu\'une ia peut dire rgj;roaekgaljaerlgjarelaerjk',
 	'trklhjjdhlkwjgwrihaegjtwkl',
-	'Wallah c\'est pas moi le bot',
 	'celui qui dit qui c\'est l\'ia je lui offre un sandwich',
-	'Vous pensez quoi de Epstein ?',
 	'Yamete kudasai',
-	'Je vais voir aller au bocal',
+	'Je vais aller au bocal',
 	'a',
 	'Ah',
 	'ok boomer',
@@ -33,96 +31,79 @@ const CANNED_REPLIES = [
 	'5htrhrhrwyjgngfjdtyjetyjyejw',
 ];
 
-//nombre de joueurs dans la partie, quelles sont les personnages de la partie,
-//info sur les config (timeout etc)
-//contexte meteo , 42 ??
-
-//Le bot recoit son couple { agent, prompt } tel qu'il est ecrit dans
-//gameConfig.bots : le modele qui repond et le texte qu'on lui envoie sont deux
-//reglages independants, ils voyagent ensemble jusqu'a l'appel.
+//Le sendFn d'un bot, recree a chaque manche avec son couple { agent, prompt } (voir Room.applyBotRound).
 export function createBotSendFn(room, botId, { agent: agentName, prompt: promptName })
 {
 	let consecutiveFailures = 0;
 	let isDead = false;
-	const identity = `${agentName} + ${promptName}`;
+	const label = `${botId} (${agentName} + ${promptName})`;
 
-	//Un bot mort ne reparlera plus de la manche : la room l'annule et relance
-	//le healthcheck (voir Room.cancelRound).
+	//Mort : plus aucun appel jusqu'a la manche suivante, la room annule celle-ci et relance le healthcheck.
 	function kill(reason, round)
 	{
 		isDead = true;
-		console.error(`[bot] ${botId} (${identity}) considere mort : ${reason}`);
+		console.error(`[bot] ${label} considere mort : ${reason}`);
 		room.cancelRound(round);
 	}
 
 	function onFailure(reason, round)
 	{
 		consecutiveFailures++;
-		console.warn(`[bot] ${botId} (${identity}) muet (${consecutiveFailures}/${MAX_CONSECUTIVE_FAILURES}) : ${reason}`);
+		console.warn(`[bot] ${label} muet (${consecutiveFailures}/${MAX_CONSECUTIVE_FAILURES}) : ${reason}`);
 		if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES)
 			kill(`${consecutiveFailures} echecs consecutifs`, round);
 	}
 
-	return async function botResponse (msg)
+	//Reponse de l'agent, null si l'API a echoue : c'est le prompt qui raconte la partie au modele.
+	async function askAgent()
 	{
-		if (msg.type !== 'yourTurn')
+		const prompt = requirePrompt(promptName);// prompt inconnu : erreur fatale
+		return generateReply(room.history, agentName, prompt.buildContextPrompt(room, botId), promptName);
+	}
+
+	async function speak(character, countdown)
+	{
+		const start = Date.now();
+		const rawReply = pickCannedReply() ?? await askAgent();
+		if (!rawReply)
+			throw new Error('reponse vide');// l'agent a echoue sans erreur fatale
+		consecutiveFailures = 0;
+		//Fautes de frappe, puis meme coupure que pour un humain : un message trop long trahirait le bot.
+		const reply = postTreatment(rawReply, character).slice(0, gameConfig.maxMessageLength);
+		//La generation compte dans le delai humain : on n'attend que ce qu'il en reste.
+		const targetDelayMs = replyDelayMs(reply, countdown);
+		const genMs = Date.now() - start;
+		if (genMs < targetDelayMs)
+			await sleep(targetDelayMs - genMs);
+		logDelivery(reply, { countdown, start, genMs, targetDelayMs });//#TMP
+		room.addMessage(botId, reply);
+	}
+
+	//#TMP a supprimer avec son appel : room.addMessage throw sans rien dire un message arrive apres son tour.
+	function logDelivery(reply, { countdown, start, genMs, targetDelayMs })
+	{
+		const current = room.currentRound;
+		const aLaParole = current?.status === 'chatting' && current.canSpeak(botId);
+		console.log(`[#TMP bot] ${label}`
+			+ ` gen=${genMs}ms cible=${targetDelayMs}ms (${reply.length} car.) attente=${Math.max(0, targetDelayMs - genMs)}ms total=${Date.now() - start}ms`
+			+ ` budget=${countdown}s`
+			+ ` | round=${current?.status ?? 'aucun'}`
+			+ ` | ${aLaParole ? 'ENVOI' : 'JETE (le tour est deja passe)'}`
+			+ ` | "${reply}"`);
+	}
+
+	return async function botResponse(msg)
+	{
+		if (msg.type !== 'yourTurn' || isDead)
 			return;
-		if (isDead)
-			return;// disjoncteur ouvert : plus aucun appel a l'agent
-		//Tire avant l'appel : un tour muet ne coute rien a l'API et ne compte
-		//pas comme un echec. Loggue pour ne pas le confondre avec une panne.
+		//Tirage avant l'appel : un tour muet ne coute rien a l'API et ne compte pas comme un echec.
 		if (Math.random() < BOT_SILENCE_CHANCE)
-		{
-			console.log(`[bot] ${botId} (${identity}) muet ce tour (tirage aleatoire)`);
-			return;
-		}
-		const maxDelayMs = Math.max(BOT_MIN_DELAY, msg.countdown * 1000); //1000 pour que parfois le bot ne reponde pas du tout si il depasse le delais.
-		//Lu avant l'appel : la manche peut changer pendant la generation, et
-		//c'est celle-ci qu'un echec doit faire annuler.
+			return console.log(`[bot] ${label} muet ce tour (tirage aleatoire)`);
+		//Lue avant l'appel : la manche peut changer pendant la generation, c'est celle-ci qu'un echec annule.
 		const round = room.currentRound;
 		try
 		{
-			const start = Date.now();
-			//Le contexte de la partie vient du prompt lui-meme : c'est lui qui
-			//decide comment l'etat du jeu se raconte au modele. Un nom de prompt
-			//absent du registre jette une erreur fatale, traitee plus bas comme
-			//un agent introuvable.
-			const prompt = requirePrompt(promptName);
-			const character = round.caracterOf(botId);
-			//Une phrase toute faite evite l'appel a l'API mais passe par les
-			//memes fautes de frappe et la meme normalisation qu'une vraie reponse.
-			const rawReply = pickCannedReply() ?? await generateReply(room.history, agentName, prompt.buildContextPrompt(room, botId), promptName);
-			if (!rawReply)
-			{
-				onFailure('reponse vide', round);
-				return;// l'API a échoué : le bot restera muet ce tour si le disjoncteur ne s'active pas
-			}
-			consecutiveFailures = 0;
-			//fautes de frappe : le bot doit passer pour un humain (minuscules et
-			//repetitions sont traitees pour tous dans room.addMessage). Meme coupure que
-			//pour les humains : un message plus long que ce que le front laisse
-			//taper trahirait le bot.
-			const reply = postTreatment(rawReply, character).slice(0, gameConfig.maxMessageLength);
-			const targetDelayMs = replyDelayMs(reply, maxDelayMs);
-			const genMs = Date.now() - start;
-			const remaining = targetDelayMs - genMs;
-			if (remaining > 0)
-				await sleep(remaining);
-
-			//#TMP a supprimer : pourquoi un bot reste muet alors que l'agent a
-			//bien repondu. room.addMessage jette le message sans rien dire si le
-			//tour est deja passe (canSpeak faux), et ce cas ne compte pas comme
-			//un echec : le bot parait muet sans qu'aucune ligne ne l'explique.
-			const current = room.currentRound;
-			const aLaParole = current?.status === 'chatting' && current.canSpeak(botId);
-			console.log(`[#TMP bot] ${botId} (${identity})`
-				+ ` gen=${genMs}ms cible=${targetDelayMs}ms (${reply.length} car.) attente=${Math.max(0, remaining)}ms total=${Date.now() - start}ms`
-				+ ` budget=${msg.countdown}s`
-				+ ` | round=${current?.status ?? 'aucun'}`
-				+ ` | ${aLaParole ? 'ENVOI' : 'JETE (le tour est deja passe)'}`
-				+ ` | "${reply}"`);
-			/**/
-			room.addMessage(botId, reply);
+			await speak(round.caracterOf(botId), msg.countdown);
 		}
 		catch (err)
 		{
@@ -134,20 +115,16 @@ export function createBotSendFn(room, botId, { agent: agentName, prompt: promptN
 	};
 }
 
-//Le temps qu'un humain mettrait a envoyer ce message : lire, puis taper chaque
-//caractere. Vitesse de frappe tiree a chaque message, comme un joueur plus ou
-//moins concentre. La generation se deroule pendant ce temps et ne s'y ajoute
-//pas. Un message trop long pour le tour peut arriver trop tard, comme celui
-//d'un humain.
-function replyDelayMs(reply, maxDelayMs)
+//Lire puis taper, borne entre BOT_MIN_DELAY et le tour entier : un long message peut arriver trop tard.
+function replyDelayMs(reply, countdown)
 {
 	const reading = randomInt(BOT_REACTION_MS.min, BOT_REACTION_MS.max);
 	const typing = reply.length * randomInt(BOT_TYPING_MS_PER_CHAR.min, BOT_TYPING_MS_PER_CHAR.max);
+	const maxDelayMs = Math.max(BOT_MIN_DELAY, countdown * 1000);
 	return Math.min(maxDelayMs, Math.max(BOT_MIN_DELAY, reading + typing));
 }
 
-//Une fois sur BOT_CANNED_CHANCE, une phrase de CANNED_REPLIES ; sinon null et
-//l'agent repond normalement.
+//Une phrase de CANNED_REPLIES avec la probabilite BOT_CANNED_CHANCE, sinon null.
 function pickCannedReply()
 {
 	if (Math.random() >= BOT_CANNED_CHANCE)

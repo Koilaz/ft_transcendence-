@@ -1,4 +1,4 @@
-//le context, commun a tous les prompts donne les informations de bases sur l'etat de la partie
+//le context dynamiquement ajouter au prompts a chaque apelle de l'agent
 //donne les informations de bases sur l'etat de la partie pour que le bot aie les memes info que les joueurs humains
 //Chaque prompt choisit ensuite ce qu'il en garde, sans avoir a recopier le texte des blocs qu'il conserve.
 

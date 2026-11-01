@@ -17,15 +17,15 @@ export const gameConfig = {
 			//{ agent: 'mistral_big', prompt: 'prompt_test' }, // manche 4
 		]
 	}],
-	turnPerRound: 4,   // nombre de tours par manche
-	turnDuration: 5,   // secondes par tour
+	turnPerRound: 5,   // nombre de tours par manche
+	turnDuration: 15,   // secondes par tour
 	maxMessageLength: 150, // caracteres par message de chat, au-dela le serveur tronque ; envoye au front dans les messages state (cf. room.js publicState et queue.js)
 	maxPlayers: 6,
 	minPlayers: 3,          // seuil pour DEMARRER une partie
 	minPlayersToContinue: 3, // seuil pour CONTINUER une partie deja lancee
-	startingTimer: 5,       // secondes apres que tous les joueurs sont prets
+	startingTimer: 7,       // secondes apres que tous les joueurs sont prets
 	maxRounds: 5, // nombre de manche
-	roundTransitionDelay: 5,
+	roundTransitionDelay: 8,
 	debriefMaxWaits: 5,//Prolongations du tableau des scores accordees a l'analyse d'apres-manche
 	agentRecheckDelay: 15, // secondes entre deux verifications d'un agent hors service, tant que des joueurs attendent
 };

@@ -3,6 +3,8 @@
 //Le texte envoye, lui, n'est pas ici : le prompt arrive en argument de
 //generate(), choisi bot par bot dans game/config.js.
 
+import { resolveSampling } from './prompt/index_prompt.js';
+
 const MISTRAL_API_URL = 'https://api.mistral.ai/v1';
 const apiKey = process.env.MISTRAL_API_KEY;
 
@@ -27,17 +29,7 @@ const PORTABLE_OPTIONS =
 
 function resolveOptions(prompt)
 {
-	const { mistral = {}, ...portable } = prompt?.sampling ?? {};
-	const options = { ...MISTRAL_DEFAULTS };
-
-	for (const [key, value] of Object.entries(portable))
-	{
-		const name = PORTABLE_OPTIONS[key];
-		if (name)
-			options[name] = value;
-	}
-
-	return { ...options, ...mistral };
+	return resolveSampling(prompt, 'mistral', MISTRAL_DEFAULTS, PORTABLE_OPTIONS);
 }
 
 //Fabrique un agent conforme au contrat { name, generate, healthCheck }.
@@ -72,7 +64,7 @@ function buildMessages(history, { shared = '', perBot = '', character }, prompt)
 
 async function ask(model, messages, options)
 {
-	//#TMP a supprimer : prompt + contexte complet envoye a l'agent Mistral
+	//Log prompt + contexte complet envoye a l'agent Mistral
 	console.log(`----- [mistral ${model}] prompt envoye -----`);
 	for (const m of messages)
 	{

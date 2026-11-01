@@ -1,74 +1,52 @@
+//Agent local : un LLM servi par le conteneur ollama.
+//Ollama garde en cache (KV cache) le debut du dernier prompt evalue : on envoie
+//donc toujours le meme debut pour ne recalculer que la fin.
+
 import { gameConfig, botEntries, DEFAULT_PROMPT } from '../game/config.js';
-import { getPrompt } from './prompt/index_prompt.js';
+import { getPrompt, resolveSampling } from './prompt/index_prompt.js';
 
-const OLLAMA_URL = process.env.OLLAMA_URL ?? 'http://ollama:11434';
-const OLLAMA_MODEL = process.env.OLLAMA_MODEL;
+const OLLAMA_URL = process.env.OLLAMA_URL ?? 'http://ollama:11434';	//conteneur ollama
+const OLLAMA_MODEL = process.env.OLLAMA_MODEL;	//ex. llama3.2:3b, defini dans .env
 
-const TIMEOUT_MS = Math.max(1000, (gameConfig.turnDuration -0.5) * 1000);
-const HEALTHCHECK_TIMEOUT_MS = 5000;
-const PREFILL_TIMEOUT_MS = 120000;
+//Delais avant d'abandonner une requete
+const TIMEOUT_MS = Math.max(1000, (gameConfig.turnDuration -0.5) * 1000);	//repondre avant la fin du tour
+const HEALTHCHECK_TIMEOUT_MS = 5000;	//verif de demarrage
+const PREFILL_TIMEOUT_MS = 120000;		//prechargement : ~30 s pour un prompt froid
 
-//num_ctx est un parametre de chargement : ollama decharge et recharge le modele
-//des qu'il change d'un appel a l'autre. Le warmup et ask doivent donc envoyer
-//exactement les memes options, sinon le prechargement est perdu au premier tour.
+//Options envoyees a ollama si le prompt ne les redefinit pas
 const OLLAMA_OPTIONS =
 {
-	temperature: 0.85,
-	//Marge sur les 10 mots demandes dans le prompt : le francais tokenise a
-	//environ 2 tokens par mot. 24 laisse le modele finir sa phrase, et c'est
-	//aussi le pire cas du budget d'un tour — sur CPU il decode environ 4 tokens
-	//par seconde, donc chaque unite ici coute un quart de seconde d'attente.
-	num_predict: 24,
-	num_ctx: 4096,
-	stop: ['\n'],
-	//Sans ces deux lignes, ollama n'applique aucune penalite : repeat_penalty
-	//vaut 1.0, c'est-a-dire desactivee. Rien n'empeche alors le bot de reemettre
-	//sa phrase precedente mot pour mot, puisqu'elle figure dans le transcript.
-	//La fenetre par defaut, 64 tokens, ne couvre que la consigne finale : il faut
-	//qu'elle remonte assez loin pour atteindre les dernieres repliques.
-	repeat_penalty: 1.15,
-	repeat_last_n: 256,
+	temperature: 0.85,		//creativite : plus haut = plus aleatoire
+	num_predict: 24,		//longueur max de la reponse, en tokens
+	num_ctx: 4096,			//fenetre de contexte ; la changer recharge le modele
+	stop: ['\n'],			//coupe a la fin de la premiere ligne
+	repeat_penalty: 1.15,	//penalise les tokens deja vus (1 = aucune)
+	repeat_last_n: 256,		//nombre de tokens surveilles par repeat_penalty
 };
 
-//Vocabulaire portable des prompts traduit vers celui d'ollama. Un prompt ne
-//declare que ce qu'il veut changer ; le bloc `ollama` passe tel quel, pour les
-//reglages qui n'existent que chez lui.
-//num_ctx et keep_alive n'y figurent pas volontairement : ce sont des parametres
-//de chargement, les laisser varier d'un prompt a l'autre ferait recharger le
-//modele a chaque alternance de bot.
+//Noms communs a tous les agents -> noms ollama
 const PORTABLE_OPTIONS =
 {
-	temperature: 'temperature',
-	maxTokens: 'num_predict',
-	topP: 'top_p',
-	stop: 'stop',
+	temperature: 'temperature',	//meme nom des deux cotes
+	maxTokens: 'num_predict',	//longueur max de la reponse
+	topP: 'top_p',				//ne tire que parmi les tokens les plus probables
+	stop: 'stop',				//chaines qui arretent la generation
 };
 
+//Options finales pour ce prompt : defauts, puis son `sampling`
 function resolveOptions(prompt)
 {
-	const { ollama = {}, ...portable } = prompt?.sampling ?? {};
-	const options = { ...OLLAMA_OPTIONS };
-
-	for (const [key, value] of Object.entries(portable))
-	{
-		const name = PORTABLE_OPTIONS[key];
-		if (name)
-			options[name] = value;
-	}
-
-	return { ...options, ...ollama };
+	return resolveSampling(prompt, 'ollama', OLLAMA_OPTIONS, PORTABLE_OPTIONS);
 }
 
 export const local_agent =
 {
 	name: 'local_agent',
 
-	//Purement informatif : liste les modeles pull, ne genere rien.
-	//N'echoue jamais par exception, renvoie toujours { ok, detail }.
+	//Verifie qu'ollama repond et que le modele est telecharge. Ne genere rien
+	//et ne leve jamais : renvoie toujours { ok, reason?, detail }.
 	async healthCheck()
 	{
-		//Aucun modele a demander : ollama n'en choisit pas pour nous, /api/chat
-		//exige un nom explicite. Inutile d'aller jusqu'au reseau pour l'apprendre.
 		if (!OLLAMA_MODEL)
 			return { ok: false, reason: 'model_unavailable', detail: 'OLLAMA_MODEL non defini — voir .env.example' };
 
@@ -84,8 +62,7 @@ export const local_agent =
 			const data = await res.json();
 			const tags = (data.models ?? []).map((m) => m.name);
 			console.log(`  [ollama] ${tags.length} modeles pull : ${tags.join(', ') || 'aucun'}`);
-			//le tag compte : llama3.2 et llama3.2:3b sont deux entrees distinctes.
-			//sans tag explicite, ollama stocke sous :latest
+			//sans tag, ollama range le modele sous :latest
 			const wanted = OLLAMA_MODEL.includes(':') ? OLLAMA_MODEL : `${OLLAMA_MODEL}:latest`;
 			if (!tags.includes(wanted))
 				return { ok: false, reason: 'model_unavailable', detail: `modele ${wanted} pas pull (dispo : ${tags.join(', ') || 'aucun'})` };
@@ -104,16 +81,8 @@ export const local_agent =
 		}
 	},
 
-	//Tout est ordonne pour le KV cache d'ollama, du plus stable au plus volatile :
-	//le message systeme ne bouge jamais, les deux blocs de contexte tiennent la
-	//manche entiere, le transcript ne grandit que par la fin, et seule la
-	//consigne finale se retrouve systematiquement recalculee. Ollama relit le
-	//reste depuis son cache.
-	//Ce n'est pas une micro-optimisation : le prefill tourne a une dizaine de
-	//tokens par seconde sur CPU, donc un bloc volatile place trop tot coute une
-	//trentaine de secondes par tour, largement au-dela du budget d'un tour.
-	//Le transcript et la consigne arrivent separement du prompt : c'est le seul
-	//agent qui a besoin de glisser le contexte entre les deux.
+	//Replique du bot pour ce tour. Le message va du plus stable au plus variable
+	//(systeme, contexte, transcript, consigne) : le debut reste en cache.
 	async generate(history, additionalContext = {}, prompt)
 	{
 		const { shared = '', perBot = '', character } = additionalContext;
@@ -129,7 +98,7 @@ export const local_agent =
 			{ role: 'user', content: userMessage },
 		];
 
-		//#TMP a supprimer : prompt complet envoye a ollama
+		//debug : prompt complet envoye
 		console.log(`----- [ollama] system (${prompt.name}) -----`);
 		console.log(systemPrompt);
 		console.log('----- [ollama] user -----');
@@ -139,11 +108,8 @@ export const local_agent =
 		return ask(messages, resolveOptions(prompt));
 	},
 
-	//Fait evaluer d'avance le prefixe stable de la manche — message systeme et
-	//contexte — pour qu'il soit deja dans le cache KV quand le bot prend la
-	//parole. Sans ca, le premier appel de la manche paie plusieurs centaines de
-	//tokens de prefill et depasse a lui seul le budget d'un tour.
-	//A lancer sans await : l'appel dure plusieurs dizaines de secondes.
+	//Debut de manche : met en cache le systeme et le contexte avant le premier
+	//tour du bot, sinon ce tour depasserait le temps imparti. Lent : sans await.
 	async preheat(additionalContext = {}, prompt)
 	{
 		const { shared = '', perBot = '' } = additionalContext;
@@ -156,35 +122,28 @@ export const local_agent =
 		return prefill(messages, `prechauffage de la manche (${prompt.name})`, resolveOptions(prompt));
 	},
 
-	//Rappele quand l'agent revient apres une panne (voir recheckDownAgents) :
-	//un conteneur ollama relance a perdu le modele charge en RAM.
+	//Apres une panne (voir recheckDownAgents) : ollama relance a perdu le modele
+	//en memoire, on le recharge.
 	warmup()
 	{
 		return warmupOllama();
 	},
 };
 
-//Le premier prompt attribue a cet agent dans game/config.js, toutes manches
-//confondues. Le prechargement doit envoyer exactement le message systeme des
-//vrais appels, sinon le KV cache amorce ne sert a rien (voir warmupOllama). Un
-//nom de prompt errone est deja signale par checkAllAgents : ici on se rabat sur
-//le defaut plutot que de faire echouer le prechargement.
+//Prompt du premier bot ollama dans game/config.js, ou le defaut si son nom est
+//inconnu. Le prechargement doit utiliser le meme message systeme que les vrais
+//appels, sinon le cache ne sert a rien.
 function configuredPrompt()
 {
 	const entry = botEntries().flat().find((b) => b.agent === local_agent.name);
 	return getPrompt(entry?.prompt) ?? getPrompt(DEFAULT_PROMPT);
 }
 
-//Charge le modele en memoire ET amorce le KV cache : lent (plusieurs dizaines
-//de secondes au premier appel). A lancer sans await pour ne pas retarder le
-//demarrage du serveur.
-//On envoie le meme message systeme que generate() au lieu d'un tableau vide :
-//sinon seuls les poids sont charges, le cache reste vide et le premier tour
-//repaie l'integralite du prefill.
+//Demarrage du serveur : charge le modele en memoire et met son message systeme
+//en cache. Lent (dizaines de secondes) : a lancer sans await.
 export async function warmupOllama()
 {
-	//checkAllAgents tourne avant et a deja signale l'absence de modele : le
-	//redire ici n'apprendrait rien.
+	//absence deja signalee par checkAllAgents
 	if (!OLLAMA_MODEL)
 		return;
 
@@ -198,13 +157,8 @@ export async function warmupOllama()
 	return prefill(messages, `prechargement de ${OLLAMA_MODEL} (${prompt.name})`, resolveOptions(prompt));
 }
 
-//Un appel qui ne sert qu'a faire evaluer son prompt : num_predict a 1, la
-//reponse est jetee, ce qui reste est le cache KV d'ollama. num_predict est un
-//parametre d'echantillonnage et non de chargement : le surcharger ne fait pas
-//recharger le modele, contrairement a num_ctx.
-//Il lui faut son propre delai, bien plus large que celui d'un tour : evaluer un
-//prompt froid prend une trentaine de secondes, et l'interrompre a mi-chemin
-//reviendrait a ne rien precharger du tout.
+//Fait evaluer un prompt sans vraiment generer (1 token, jete) : seul compte le
+//cache qu'ollama en garde. Delai large : interrompu, il ne cacherait rien.
 async function prefill(messages, label, options)
 {
 	const start = Date.now();
@@ -248,11 +202,8 @@ async function prefill(messages, label, options)
 	}
 }
 
-//prompt_eval_count compte tout le prompt, y compris ce qui vient du cache :
-//seule la duree dit ce qu'ollama a reellement evalue. Les deux chiffres se
-//lisent ensemble — quelques centaines de tokens prefilles en quelques
-//millisecondes signifient que le prefixe a ete retrouve dans le cache KV, les
-//memes en dizaines de secondes qu'il a fallu tout recalculer.
+//Tokens et durees d'un appel. Beaucoup de tokens en quelques ms : prompt
+//retrouve dans le cache ; en plusieurs secondes : tout a ete recalcule.
 function logTimings(data)
 {
 	const promptTok = data.prompt_eval_count ?? 0;
@@ -264,6 +215,8 @@ function logTimings(data)
 		+ ` | decode ${decodeTok} tok en ${decodeMs} ms`);
 }
 
+//Appel de generation d'un tour. Renvoie le texte, ou null en cas d'echec ou de
+//timeout ; leve une erreur `fatal` si reessayer ne servirait a rien.
 async function ask(messages, options)
 {
 	const controller = new AbortController();
@@ -290,6 +243,7 @@ async function ask(messages, options)
 		if (!res.ok)
 		{
 			const body = await res.text();
+			//acces refuse ou modele absent : definitif
 			if ([401, 402, 403, 404].includes(res.status))
 			{
 				const fatalErr = new Error(`[ollama] HTTP ${res.status} : ${body}`);

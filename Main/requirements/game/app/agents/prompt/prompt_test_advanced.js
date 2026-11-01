@@ -58,8 +58,6 @@ const OPENING = (character) =>
 	`la manche commence, personne n'a encore parle, c'est toi qui lances la discussion.
 ${character}:...`;
 
-//La meme amorce que prompt_test, mais a la deuxieme personne : "devine la
-//prochaine reponse" en faisait un observateur qui predit la replique d'un autre.
 const NEXT_REPLY = (character) =>
 	`c'est a toi.
 ${character}:...`;

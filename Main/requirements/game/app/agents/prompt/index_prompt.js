@@ -74,3 +74,24 @@ export function requirePrompt(name)
 
 	return prompt;
 }
+
+//Traduit le champ `sampling` d'un prompt en options pour un agent. Trois
+//couches, la derniere l'emporte :
+//  defaults            les valeurs de l'agent
+//  cles portables      renommees par `names` (maxTokens -> num_predict...)
+//  sampling[agentKey]  le bloc propre a l'agent, passe tel quel
+//Une cle absente de `names` est ignoree : c'est ce qui ecarte le bloc d'un
+//autre agent.
+export function resolveSampling(prompt, agentKey, defaults, names)
+{
+	const sampling = prompt.sampling ?? {};
+	const portable = {};
+
+	for (const [key, value] of Object.entries(sampling))
+	{
+		if (key in names)
+			portable[names[key]] = value;
+	}
+
+	return { ...defaults, ...portable, ...sampling[agentKey] };
+}

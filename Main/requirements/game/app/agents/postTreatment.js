@@ -97,12 +97,22 @@ export function keepPlainChars(text)
 		.replace(/[^a-z0-9 .,;:!?'"+\-*/()=%]/g, '');
 }
 
-// Ecrase les caracteres repetes "aaaa     bbbbbb" => "a b"
+// Ecrase les caracteres repetes : "aaaa     bbbbbb" => "a b".
+// Les chiffres et les points ne sont jamais touches ("100", "..."), et une
+// lettre que le francais double garde ses deux exemplaires ("belle", "passe").
+
+// Un caractere qui n'est ni un chiffre ni un point, suivi de lui-meme une fois
+// ou plus.
+const REPEATED_CHAR = /([^\d.])\1+/g;
 
 export function trimRepeats(text)
 {
-	return text.replace(/([^\d.])\1+/gu, (run, char) =>
-		run.length === 2 && FRENCH_DOUBLES.has(char) ? run : char);
+	return text.replace(REPEATED_CHAR, (run, char) =>
+	{
+		if (run.length === 2 && FRENCH_DOUBLES.has(char))
+			return run;
+		return char;
+	});
 }
 
 // Retire les guillemets qui entourent tout le message : "salut" => salut.

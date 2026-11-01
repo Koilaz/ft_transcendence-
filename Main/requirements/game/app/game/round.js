@@ -128,11 +128,12 @@ export class Round {
 			if (this.turnCycle <= 0)
 				return this.endRound(); // Ajout systeme de vote
 		}
-		this.startTurn();
+		this.startTurn();	
 	}
 
-    onPlayerVote(playerId, targetCharacter)
-    {
+
+	onPlayerVote(playerId, targetCharacter)
+	{
         // 1. Sécurités de base
         if (this.status !== 'chatting') return;
         if (this.votes.has(playerId)) return;

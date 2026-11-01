@@ -63,26 +63,26 @@ export function requestDebrief(room, results)
 			//Une analyse vide ou ratee garde la note precedente : perdre la
 			//memoire accumulee serait pire que de ne pas l'avoir mise a jour.
 			const debrief = parseDebrief(text);
-			logDebrief(room, debrief, text);
+			//logDebrief(room, debrief, text);
 			room.debrief = debrief ?? room.debrief;
 		})
 		.catch((err) => console.error(`[debrief] room ${room.id} : analyse echouee :`, err.message))
 		.finally(() => { room.debriefPending = false; });
 }
 
+//L'analyse ne sert que si un bot la lira a la manche suivante. Un humain n'a
+//pas de prompt : getPrompt renvoie null, d'ou le test sur prompt.
 function wantsDebrief(room)
 {
-	return [...room.players.values()].some((p) => getPrompt(room.nextRoundPromptOf(p))?.debrief);
+	for (const player of room.players.values())
+	{
+		const prompt = getPrompt(room.nextRoundPromptOf(player));
+		if (prompt !== null && prompt.debrief)
+			return true;
+	}
+	return false;
 }
 
-//On reutilise l'agent tel quel — logs, entetes de quota, gestion d'erreur
-//comprises — en lui passant un objet qui remplit le sous-ensemble du contrat de
-//prompt que les agents consomment reellement.
-//maxTokens est indispensable : le defaut de l'agent est 70 tokens, taille d'un
-//message de joueur, pas d'une note d'analyse.
-//async : ce qui casse ici doit repartir en promesse rejetee, que requestDebrief
-//rattrape. Une exception synchrone remonterait jusqu'au chrono de la manche et
-//emporterait le serveur, pour une note dont personne ne depend.
 async function askAnalyst(analyst, room, results)
 {
 	const body = buildAnalysisPrompt(room, results);
@@ -109,12 +109,7 @@ function buildAnalysisPrompt(room, results)
 	return parts.filter(Boolean).join('\n\n');
 }
 
-//Le personnage de l'IA et le detail des votes. C'est la seule chose que la
-//conversation ne dit pas et sans laquelle l'analyse n'a pas d'objet : qui a
-//devine, et qui les autres ont accuse a la place.
-//Les personnages sont nommes ici, contrairement a la reponse attendue : c'est
-//ce qui permet de recouper un vote avec les repliques de son auteur dans le
-//transcript.
+//Le personnage de l'IA et le detail des votes.
 function buildFacts(room, results)
 {
 	const ai = results.find((r) => r.isAI);
@@ -157,13 +152,18 @@ function parseDebrief(text)
 }
 
 //mistral ouvre ses balises mais ne les ferme presque jamais : une section
-//s'arrete a sa balise fermante, a la balise ouvrante suivante ou a la fin.
+//s'arrete a la balise suivante, quelle qu'elle soit, ou a la fin du texte.
 function section(text, tag)
 {
-	return text.match(new RegExp(`<${tag}>([\\s\\S]*?)(?:</${tag}>|(?=<\\w+>)|$)`))?.[1].trim() ?? '';
-}
+	const start = text.indexOf(`<${tag}>`);
+	if (start === -1)
+		return '';
 
-//#TMP a supprimer : la note produite par l'analyste. C'est la seule facon de
+	const after = text.slice(start + tag.length + 2);
+	return after.split(/<\/?\w+>/)[0].trim();
+}
+/*
+//la note produite par l'analyste. C'est la seule facon de
 //voir ce que le bot recevra a la manche suivante — le prompt envoye est deja
 //loggue par mistral_common, la reponse ne l'est pas.
 function logDebrief(room, debrief, text)
@@ -177,4 +177,4 @@ function logDebrief(room, debrief, text)
 		console.log(`--- correctifs ---\n${debrief.fixes || '(vide)'}`);
 	}
 	console.log('--------------------------------------------------');
-}
+}*/
