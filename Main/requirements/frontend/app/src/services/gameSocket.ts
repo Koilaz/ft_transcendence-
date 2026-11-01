@@ -21,6 +21,10 @@ export type GameStateMessage = {
   // par le calcul local qu'on faisait avant avec un nombre de manches en dur.
   current_manche?: number;
   max_manches?: number;
+  // Present dans les deux (queue et room publicState) : la limite de
+  // longueur des messages, cf. config.js maxMessageLength — le front en
+  // fait son maxLength (ChatInput).
+  max_message_length?: number;
 };
 
 export type GameDebriefWaitMessage = {
@@ -48,6 +52,7 @@ export type GameReconnectedMessage = {
     countdown: number | null;
     current_manche?: number;
     max_manches?: number;
+    max_message_length?: number;
   };
   character: string;
   history: { sender: string; text: string }[];

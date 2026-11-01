@@ -1,6 +1,11 @@
 // Types pour la partie Game
 
-import type { RoundResult, FinalRank, AgentStatus } from '../services/gameSocket';
+// GameMessage (le protocole complet, vue reseau) est declare UNE seule
+// fois, dans services/gameSocket.ts — le reducer le consomme tel quel via
+// GameAction. L'ancienne redeclaration ici avait deja derive de la version
+// socket (max_message_length ajoute d'un seul cote le 01/11) : une seule
+// source elimine la question.
+import type { RoundResult, FinalRank, AgentStatus, GameMessage } from '../services/gameSocket';
 
 export type FeedMessage =
   | { id: string; kind: 'chat'; sender: string; text: string }
@@ -60,25 +65,6 @@ export type LocalConnectionAction =
   | { type: 'connection'; text: string }
   | { type: 'resetGame' };
 
-export type GameMessage = 
-  | { type: 'state'; status: string; room_number: number | null; countdown: number | null; players?: number; min_players?: number; ready_players?: number; ready?: boolean; current_manche?: number; max_manches?: number; max_message_length?: number }
-  | { type: 'debriefWait'; attempt: number; max: number }
-  | { type: 'session'; token: string }
-  | { type: 'reconnected'; state: { status: string; players: number; room_number: number; countdown: number | null; current_manche?: number; max_manches?: number; max_message_length?: number }; character: string; history: { sender: string; text: string }[]; turn: { character: string; turnOrder: string[]; turnCycle: number; totalTurns: number; countdown: number } | null; roundPhase: string; hasVoted: boolean; votedFor: string | null; debriefWaiting: boolean; disconnectedCharacters: string[]; leftCharacters: string[] }
-  | { type: 'playerDisconnected'; character: string; temporary: boolean }
-  | { type: 'playerReconnected'; character: string }
-  | { type: 'agentsDown'; agents: AgentStatus[] }
-  | { type: 'assignment'; character: string }
-  | { type: 'yourTurn'; countdown: number }
-  | { type: 'turn'; character: string; turnOrder: string[]; turnCycle: number; totalTurns: number; countdown: number }
-  | { type: 'chat'; sender: string; text: string }
-  | { type: 'silence'; character: string }
-  | { type: 'voteRegistered'; target: string }
-  | { type: 'roundTransition'; results: RoundResult[]; aiCharacter: string }
-  | { type: 'roundCancelled' }
-  | { type: 'gameEnd'; winnerId: string; ranking: FinalRank[]; history: { sender: string; text: string; isAI: boolean }[] }
-  | { type: 'roomClosed'; code: string };
-
 export type GameAction = GameMessage | LocalConnectionAction;
 
 export type BannerVariant = 'waiting' | 'myturn' | 'voting' | 'info';
@@ -88,9 +74,3 @@ export type Banner = { text: string; variant: BannerVariant };
 export type InputState = { enabled: boolean; placeholder: string; myTurn: boolean };
 
 export type ConnectionStatus = 'open' | 'closed' | 'connecting';
-
-export type Player = {
-  name: string;
-  isMe: boolean;
-  isCurrentTurn: boolean;
-};
