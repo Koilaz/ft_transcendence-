@@ -133,6 +133,7 @@ export function GameHeader({
           <div className="w-[12%] sm:w-[10%] h-full flex items-center justify-end pr-1 sm:pr-2">
             <button
               type="button"
+              aria-label="Quitter la partie"
               onClick={onQuit}
               className="bg-azur-800/80 border border-azur-600 rounded-lg p-1 sm:p-2 text-xs sm:text-xl font-semibold text-danger-400 transition-colors hover:bg-azur-700/80"
             >
