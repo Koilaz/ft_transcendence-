@@ -183,6 +183,35 @@ fermer une socket encore en établissement (même message console). Cas marginal
 
 ---
 
+## Suite de session (01/11, 12:50) : 502 sur tout le site apres un make
+
+**Symptome :** apres un `make` qui recree `game` et `frontend`, la page, l'API
+game et le front repondent 502, alors que `/api` (backend, non recree) marche.
+
+**Cause :** nginx resout les noms (`backend`, `game`, `frontend`) une seule fois
+au demarrage et garde les IP en cache. Un conteneur recree recoit souvent une
+nouvelle IP ; nginx continue de contacter l'ancienne jusqu'a ce qu'on le
+redemarre. C'est le piege classique nginx+Docker, et il tombe systematiquement
+le jour ou l'on recree un conteneur (donc a chaque make qui reconstruit).
+
+**Fix (`conf/nginx.conf`) :**
+- `resolver 127.0.0.11 valid=10s ipv6=off;` — le DNS embarque de Docker ;
+- les `proxy_pass` passent par des variables (`set $upstream_game
+  http://game:3000;` puis `proxy_pass $upstream_game;`), ce qui force nginx a
+  re-resoudre a l'execution toutes les 10 s au lieu d'une fois pour toutes.
+  Sans URI dans le `proxy_pass`, nginx transmet la requete avec son URI
+  d'origine : comportement identique a la version statique.
+
+**Validation :** IP de game forcee a changer (172.19.0.4 -> 172.19.0.8 via un
+conteneur fantome occupant l'ancienne IP) : `/ws/game` repond 204 sans
+restart de nginx. Toutes les routes re-testees (page, /api/health, handshakes).
+
+Au passage, meme session : le filet de re-check des agents apres boot passe
+de 10 a 30 essais (5 -> 15 min) : deux pannes reseau de l'hote de plus de
+6 minutes observees en un jour ont epuise la premiere fenetre.
+
+---
+
 ## Validation
 
 - `HEAD /ws/game` sans Origin → 204 (le health check atteint le service game) ; handshakes
