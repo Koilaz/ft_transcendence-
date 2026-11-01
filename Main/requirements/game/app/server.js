@@ -34,7 +34,10 @@ warmupOllama().catch((err) => console.error('[ollama] prechargement echoue :', e
 //des que tout est revenu ou apres BOOT_RECHECK_ATTEMPTS : la sonde Mistral
 //coute ~17 tokens, la serie complete reste negligeable.
 const BOOT_RECHECK_DELAY_S = 30;
-const BOOT_RECHECK_ATTEMPTS = 10;
+//30 essais x 30 s = 15 min de filet. Les 10 premiers essais (5 min) ont ete
+//epuises deux fois en un jour par un reseau hote qui met plus de 5 min a
+//revenir apres un boot ou un make : la fenetre doit couvrir ce cas.
+const BOOT_RECHECK_ATTEMPTS = 30;
 
 function recheckDownAgentsAfterBoot()
 {
@@ -44,8 +47,14 @@ function recheckDownAgentsAfterBoot()
 		attempts++;
 		recheckDownAgents().finally(() =>
 		{
-			if (attempts >= BOOT_RECHECK_ATTEMPTS || !unavailableBots().length)
+			const down = unavailableBots();
+			if (!down.length)
 				clearInterval(timer);
+			else if (attempts >= BOOT_RECHECK_ATTEMPTS)
+			{
+				clearInterval(timer);
+				console.error(`[agents] re-check apres boot epuise (${attempts} essais) : toujours KO — ${down.map((b) => b.agent).join(', ')}`);
+			}
 		});
 	}, BOOT_RECHECK_DELAY_S * 1000);
 	timer.unref();
