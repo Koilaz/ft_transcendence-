@@ -57,11 +57,9 @@ round.stop();   // sinon le chrono de tour empeche le process de sortir
 // -------------------------------------------------------- cablage cote Room
 const room = createRoom();
 let notified = null;
-// Le faux Round doit exposer stop() (appele par destroy) et caracterOf
-// (appele par removePlayer pour annoncer le depart).
+// Le faux Round doit aussi exposer stop(), appele par destroy.
 room.currentRound = {
 	removePlayer: (id) => { notified = id; },
-	caracterOf: () => 'Colonel Moutarde',
 	stop: () => {},
 };
 // Deux humains, pour qu'il en reste un apres le depart : sinon O5 detruirait
@@ -73,9 +71,9 @@ room.addPlayer('humain-2', (m) => restant.push(m));
 restant.length = 0;
 room.removePlayer('humain-1');
 check('Room.removePlayer previent le Round en cours', notified === 'humain-1');
-check('les joueurs restants sont prevenus du depart',
-	restant.some((m) => m.type === 'playerDisconnected' && m.character === 'Colonel Moutarde'));
-check('le depart est annonce SANS jamais diffuser de playerId',
+check('le depart n est pas annonce aux joueurs restants',
+	restant.every((m) => m.type === 'state'));
+check('le depart ne diffuse jamais de playerId',
 	!restant.some((m) => JSON.stringify(m).includes('humain-1')));
 check('le joueur est retire de la Map de la room', !room.players.has('humain-1'));
 check('la room survit tant qu il reste un humain', room.destroyed === false);

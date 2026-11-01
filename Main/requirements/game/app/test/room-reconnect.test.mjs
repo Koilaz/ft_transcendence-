@@ -94,7 +94,7 @@ try
 		const id = 'private-human-2';
 		const player = room.players.get(id);
 		player.score = 123;
-		room.addMessage('private-human-1', 'Bonjour a tous');
+		room.addMessage('private-human-1', 'bonjour a tous');
 		room.addSystemMessage('Une ligne systeme');
 		room.submitVote(id, round.caracterOf('private-bot'));
 		const vote = round.votes.get(id);
@@ -104,18 +104,19 @@ try
 		advance(1000);
 		const timer = round.turnTimerId;
 		const turnIndex = round.turnIndex;
+		const others = messages.get('private-human-1');
+		const beforeCut = others.length;
 		room.disconnectPlayer(id);
 		check('A. le siege et son identite persistent', room.players.get(id) === player && player.connected === false);
 		check('A. le tour garde son chrono et sa duree restante',
 			round.turnTimerId === timer && round.countdown === 2 && round.turnIndex === turnIndex);
 		check('A. une coupure ne marque pas un depart definitif', !round.leftPlayers.has(id));
-		check('A. les autres voient une absence temporaire sans identite privee',
-			messages.get('private-human-1').some((message) => message.type === 'playerDisconnected'
-				&& message.character === character && message.temporary === true && !JSON.stringify(message).includes(id)));
+		check('A. la coupure n est pas annoncee aux autres joueurs', others.length === beforeCut);
 		const historySize = room.history.length;
 		room.addMessage(id, 'Message provenant de la connexion fermee');
 		check('A. une connexion absente ne peut pas parler', room.history.length === historySize);
 		advance(1000);
+		const beforeReturn = others.length;
 		const received = [];
 		check('A. le retour est accepte avant la fin de manche', room.reconnectPlayer(id, (message) => received.push(message)) === true);
 		const snapshot = received.find((message) => message.type === 'reconnected');
@@ -127,14 +128,13 @@ try
 		check('A. le snapshot restaure le vote, sa cible et la phase courante',
 			snapshot?.hasVoted === true && snapshot.roundPhase === 'chatting' && round.votes.get(id) === vote
 			&& snapshot?.votedFor === round.caracterOf('private-bot'));
-		check('A. le chat est restaure une seule fois avec ses seuls champs publics',
-			JSON.stringify(snapshot?.history) === JSON.stringify(room.history.map(({ sender, text }) => ({ sender, text })))
+		check('A. le chat est restaure une seule fois, sans ligne systeme ni champ prive',
+			JSON.stringify(snapshot?.history) === JSON.stringify([{ sender: round.caracterOf('private-human-1'), text: 'bonjour a tous' }])
 			&& received.filter((message) => message.type === 'reconnected').length === 1
 			&& !received.some((message) => ['chat', 'assignment', 'yourTurn'].includes(message.type)));
 		check('A. aucune identite, nature de bot ou detail de vote ne fuit dans le snapshot',
 			!!snapshot && !privateKeys(snapshot) && !JSON.stringify(snapshot).includes('private-'));
-		check('A. les autres voient le personnage revenir',
-			messages.get('private-human-1').some((message) => message.type === 'playerReconnected' && message.character === character));
+		check('A. le retour n est pas annonce aux autres joueurs', others.length === beforeReturn);
 		room.submitVote(id, round.caracterOf('private-human-1'));
 		check('A. le vote initial ne peut pas etre remplace apres retour', round.votes.get(id) === vote);
 		room.addMessage(id, 'je suis revenu');
@@ -159,9 +159,6 @@ try
 		const historySize = room.history.length;
 		room.addMessage('private-human-1', 'Mon ancien tour');
 		check('B. le revenant doit attendre son prochain tour pour parler', room.history.length === historySize);
-		check('B. le retour conserve l absence des autres personnages',
-			JSON.stringify(first.find((message) => message.type === 'reconnected')?.disconnectedCharacters)
-			=== JSON.stringify([round.caracterOf('private-human-2')]));
 		const replacement = [];
 		room.reconnectPlayer('private-human-1', (message) => replacement.push(message));
 		const firstCount = first.length;

@@ -41,8 +41,8 @@ export type GameSessionMessage = {
 };
 
 // L'instantane de reprise : remplace l'etat du navigateur en bloc (voir
-// room.js : reconnectPlayer). L'historique arrive sans isAI — le serveur le
-// retire exprès pour ne pas révéler l'imposteur.
+// room.js : reconnectPlayer). L'historique n'a que le chat, sans isAI ni
+// lignes « Systeme » — le serveur les retire exprès pour ne rien révéler.
 export type GameReconnectedMessage = {
   type: 'reconnected';
   state: {
@@ -69,23 +69,6 @@ export type GameReconnectedMessage = {
   // « vote enregistré » après un refresh (c'est son propre vote, pas un secret).
   votedFor: string | null;
   debriefWaiting: boolean;
-  // Absents suivis en direct : place reservee (temporaire) ou depart definitif
-  // (voir room.js : reconnectPlayer).
-  disconnectedCharacters: string[];
-  leftCharacters: string[];
-};
-
-// Un joueur vient de perdre la liaison : sa place reste reservee jusqu'a la
-// fin de la manche (temporary). Le message n'est affiche que dans le fil de chat.
-export type GamePlayerDisconnectedMessage = {
-  type: 'playerDisconnected';
-  character: string;
-  temporary: boolean;
-};
-
-export type GamePlayerReconnectedMessage = {
-  type: 'playerReconnected';
-  character: string;
 };
 
 export type GameAgentsDownMessage = {
@@ -175,8 +158,6 @@ export type GameMessage =
   | GameDebriefWaitMessage
   | GameSessionMessage
   | GameReconnectedMessage
-  | GamePlayerDisconnectedMessage
-  | GamePlayerReconnectedMessage
   | GameAgentsDownMessage
   | GameAssignmentMessage
   | GameYourTurnMessage
@@ -265,8 +246,6 @@ export function connectGameSocket(
         message.type !== 'debriefWait' &&
         message.type !== 'session' &&
         message.type !== 'reconnected' &&
-        message.type !== 'playerDisconnected' &&
-        message.type !== 'playerReconnected' &&
         message.type !== 'agentsDown' &&
         message.type !== 'assignment' &&
         message.type !== 'yourTurn' &&

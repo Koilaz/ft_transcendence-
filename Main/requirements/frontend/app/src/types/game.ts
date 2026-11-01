@@ -45,11 +45,6 @@ export type GameUIState = {
   // aussi restaure par l'instantane de reprise (refresh) et remis a zero a
   // chaque nouvelle manche (assignment).
   votedFor: string | null;
-  // Absents suivis en direct : place reservee (temporaire) ou depart definitif.
-  // Peuples par l'instantane de reprise, tenus a jour par playerDisconnected
-  // et playerReconnected.
-  disconnectedCharacters: string[];
-  leftCharacters: string[];
   messages: FeedMessage[];
   roundResults: RoundResult[] | null;
   aiCharacter: string | null;

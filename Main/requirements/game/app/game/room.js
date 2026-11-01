@@ -144,7 +144,6 @@ class Room
 		player.connected = false;
 		const character = this.currentRound.caracterOf(playerId);
 		this.addSystemMessage(`${character} est déconnecté. Sa place reste réservée.`);
-		this.broadcast({ type: 'playerDisconnected', character, temporary: true });
 		return true;
 	}
 
@@ -161,30 +160,22 @@ class Room
 		if (wasDisconnected)
 			this.addSystemMessage(`${character} est de retour.`);
 		//Un seul instantane remplace l'etat du navigateur. Ne jamais transmettre
-		//history tel quel : ses indicateurs isAI reveleraient l'imposteur.
+		//history tel quel : ses indicateurs isAI reveleraient l'imposteur, et ses
+		//lignes Systeme qui s'est deconnecte, donc qui est humain.
 		player.send({
 			type: 'reconnected',
 			state: this.publicState(),
 			character,
-			history: this.history.map(({ sender, text }) => ({ sender, text })),
+			history: this.history.filter(({ sender }) => sender !== 'Systeme')
+				.map(({ sender, text }) => ({ sender, text })),
 			turn: round.status === 'chatting' ? round.publicTurn() : null,
 			roundPhase: round.status,
 			hasVoted: round.votes.has(playerId),
 			// Le joueur a vote pour ce personnage : c'est son propre choix,
 			// pas un secret (isCorrect reste cote serveur).
 			votedFor: round.votes.get(playerId)?.targetCharacter ?? null,
-			disconnectedCharacters: [...this.players.values()]
-				.filter((p) => !p.connected).map((p) => round.caracterOf(p.id)),
-			leftCharacters: [...round.leftPlayers].map((id) => round.caracterOf(id)),
 			debriefWaiting: this.debriefWaits > 0,
 		});
-		if (wasDisconnected)
-		{
-			//Le revenant a deja cette ligne dans son historique restaure.
-			for (const other of this.players.values())
-				if (other.id !== playerId)
-					other.send({ type: 'playerReconnected', character });
-		}
 		return true;
 	}
 
@@ -209,14 +200,12 @@ class Room
 	{
 		if (this.destroyed)
 			return;
-		//Le personnage se lit avant tout nettoyage. assignments n'est jamais
-		//modifie, mais le partant doit sortir de players avant la diffusion :
-		//il n'a plus rien a recevoir.
-		const departing = playerIds.filter((id) => this.players.has(id))
-			.map((id) => ({ id, character: this.currentRound?.caracterOf(id) ?? null }));
+		//Le partant doit sortir de players avant toute diffusion : il n'a plus
+		//rien a recevoir.
+		const departing = playerIds.filter((id) => this.players.has(id));
 		if (!departing.length)
 			return;
-		for (const { id } of departing)
+		for (const id of departing)
 			this.players.delete(id);
 		//La fermeture se decide avant de prevenir la manche : retirer le joueur
 		//peut passer la parole au bot, et une room condamnee n'a pas a lancer
@@ -226,15 +215,13 @@ class Room
 		if ((this.status === 'playing' || this.status === 'transition')
 			&& this.players.size < gameConfig.minPlayersToContinue)
 			return this.destroy('not_enough_players');
-		for (const { id, character } of departing)
+		for (const id of departing)
 		{
 			if (this.currentRound)
 				this.currentRound.removePlayer(id);
 			//Le tour saute a pu clore la derniere manche, donc la partie et la room
 			if (this.destroyed)
 				return;
-			if (character)
-				this.broadcast({ type: 'playerDisconnected', character, temporary: false });
 		}
 		this.broadcastState();
 	}

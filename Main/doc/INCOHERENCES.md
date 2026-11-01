@@ -46,7 +46,7 @@
 ### 3. Le game compose des phrases en français (bloquant pour l'i18n)
 
 - **Zone** : game, `room.js` (`addSystemMessage`) — messages stockés dans
-  l'historique et renvoyés tels quels par l'instantané de reconnexion.
+  l'historique et renvoyés tels quels dans le débrief de fin de partie (`gameEnd`).
 - **Constast** : « X est déconnecté. Sa place reste réservée. », « X est
   resté muet ce tour... » — le client ne peut pas les traduire seul.
 - **Gravité** : moyenne si l'i18n avance (voir `PLAN_I18N.md` §4.1).

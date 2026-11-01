@@ -59,8 +59,8 @@ Les messages système sont générés côté game et stockés dans l'historique
 - « X est déconnecté. Sa place reste réservée. »
 - « X est resté muet ce tour... »
 
-L'instantané de reconnexion les renvoie telles quelles : le client ne peut
-pas les traduire seul. Deux options :
+Le débrief de fin de partie (`gameEnd`) les affiche telles quelles : le
+client ne peut pas les traduire seul. Deux options :
 
 1. **Accepter** que ces lignes restent en français (UI traduite, messages
    système en fr). C'est le choix recommandé pour démarrer.

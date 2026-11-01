@@ -160,7 +160,7 @@ la room a l'ouverture de la socket.
 
 Les types declares couvrent exactement le protocole serveur : `state`,
 `assignment`, `yourTurn`, `turn`, `chat`, `roundState`, `silence`,
-`voteRegistered`, `roundEnd`, `gameEnd`, `playerDisconnected`, `roomClosed`.
+`voteRegistered`, `roundEnd`, `gameEnd`, `roomClosed`.
 Sortants : `chat`, `vote`, `replay`.
 
 > **Attention :** `connectGameSocket` filtre les types inconnus par liste

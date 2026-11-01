@@ -33,8 +33,6 @@ export const initialState: GameUIState = {
   debriefWait: null,
   hasVoted: false,
   votedFor: null,
-  disconnectedCharacters: [],
-  leftCharacters: [],
   messages: [],
   roundResults: null,
   aiCharacter: null,
@@ -154,9 +152,8 @@ export function gameReducer(state: GameUIState, action: GameAction): GameUIState
       };
     case 'reconnected': {
       // Un seul instantane remplace l'etat du navigateur (voir room.js :
-      // reconnectPlayer). L'historique arrive sans isAI — le serveur le
-      // retire pour ne pas révéler l'imposteur — les lignes « Systeme »
-      // redeviennent des messages systeme du fil.
+      // reconnectPlayer). L'historique n'apporte que le chat : le serveur en
+      // retire isAI et les lignes « Systeme », pour ne rien révéler.
       const turn = action.turn;
       return {
         ...state,
@@ -175,46 +172,18 @@ export function gameReducer(state: GameUIState, action: GameAction): GameUIState
         waitingPlayers: action.state.players ?? state.waitingPlayers,
         hasVoted: action.hasVoted,
         votedFor: action.votedFor ?? null,
-        disconnectedCharacters: action.disconnectedCharacters,
-        leftCharacters: action.leftCharacters,
         roundResults: null,
         aiCharacter: null,
         endGameData: null,
         roomClosedCode: null,
         messages: action.history.map(({ sender, text }) => ({
           id: nextMessageId(),
-          kind: sender === 'Systeme' ? 'system' : 'chat',
+          kind: 'chat',
           sender,
           text,
         })),
       };
     }
-    case 'playerDisconnected': {
-      // Dans les deux cas le personnage quitte la liste des absents
-      // temporaires : sa place est reservee (temporaire) ou il est parti
-      // definitivement (il rejoint alors la liste des partis).
-      const disconnected = state.disconnectedCharacters.filter((c) => c !== action.character);
-      return {
-        ...state,
-        disconnectedCharacters: action.temporary ? [...disconnected, action.character] : disconnected,
-        leftCharacters: action.temporary
-          ? state.leftCharacters
-          : [...state.leftCharacters.filter((c) => c !== action.character), action.character],
-        messages: [
-          ...state.messages,
-          { id: nextMessageId(), kind: 'system', text: `${action.character} est déconnecté. Sa place reste réservée.` },
-        ],
-      };
-    }
-    case 'playerReconnected':
-      return {
-        ...state,
-        disconnectedCharacters: state.disconnectedCharacters.filter((c) => c !== action.character),
-        messages: [
-          ...state.messages,
-          { id: nextMessageId(), kind: 'system', text: `${action.character} est de retour.` },
-        ],
-      };
     case 'roundTransition':
       return {
         ...state,
@@ -222,8 +191,7 @@ export function gameReducer(state: GameUIState, action: GameAction): GameUIState
         aiCharacter: action.aiCharacter,
       };
     case 'roundCancelled':
-      // Meme texte que la ligne systeme du serveur, que l'instantane de
-      // reprise restitue (voir room.js : cancelRound).
+      // Meme texte que la ligne systeme du serveur (voir room.js : cancelRound).
       return {
         ...state,
         messages: [

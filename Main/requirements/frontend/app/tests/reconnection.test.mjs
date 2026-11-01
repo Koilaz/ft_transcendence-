@@ -90,15 +90,12 @@ test("l'instantane de reprise remplace l'etat sans reveler l'imposteur", () => {
              current_manche: 2, max_manches: 4 },
     character: 'Caporal Poivre',
     history: [
-      { sender: 'Systeme', text: 'Colonel Moutarde est déconnecté. Sa place reste réservée.' },
       { sender: 'Lieutenant Mayo', text: 'bonjour' },
     ],
     turn: { character: 'Marechal Cocktail', turnOrder: ['Marechal Cocktail'], turnCycle: 2, countdown: 14 },
     roundPhase: 'chatting',
     hasVoted: true,
     votedFor: 'Lieutenant Mayo',
-    disconnectedCharacters: ['Colonel Moutarde'],
-    leftCharacters: [],
     debriefWaiting: false,
   };
   const before = gameReducer(playing(initialState), { type: 'voteRegistered', target: 'Marechal Cocktail' });
@@ -111,27 +108,14 @@ test("l'instantane de reprise remplace l'etat sans reveler l'imposteur", () => {
   assert.equal(next.currentTurnCharacter, 'Marechal Cocktail');
   assert.equal(next.countdown, 14);
   assert.equal(next.currentManche, 2);
-  assert.equal(next.messages.length, 2);
-  assert.equal(next.messages[0].kind, 'system');
-  assert.equal(next.messages[1].kind, 'chat');
-  assert.equal(next.messages[1].sender, 'Lieutenant Mayo');
+  assert.equal(next.messages.length, 1);
+  assert.equal(next.messages[0].kind, 'chat');
+  assert.equal(next.messages[0].sender, 'Lieutenant Mayo');
   // jamais d'isAI dans le fil : le serveur le retire avant l'envoi
   assert.ok(next.messages.every((m) => !('isAI' in m)));
-  assert.deepEqual(next.disconnectedCharacters, ['Colonel Moutarde']);
-  assert.equal(next.leftCharacters.length, 0);
   // l'instantane ecrase les modales d'une vie anterieure
   assert.equal(next.roomClosedCode, null);
   assert.equal(next.endGameData, null);
-});
-
-test('un absent apparait, est signale, puis revient', () => {
-  const state = playing(initialState);
-  const gone = gameReducer(state, { type: 'playerDisconnected', character: 'Major Wasabi', temporary: true });
-  assert.deepEqual(gone.disconnectedCharacters, ['Major Wasabi']);
-  assert.ok(gone.messages.at(-1).text.includes('déconnecté'));
-  const back = gameReducer(gone, { type: 'playerReconnected', character: 'Major Wasabi' });
-  assert.deepEqual(back.disconnectedCharacters, []);
-  assert.ok(back.messages.at(-1).text.includes('retour'));
 });
 
 test('fin de manche : les resultats tombent, la fermeture pose son code', () => {
