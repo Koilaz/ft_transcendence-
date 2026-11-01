@@ -150,16 +150,29 @@ async function guardedFetch(url, options = {})
 	}
 }
 
-//Un seul appel pour tout le processus : les trois agents Mistral partagent la
-//meme cle, donc la meme liste. La memoisation porte sur la promesse et non sur
-//le resultat, sinon trois healthChecks lances en parallele feraient trois
-//requetes avant que la premiere ait repondu.
+//Un seul appel reussi pour tout le processus : les agents Mistral partagent la
+//meme cle, donc la meme liste. La memorisation porte sur la promesse et non sur
+//le resultat, sinon les healthChecks lances en parallele feraient chacun leur
+//requete avant que la premiere ait repondu. Un echec, lui, est oublie des qu'il
+//tombe : au boot le reseau de l'hote peut ne pas etre pret, et garde en memoire
+//il condamnait tous les re-checks (boot, filet, file, cancelRound) a le rejouer.
 let modelsPromise = null;
 
 function listModels()
 {
-	modelsPromise ??= fetchModels();
+	if (modelsPromise === null)
+		modelsPromise = fetchModelsOrForget();
 	return modelsPromise;
+}
+
+//La requete, plus l'oubli de son echec : modelsPromise repasse a null et le
+//prochain listModels() relancera /v1/models.
+async function fetchModelsOrForget()
+{
+	const result = await fetchModels();
+	if (!result.ok)
+		modelsPromise = null;
+	return result;
 }
 
 async function fetchModels()
