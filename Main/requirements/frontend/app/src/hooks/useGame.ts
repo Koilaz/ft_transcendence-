@@ -263,6 +263,7 @@ export function useGame() {
     isReady: state.isReady,
     agentsDown: state.agentsDown,
     currentManche: state.currentManche,
+    maxMessageLength: state.maxMessageLength,
     maxManches: state.maxManches,
     debriefWait: state.debriefWait,
     hasVoted: state.hasVoted,

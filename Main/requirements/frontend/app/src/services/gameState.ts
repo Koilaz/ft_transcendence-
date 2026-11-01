@@ -25,6 +25,9 @@ export const initialState: GameUIState = {
   readyPlayers: 0,
   isReady: false,
   agentsDown: [],
+  // Valeur de repli avant le premier 'state' serveur : la vraie limite arrive
+  // avec le message state (queue ou room), cf. config.js maxMessageLength.
+  maxMessageLength: 150,
   currentManche: null,
   maxManches: null,
   debriefWait: null,
@@ -78,6 +81,7 @@ export function gameReducer(state: GameUIState, action: GameAction): GameUIState
         isReady: action.ready ?? state.isReady,
         currentManche: action.current_manche ?? state.currentManche,
         maxManches: action.max_manches ?? state.maxManches,
+        maxMessageLength: action.max_message_length ?? state.maxMessageLength,
         ...(playing ? {} : {
           currentTurnCharacter: null,
           turnOrder: [],
@@ -167,6 +171,7 @@ export function gameReducer(state: GameUIState, action: GameAction): GameUIState
         countdown: turn ? turn.countdown : action.state.countdown,
         currentManche: action.state.current_manche ?? state.currentManche,
         maxManches: action.state.max_manches ?? state.maxManches,
+        maxMessageLength: action.state.max_message_length ?? state.maxMessageLength,
         waitingPlayers: action.state.players ?? state.waitingPlayers,
         hasVoted: action.hasVoted,
         votedFor: action.votedFor ?? null,

@@ -28,6 +28,10 @@ export type GameUIState = {
   // plus de total de manches code en dur dans le front.
   currentManche: number | null;
   maxManches: number | null;
+  // Limite de longueur des messages, depuis le 'state' (queue et room) :
+  // la config serveur fait foi (config.js maxMessageLength), le front n'a
+  // plus de 150 code en dur — le ChatInput en fait son maxLength.
+  maxMessageLength: number;
   // L'agent d'analyse tarde : le serveur prolonge le scoreboard (debriefWait).
   debriefWait: { attempt: number; max: number } | null;
   // Vote deja depose cette manche : restaure par l'instantane de reprise.
@@ -57,10 +61,10 @@ export type LocalConnectionAction =
   | { type: 'resetGame' };
 
 export type GameMessage = 
-  | { type: 'state'; status: string; room_number: number | null; countdown: number | null; players?: number; min_players?: number; ready_players?: number; ready?: boolean; current_manche?: number; max_manches?: number }
+  | { type: 'state'; status: string; room_number: number | null; countdown: number | null; players?: number; min_players?: number; ready_players?: number; ready?: boolean; current_manche?: number; max_manches?: number; max_message_length?: number }
   | { type: 'debriefWait'; attempt: number; max: number }
   | { type: 'session'; token: string }
-  | { type: 'reconnected'; state: { status: string; players: number; room_number: number; countdown: number | null; current_manche?: number; max_manches?: number }; character: string; history: { sender: string; text: string }[]; turn: { character: string; turnOrder: string[]; turnCycle: number; totalTurns: number; countdown: number } | null; roundPhase: string; hasVoted: boolean; votedFor: string | null; debriefWaiting: boolean; disconnectedCharacters: string[]; leftCharacters: string[] }
+  | { type: 'reconnected'; state: { status: string; players: number; room_number: number; countdown: number | null; current_manche?: number; max_manches?: number; max_message_length?: number }; character: string; history: { sender: string; text: string }[]; turn: { character: string; turnOrder: string[]; turnCycle: number; totalTurns: number; countdown: number } | null; roundPhase: string; hasVoted: boolean; votedFor: string | null; debriefWaiting: boolean; disconnectedCharacters: string[]; leftCharacters: string[] }
   | { type: 'playerDisconnected'; character: string; temporary: boolean }
   | { type: 'playerReconnected'; character: string }
   | { type: 'agentsDown'; agents: AgentStatus[] }

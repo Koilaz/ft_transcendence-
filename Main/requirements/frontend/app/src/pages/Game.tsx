@@ -32,6 +32,7 @@ export default function Game() {
     draft,
     setDraft,
     inputState,
+    maxMessageLength,
     inputRef,
     handleSend,
     handleVote,
@@ -123,6 +124,7 @@ export default function Game() {
               setDraft={setDraft}
               inputState={inputState}
               onSend={handleSend}
+              maxLength={maxMessageLength}
             />
           </motion.div>
         )}

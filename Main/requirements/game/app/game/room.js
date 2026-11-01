@@ -305,7 +305,9 @@ class Room
 			room_number: this.id,
 			countdown: this.countdown,
 			current_manche: this.roundNumber,
-			max_manches: gameConfig.maxRounds
+			max_manches: gameConfig.maxRounds,
+			//Envoye au front pour son maxLength : la limite vit ici, en un seul endroit.
+			max_message_length: gameConfig.maxMessageLength
 		};
 	}
 

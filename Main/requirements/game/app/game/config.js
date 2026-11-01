@@ -19,7 +19,7 @@ export const gameConfig = {
 	}],
 	turnPerRound: 4,   // nombre de tours par manche
 	turnDuration: 5,   // secondes par tour
-	maxMessageLength: 150, // caracteres par message de chat, au-dela le serveur tronque (miroir cote front : ChatInput.tsx MAX_MESSAGE_LENGTH, a garder synchronise)
+	maxMessageLength: 150, // caracteres par message de chat, au-dela le serveur tronque ; envoye au front dans les messages state (cf. room.js publicState et queue.js)
 	maxPlayers: 6,
 	minPlayers: 3,          // seuil pour DEMARRER une partie
 	minPlayersToContinue: 3, // seuil pour CONTINUER une partie deja lancee

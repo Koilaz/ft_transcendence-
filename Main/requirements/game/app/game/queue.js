@@ -65,6 +65,7 @@ function broadcastQueue()
 			ready: entry.ready,
 			room_number: null,
 			countdown,
+			max_message_length: gameConfig.maxMessageLength, // cf. publicState() : le front en fait son maxLength
 		});
 	}
 }
