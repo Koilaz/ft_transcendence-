@@ -24,6 +24,8 @@ mention du cursus 42. Les points résolus sont barrés pour mémoire.
 - [ ] **Champs Who du README** : plusieurs sections de modules et la section
       « Individual Contributions » ont encore des `<!-- TODO: a confirmer -->`
       sur qui a fait quoi.
-- [ ] **Matrice navigateurs** : il reste des cases `TODO` pour Chrome et
+- [x] **Matrice navigateurs** : il restait des cases `TODO` pour Chrome et
       Firefox (profil, endgame, Privacy/ToS — la Privacy Policy a changé
-      depuis leurs pré-tests, à re-vérifier dessus).
+      depuis leurs pré-tests, à re-vérifier dessus). Résolu : les trois
+      navigateurs ont été re-testés de bout en bout en desktop et en largeur
+      mobile (~375 px), tout passe ; les cases du README sont remplies.
