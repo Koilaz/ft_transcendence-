@@ -145,7 +145,10 @@ export function VoteArea({
                   />
                 </div>
                 
-                {/* Texte indicateur de tour - effet manga sur le personnage actuel */}
+                {/* Texte indicateur de tour - effet manga sur le personnage actuel.
+                    aria-hidden sur chaque « bla » : sans lui, un lecteur
+                    d'ecran lirait six fois le mot a voix haute — le decor
+                    ne parle pas, le badge et le nom portent l'information. */}
                 {isCurrent && (
                   <>
                     {Array.from({ length: 6 }).map((_, i) => {
@@ -159,6 +162,7 @@ export function VoteArea({
                       return (
                         <motion.div
                           key={i}
+                          aria-hidden="true"
                           className="absolute text-danger-400 text-[clamp(0.75rem,1.2vw,1rem)] font-bold pointer-events-none font-bangers"
                           style={{ left: '50%', top: '50%', transform: 'translate(-50%, -50%)', WebkitTextStroke: '1px rgba(0,0,0,0.5)' }}
                           initial={{ x: startX, y: startY, opacity: 0, scale: 1.2 }}
