@@ -20,7 +20,6 @@ export function useGame() {
   const [guestName] = useState(() => localStorage.getItem('guestName'));
 
   const socketRef = useRef<WebSocket | null>(null);
-  const feedRef = useRef<HTMLDivElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   // Fin definitive pour cette session (room fermee, onglet remplace) : la
   // boucle de reconnexion s'arrete, seul « Rejouer » la relance.
@@ -153,12 +152,6 @@ export function useGame() {
     };
   }, []);
 
-  // Scroll automatique du chat
-  useEffect(() => {
-    const feed = feedRef.current;
-    if (feed) feed.scrollTop = feed.scrollHeight;
-  }, [state.messages]);
-
   // Focus automatique sur l'input quand c'est son tour
   const inputState = getInputState(state, connectionOpen === true);
   useEffect(() => {
@@ -230,7 +223,6 @@ export function useGame() {
     guestName,
     isGuest,
     socketRef,
-    feedRef,
     inputRef,
     handleSend,
     handleVote,
