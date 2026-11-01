@@ -2,13 +2,16 @@
 //donne les informations de bases sur l'etat de la partie pour que le bot aie les memes info que les joueurs humains
 //Chaque prompt choisit ensuite ce qu'il en garde, sans avoir a recopier le texte des blocs qu'il conserve.
 
-//Une ligne par message, prefixee du personnage qui l'a envoye.
+//Une ligne par message, prefixee du personnage qui l'a envoye. Les lignes
+//Systeme restent dehors : les joueurs ne les voient pas, et le bot ne doit pas
+//en savoir plus qu'eux (une deconnexion designerait un humain).
 export function buildRawTranscript(history)
 {
 	if (!history || history.length === 0)
 		return '';
 
-	return history.map((m) => `${m.sender}: ${m.text}`).join('\n');
+	return history.filter((m) => m.sender !== 'Systeme')
+		.map((m) => `${m.sender}: ${m.text}`).join('\n');
 }
 
 //Les balises marquent de la donnee et non des consignes

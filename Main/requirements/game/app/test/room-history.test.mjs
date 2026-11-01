@@ -3,6 +3,7 @@
 // conserve d'une manche a l'autre designerait quelqu'un d'autre : le bot
 // attribuerait des propos au mauvais joueur.
 import { gameConfig } from '../game/config.js';
+import { buildRawTranscript } from '../agents/prompt/context.js';
 
 // Sans bot, la manche lancee donne le premier tour a un humain dont le sendFn
 // est muet : aucun appel au LLM.
@@ -28,6 +29,8 @@ room.addSystemMessage('une ligne systeme');
 check('la manche 1 remplit bien l historique', room.history.length === 2);
 check('le message est enregistre sous un personnage, pas un playerId',
 	room.history[0].sender === perso1 && perso1 !== joueurDuTour);
+check('le transcript du bot ignore les lignes systeme, invisibles des joueurs',
+	buildRawTranscript(room.history) === `${perso1}: un message de la manche 1`);
 
 // En production, endRound coupe le chrono du tour avant que la manche suivante
 // soit lancee. Ici on court-circuite ce cycle, il faut donc l'arreter a la main :
