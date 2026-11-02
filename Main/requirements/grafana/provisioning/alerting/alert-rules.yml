@@ -1,0 +1,181 @@
+apiVersion: 1
+groups:
+    - orgId: 1
+      name: Backend Alerts
+      folder: Backend Monitoring
+      interval: 1m
+      rules:
+        - uid: cg2i3l5awurr4c
+          title: 5xx Errors Detected
+          condition: C
+          data:
+            - refId: A
+              relativeTimeRange:
+                from: 600
+                to: 0
+              datasourceUid: prometheus
+              model:
+                editorMode: code
+                expr: |-
+                    sum(
+                      increase(http_requests_total{status=~"5.."}[5m])
+                    ) or vector(0)
+                instant: true
+                intervalMs: 1000
+                legendFormat: __auto
+                maxDataPoints: 43200
+                range: false
+                refId: A
+            - refId: C
+              queryType: expression
+              datasourceUid: __expr__
+              model:
+                conditions:
+                    - evaluator:
+                        params:
+                            - 0
+                        type: gt
+                      operator:
+                        type: and
+                      query:
+                        params:
+                            - C
+                      reducer:
+                        params: []
+                        type: last
+                      type: query
+                datasource:
+                    type: __expr__
+                    uid: __expr__
+                expression: A
+                intervalMs: 1000
+                maxDataPoints: 43200
+                refId: C
+                type: threshold
+          noDataState: NoData
+          execErrState: Error
+          annotations:
+            description: Au moins une réponse HTTP 5xx sur les 5 dernières minutes
+            summary: 5xx error detected on backend
+          isPaused: false
+          notification_settings:
+            receiver: Discord Alerts
+        - uid: dg2i49vsqq0owa
+          title: High 5xx Error Rate
+          condition: C
+          data:
+            - refId: A
+              relativeTimeRange:
+                from: 600
+                to: 0
+              datasourceUid: prometheus
+              model:
+                editorMode: code
+                expr: |-
+                    100 *
+                    (
+                      sum(increase(http_requests_total{status=~"5.."}[5m]))
+                      or vector(0)
+                    )
+                    /
+                    clamp_min(
+                      (
+                        sum(increase(http_requests_total[5m]))
+                        or vector(0)
+                      ),
+                      1
+                    )
+                instant: true
+                intervalMs: 1000
+                legendFormat: __auto
+                maxDataPoints: 43200
+                range: false
+                refId: A
+            - refId: C
+              queryType: expression
+              datasourceUid: __expr__
+              model:
+                conditions:
+                    - evaluator:
+                        params:
+                            - 5
+                        type: gt
+                      operator:
+                        type: and
+                      query:
+                        params:
+                            - C
+                      reducer:
+                        params: []
+                        type: last
+                      type: query
+                datasource:
+                    type: __expr__
+                    uid: __expr__
+                expression: A
+                intervalMs: 1000
+                maxDataPoints: 43200
+                refId: C
+                type: threshold
+          noDataState: NoData
+          execErrState: Error
+          for: 1m
+          annotations:
+            description: Le taux d’erreurs HTTP 5xx est resté au-dessus de 5% pendant au moins 1 minute
+            summary: High 5xx error rate detected
+          isPaused: false
+          notification_settings:
+            receiver: Discord Alerts
+        - uid: dg2iem7mvbwg0e
+          title: Backend Down
+          condition: C
+          data:
+            - refId: A
+              relativeTimeRange:
+                from: 600
+                to: 0
+              datasourceUid: prometheus
+              model:
+                editorMode: code
+                expr: up{job="backend"}
+                instant: true
+                intervalMs: 1000
+                legendFormat: __auto
+                maxDataPoints: 43200
+                range: false
+                refId: A
+            - refId: C
+              queryType: expression
+              datasourceUid: __expr__
+              model:
+                conditions:
+                    - evaluator:
+                        params:
+                            - 1
+                        type: lt
+                      operator:
+                        type: and
+                      query:
+                        params:
+                            - C
+                      reducer:
+                        params: []
+                        type: last
+                      type: query
+                datasource:
+                    type: __expr__
+                    uid: __expr__
+                expression: A
+                intervalMs: 1000
+                maxDataPoints: 43200
+                refId: C
+                type: threshold
+          noDataState: NoData
+          execErrState: Error
+          for: 1m
+          annotations:
+            description: Prometheus cannot reach the backend for at least 1 minute.
+            summary: Backend is unavailable
+          isPaused: false
+          notification_settings:
+            receiver: Discord Alerts
