@@ -3,10 +3,14 @@ import { NestFactory } from '@nestjs/core';
 import helmet from 'helmet';
 
 import { AppModule } from './app.module';
+import { LogstashLogger } from './logger/logstash.logger';
 import { PresenceGateway } from './presence/presence.gateway';
 
 async function bootstrap(): Promise<void> {
-  const app = await NestFactory.create(AppModule);
+  // Logs de Nest en JSON sur stdout, et envoyes a Logstash pour Kibana.
+  const logger = new LogstashLogger();
+
+  const app = await NestFactory.create(AppModule, { logger });
 
   app.enableShutdownHooks();
 
@@ -41,7 +45,7 @@ async function bootstrap(): Promise<void> {
 
   await app.listen(3000, '0.0.0.0');
 
-  console.log('Backend running on port 3000');
+  logger.log('Backend running on port 3000', 'Bootstrap');
 }
 
 bootstrap();
