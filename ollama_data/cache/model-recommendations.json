@@ -1,0 +1,23 @@
+{
+  "recommendations": [
+    {
+      "model": "glm-5.2:cloud",
+      "description": "Long-horizon coding and agentic engineering with a solid 1M context",
+      "context_length": 1000000,
+      "max_output_tokens": 131072,
+      "required_plan": "pro"
+    },
+    {
+      "model": "minimax-m3:cloud",
+      "description": "State-of-the-art coding \u0026 agent capabilities with multimodal reasoning and support for up to 1M context",
+      "context_length": 524288,
+      "max_output_tokens": 131072,
+      "required_plan": "free"
+    },
+    {
+      "model": "gemma4:26b",
+      "description": "Agentic workflows and multimodal reasoning",
+      "vram_bytes": 19000000000
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+je souhaiterais ensuite egalement pouvoir passer au round suivant (on skip temporairement la phase de vote)
+
+L'idee serait que je a chaque round j 'ai le choix entre un agent et un prompt (que je puisse choisir dans les configs l'ordre des agents , et peut etre faire un index de prompt pour qu 'IA puisse avoir differente personalite)
+
+pour garder la continuite et augmenter la difficulte a chaque prompt je souhaiterais egalement conserver l'historique de chaque rounds pour le round suivant et passer l'historique a un Agent qui analysera la partie et donnera un ajout de prompt avec ADD_context  au round suivant  avec un correctif pour ajuster et ameliorer son comportement d'un round a l'autre et empecher qu'une meme tactique marche deux fois de suites.
+
+
+
+fait moi un plan en plusieurs etapes pour faire tout cela.
+
+toujours de manieres la plus modulaires et adaptable par la suite.
+

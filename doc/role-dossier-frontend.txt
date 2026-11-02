@@ -1,0 +1,255 @@
+src/
+│
+├── App.tsx
+│   -> Composant principal de l'application.
+│
+├── main.tsx
+│   -> Point d'entrée, ici pour React
+│
+├── index.css
+│   -> Styles globaux (Tailwind)
+│
+├── pages/
+│   -> Les grandes pages du site.
+│
+├── components/
+│   -> Les éléments réutilisables.
+│
+├── services/
+│   -> Toute la communication avec le backend.
+│
+├── router/
+│   -> Gestion des routes (/login, /profile, ...)
+│
+├── hooks/
+│   -> Logique React réutilisable. Semble specifique a react pour raphael
+│
+└── types/
+    -> Types et interfaces TypeScript.
+
+
+
+
+
+
+
+
+
+
+    Detail : 
+    ------------------------------------------------------------------------------------------
+
+    pages/
+
+    Chaque fichier représente une page complète du site.
+    C'est ce qu'on appel une view dans le modele MVC.
+
+    Par exemple :
+
+    pages/
+    ├── Home.tsx
+    ├── Login.tsx
+    ├── Register.tsx
+    ├── Profile.tsx
+    ├── Settings.tsx
+    └── Game.tsx
+
+    Une page correspond généralement à une URL
+
+    Par exemple :
+
+    /            -> Home
+    /login       -> Login
+    /register    -> Register
+    /profile     -> Profile
+    /game        -> Game
+
+
+    ------------------------------------------------------------------------------------------
+
+    components/
+
+    Un composant est un petit morceau réutilisable.
+
+    Au lieu de refaire un bouton partout :
+
+    <button>Connexion</button>
+
+    tu peux créer :
+
+    components/
+    ├── Button.tsx
+    ├── Navbar.tsx
+    ├── Footer.tsx
+    ├── Avatar.tsx
+    ├── FriendCard.tsx
+    └── MatchHistory.tsx
+
+    Puis l'utiliser partout
+
+
+
+
+    ------------------------------------------------------------------------------------------
+
+
+    services/
+
+    Ici, on met tout ce qui parle au backend.
+
+    par exemple :
+
+    fetch("/api/health")
+
+    
+
+    Toutes les requetes sql vers la base de donnees se feront par le backend en sql, puis ils seront transmis en JSON au frontend dans ce fichier
+
+
+    Toute la communication avec NestJS sera ici.
+
+
+    ------------------------------------------------------------------------------------------
+
+
+
+    hooks/
+
+    c'est une particularité de React.
+
+    Un Hook sert à réutiliser une logique, pas une interface.
+
+    Par exemple :
+
+    On voudra connaître l'utilisateur connecté.
+
+    Au lieu d'écrire :
+
+    const user = ...
+
+    dans 25 composants...
+
+    on écrit :
+
+    hooks/
+    └── useAuth.ts
+
+    Puis :
+
+    const user = useAuth();
+
+    Le Hook fait tout le travail.
+
+    Il peut :
+
+    appeler le backend,
+    vérifier le token,
+    gérer la connexion.
+
+    Les Hooks servent à partager de la logique entre composants.
+
+
+    ------------------------------------------------------------------------------------------
+
+
+    types/
+
+    On utilise TypeScript.
+
+    Donc tu vas créer des types.
+
+    Par exemple :
+
+    interface User
+    {
+        id: number;
+        username: string;
+        avatar: string;
+    }
+
+    On ne veut pas recopier ça partout.
+
+    ------------------------------------------------------------------------------------------
+
+
+    router/
+
+
+
+    Le Router décide quelle page afficher.
+
+    Imaginons qu'on tape :
+
+    https://localhost/profile
+
+    Comment React sait-il qu'il doit afficher :
+
+    <Profile />
+
+    et pas :
+
+    <Home />
+
+    C'est justement le rôle du Router.
+
+    Par exemple :
+
+    <Route path="/" element={<Home />} />
+
+    <Route path="/login" element={<Login />} />
+
+    <Route path="/profile" element={<Profile />} />
+
+    Le Router regarde l'URL :
+
+    /profile
+
+    et dit :
+
+    "Je vais afficher le composant <Profile />."
+
+    Sans Router
+
+    Sans Router, On n'aurait qu'une seule page :
+
+    https://localhost
+
+    Impossible d'avoir :
+
+    /login
+
+    /profile
+
+    /game
+
+    /settings
+    Avec Router
+
+    On peut avoir :
+
+    https://localhost/
+            │
+            ▼
+          Home
+
+    https://localhost/login
+            │
+            ▼
+          Login
+
+    https://localhost/register
+            │
+            ▼
+         Register
+
+    https://localhost/profile
+            │
+            ▼
+          Profile
+
+    https://localhost/game
+            │
+            ▼
+           Pong
+
+    ------------------------------------------------------------------------------------------

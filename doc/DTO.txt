@@ -1,0 +1,31 @@
+Imagine que React envoie :
+
+
+{
+    "username": "max",
+    "email": "max@test.fr",
+    "password": "bonjour123malcolm"
+}
+
+
+
+Sans DTO, notre contrôleur ferait un truc comme :
+
+if (!body.username)
+    ...
+if (body.username.length < 3)
+    ...
+if (!body.email.includes('@'))
+    ...
+if (!body.password)
+    ...
+
+
+Le contrôleur deviendrait rapidement rempli de vérifications.
+(exactement comme en PHP sur un modele MVC, le controller est enorme)
+
+
+
+
+NestJS préfère dire : "Décris-moi ce qu'est une inscription valide."
+C'est exactement le rôle d'un DTO.

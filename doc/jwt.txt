@@ -1,0 +1,512 @@
+================================================================================
+JWT (JSON Web Token)
+================================================================================
+
+Pourquoi utilise-t-on un JWT ?
+==============================
+
+Le JWT (JSON Web Token) est un jeton d'authentification.
+
+Son rôle est de permettre à un utilisateur de prouver son identité à chaque
+requête sans que le serveur ait besoin de conserver une session.
+
+Autrement dit :
+
+- le serveur vérifie une seule fois le login et le mot de passe ;
+- ensuite il remet un "badge" au client ;
+- ce badge est le JWT ;
+- le client présente ce badge à chaque requête ;
+- le serveur reconnaît immédiatement l'utilisateur.
+
+Le JWT ne protège pas NodeJS lui-même.
+Il protège l'authentification entre React (le client) et NestJS (le serveur).
+
+================================================================================
+Comparaison avec PHP
+================================================================================
+
+En PHP traditionnel :
+
+Navigateur
+     │
+     ▼
+login.php
+     │
+     ▼
+$_SESSION["user_id"] = 1
+
+Le serveur garde une session en mémoire.
+
+Ensuite le navigateur renvoie automatiquement le cookie de session.
+
+Le serveur retrouve :
+
+    $_SESSION["user_id"]
+
+et sait immédiatement qui est connecté.
+
+Le client ne transporte jamais son identité.
+
+C'est le serveur qui s'en souvient.
+
+================================================================================
+Avec JWT
+================================================================================
+
+React
+   │
+   ▼
+POST /api/auth/login
+   │
+   ▼
+NestJS vérifie email + mot de passe
+   │
+   ▼
+Création d'un JWT
+   │
+   ▼
+React reçoit le JWT
+
+Cette fois le serveur ne garde aucune session.
+
+C'est le client qui transporte son identité.
+
+On appelle cela une authentification "stateless"
+(c'est-à-dire "sans état").
+
+================================================================================
+Cycle complet d'authentification
+================================================================================
+
+1) L'utilisateur s'inscrit
+
+POST /api/auth/register
+
+Le backend :
+
+- valide les données
+- hash le mot de passe avec bcrypt
+- crée l'utilisateur dans PostgreSQL
+
+Aucun JWT n'est créé.
+
+--------------------------------------------------------------------------------
+
+2) L'utilisateur se connecte
+
+POST /api/auth/login
+
+Le backend :
+
+- recherche l'utilisateur
+- vérifie le mot de passe avec bcrypt
+- crée un JWT
+- renvoie ce JWT au frontend
+
+Exemple :
+
+{
+    "accessToken": "...",
+    "user": {
+        ...
+    }
+}
+
+--------------------------------------------------------------------------------
+
+3) React stocke le JWT
+
+Le frontend peut le stocker :
+
+- en mémoire
+- dans localStorage
+- dans un cookie HttpOnly (plus sécurisé)
+
+Pour notre projet nous utiliserons probablement un stockage mémoire ou un
+cookie selon l'architecture finale.
+
+--------------------------------------------------------------------------------
+
+4) Chaque requête protégée
+
+Quand React appelle une route protégée :
+
+GET /api/auth/me
+
+il ajoute automatiquement :
+
+Authorization: Bearer <JWT>
+
+Exemple :
+
+GET /api/auth/me
+
+Authorization: Bearer eyJhbGc...
+
+Le JWT accompagne donc chaque requête.
+
+================================================================================
+Que contient un JWT ?
+================================================================================
+
+Dans notre projet nous mettons :
+
+{
+    "sub": 1,
+    "username": "max"
+}
+
+sub représente l'identifiant de l'utilisateur.
+
+Ces informations sont appelées le "payload".
+
+================================================================================
+Le JWT est signé
+================================================================================
+
+Le JWT n'est pas simplement du texte.
+
+Il est signé cryptographiquement.
+
+Le serveur utilise une clé secrète :
+
+JWT_SECRET
+
+pour créer cette signature.
+
+Quand le client renvoie son JWT :
+
+NestJS vérifie automatiquement la signature.
+
+Si quelqu'un modifie un seul caractère :
+
+→ le JWT devient invalide
+
+→ NestJS répond immédiatement :
+
+401 Unauthorized
+
+Le client ne peut donc pas fabriquer un faux JWT.
+
+================================================================================
+Le rôle du JWT_SECRET
+================================================================================
+
+Notre fichier :
+
+secrets/jwt_secret.txt
+
+contient une clé privée.
+
+Exemple :
+
+1499c9519b38f9438faee7278a829163bb967d0fe5ba0ee32bb91c339e06f6c3
+
+Cette clé :
+
+- ne quitte jamais le serveur ;
+- n'est jamais envoyée au navigateur ;
+- sert uniquement à signer les JWT ;
+- sert également à vérifier leur authenticité.
+
+================================================================================
+Pourquoi le client ne connaît-il pas JWT_SECRET ?
+================================================================================
+
+Le navigateur reçoit uniquement le JWT.
+
+Il ne reçoit jamais :
+
+JWT_SECRET
+
+Sinon il pourrait fabriquer lui-même des JWT valides.
+
+Ce serait une énorme faille de sécurité.
+
+================================================================================
+Le rôle de JwtStrategy
+================================================================================
+
+Notre fichier :
+
+jwt.strategy.ts
+
+explique à NestJS :
+
+"Voici comment vérifier un JWT."
+
+On y trouve notamment :
+
+super({
+    jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+    secretOrKey: process.env.JWT_SECRET,
+});
+
+Cela signifie :
+
+- lire le JWT dans le header Authorization ;
+- utiliser JWT_SECRET ;
+- vérifier la signature.
+
+================================================================================
+validate()
+================================================================================
+
+Lorsque le JWT est valide :
+
+validate(payload)
+
+est appelée automatiquement.
+
+Nous renvoyons :
+
+return {
+    userId: payload.sub,
+    username: payload.username,
+};
+
+NestJS place automatiquement cet objet dans :
+
+request.user
+
+================================================================================
+Le rôle de JwtAuthGuard
+================================================================================
+
+Notre guard :
+
+JwtAuthGuard
+
+protège les routes.
+
+Par exemple :
+
+@UseGuards(JwtAuthGuard)
+
+Avant d'exécuter le contrôleur :
+
+Le Guard vérifie :
+
+- un JWT est-il présent ?
+- est-il valide ?
+- la signature est-elle correcte ?
+- est-il expiré ?
+
+Si tout est correct :
+
+↓
+
+request.user est rempli
+
+↓
+
+le contrôleur est exécuté.
+
+Sinon :
+
+↓
+
+401 Unauthorized
+
+================================================================================
+request.user
+================================================================================
+
+Grâce au JwtStrategy :
+
+request.user
+
+contient déjà :
+
+{
+    userId: 1,
+    username: "max"
+}
+
+Le contrôleur n'a donc plus besoin de décoder le JWT.
+
+Il récupère directement :
+
+request.user.userId
+
+pour aller chercher l'utilisateur dans PostgreSQL.
+
+================================================================================
+Pourquoi relire l'utilisateur dans PostgreSQL ?
+================================================================================
+
+Même si le JWT contient :
+
+{
+    "sub":1,
+    "username":"max"
+}
+
+on ne renvoie pas directement ces informations.
+
+On fait :
+
+JWT
+
+↓
+
+userId
+
+↓
+
+PostgreSQL
+
+↓
+
+Utilisateur actuel
+
+Ainsi :
+
+- si l'utilisateur change son email ;
+- change son avatar ;
+- change son pseudo ;
+- est supprimé ;
+
+le backend récupère toujours les informations les plus récentes.
+
+Le JWT sert uniquement à identifier l'utilisateur.
+
+La base de données reste la source officielle des informations.
+
+================================================================================
+bcrypt et JWT sont deux choses différentes
+================================================================================
+
+bcrypt sert uniquement à protéger les mots de passe.
+
+Lors de l'inscription :
+
+mot de passe
+
+↓
+
+bcrypt.hash()
+
+↓
+
+passwordHash
+
+↓
+
+PostgreSQL
+
+Lors de la connexion :
+
+mot de passe tapé
+
+↓
+
+bcrypt.compare()
+
+↓
+
+mot de passe correct ?
+
+↓
+
+Oui
+
+↓
+
+Création du JWT
+
+Le JWT n'est donc créé qu'après la vérification du mot de passe.
+
+================================================================================
+Différence entre Session PHP et JWT
+================================================================================
+
+PHP
+
+Navigateur
+
+↓
+
+Cookie de session
+
+↓
+
+Serveur
+
+↓
+
+$_SESSION["user_id"]
+
+Le serveur garde toutes les sessions en mémoire.
+
+----------------------------------------
+
+JWT
+
+React
+
+↓
+
+JWT
+
+↓
+
+NestJS
+
+Le serveur ne garde aucune session.
+
+Chaque requête contient déjà tout ce qu'il faut pour identifier
+l'utilisateur.
+
+On parle d'une authentification "stateless".
+
+================================================================================
+Ce que nous avons construit
+================================================================================
+
+À ce stade du projet ft_transcendence, nous avons développé une architecture
+d'authentification moderne proche de celle utilisée dans les applications
+professionnelles.
+
+Notre backend est désormais capable de :
+
+✓ enregistrer un utilisateur (register)
+
+✓ valider automatiquement les données reçues avec ValidationPipe
+
+✓ protéger les mots de passe avec bcrypt
+
+✓ créer un utilisateur dans PostgreSQL avec Prisma
+
+✓ connecter un utilisateur (login)
+
+✓ vérifier le mot de passe avec bcrypt.compare()
+
+✓ générer un JWT signé avec JWT_SECRET
+
+✓ protéger les routes grâce à JwtAuthGuard
+
+✓ vérifier automatiquement les JWT avec JwtStrategy
+
+✓ récupérer l'utilisateur connecté via request.user
+
+✓ retrouver les informations les plus récentes dans PostgreSQL
+
+✓ renvoyer le profil connecté via /api/auth/me
+
+Cette base est solide et servira pour toute la suite du projet :
+
+- gestion des profils
+- avatars
+- amis
+- matchmaking
+- WebSockets
+- parties de Pong
+- invitations
+- chat
+- historique des matchs
+- authentification 42
+- et toutes les futures routes protégées.
+
+Le JWT devient donc la carte d'identité numérique que React présente à NestJS
+à chaque requête protégée.
