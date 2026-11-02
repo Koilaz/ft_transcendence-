@@ -282,7 +282,7 @@ ihas been completly removed from the current version
 | Member | Tools | Tasks | Parts of the project |
 |---|---|---|---|
 | lmarck |Claude opus 5.5, Chat GPT, Mistral studio|Code Review, Debugging, Testing, Research bainstorming, redondant Tasks | Game backend, room logic, LLM API and prompts, Ollama container, Makefile |
-| cnamoune | <!-- TODO --> | <!-- TODO --> | <!-- TODO --> |
+| cnamoune | Codex | Code generation, Git, technical explanations | Ranking systeme integration to game backend, Reconnection logic, merging |
 | radubos | Mistral (Le Chat, Mistral Studio), Nano Banana 2 (Google Gemini image generation) | Code generation, Debugging, Brainstorming, Testing, Image generation | Frontend (React application, UI components, animations, reconnection), illustrations of the characters and the timer bunny |
 | mwallis | ChatGPT | Code review, debugging assistance, technical explanations, documentation drafting and verification of Docker/NestJS/Prisma concepts | Backend architecture, Docker infrastructure, NestJS, Prisma, PostgreSQL, nginx, JWT authentication, documentation |
 | mlavry | <!-- TODO --> | <!-- TODO --> | <!-- TODO --> |
@@ -298,7 +298,7 @@ The character portraits and the timer bunny illustrations were generated with Na
 | Member (42 login) | Role(s) | Responsibilities |
 |---|---|---|
 | `lmarck` | Product Owner |integration of the backend skeleton and presence, architecture of the game service, AI agents and prompts, team documentation, merges of the team branches, Makefile, integration of the Ollama container |
-| `cnamoune` | <!-- TODO --> | Voting and scoring system, round transitions and endgame screen, lobby Ready flow, |
+| `cnamoune` | Scrum master, developers | Voting and scoring system, round transitions and endgame screen, lobby Ready flow, |
 | `radubos` | developers | Frontend (UI components, game screen, animations, responsive design, legal pages), reconnection, multi-tab presence, integration of the team branches |
 | `mwallis` | Technical Lead / Architect, Developer | Initial `core/` architecture and infrastructure: Docker Compose setup and containerization of nginx, PostgreSQL, NestJS backend and React/Vite frontend; nginx reverse proxy and HTTPS configuration; PostgreSQL initialization, configuration and persistent storage; NestJS backend (authentication, users, friends), Prisma schema and migrations; frontend development environment with Node.js, Vite and ESLint |
 | `mlavry` | <!-- TODO --> | <!-- TODO --> |
@@ -528,7 +528,7 @@ The whole frontend was built by **radubos**. On the other rows, the names listed
 | Sign-up and login | email + password, password confirmation at sign-up, bcrypt, JWT, same error for unknown email and wrong password | mwallis, cnamoune |
 | Profile | own information, username change, avatar upload with a default avatar, two-step password change | mwallis,  |
 | Friends | user search, send / accept / cancel / remove requests, sent and received lists | mwallis |
-| Online status | live presence through a WebSocket, aware of several open tabs, reset after a server restart | mwallis, cnamoune, radubos |
+| Online status | live presence through a WebSocket, aware of several open tabs, reset after a server restart | mwallis, radubos |
 | Guest mode | play without an account, with a nickname | lmarck, radubos |
 | Lobby and matchmaking | single waiting queue showing only a counter, Ready check, warning when the AIs are unavailable | lmarck, cnamoune, radubos |
 | Turn-based chat | server-authoritative turns and timers, silence detection,  chat history| lmarck |
@@ -753,8 +753,7 @@ Modules candidats NON revendiques ci-dessus (a ajouter seulement s'ils sont defe
 - **Voting and scoring:** vote screen and server-side collection of the votes during the discussion, score based on correctness and speed, points for the AI.
 - **Rounds and endgame:** round transition state, delay at the end of a round to read the last message, endgame screen with the final ranking and the chat history of the whole game.
 - **Lobby:** Ready button and start condition (frontend and queue).
-- **Accounts:** password confirmation at sign-up and password change (endpoint, DTO, test and form), fix of the online status of registered players.
-- **Challenges:** <!-- TODO -->
+- **Challenges:** Facing a log of new technologie, git system file manipulation
 
 ### radubos
 

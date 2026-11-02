@@ -26,7 +26,7 @@ export class Round {
 		/* Ajout pour le systeme de vote en temps reel pendant les Round */
 		this.onRoundEnded = onRoundEndedFn;
 		this.roundStartTime = null;
-        this.votes = new Map(); // Stockera : playerId -> { targetCharacter, isCorrect, timeElapsed, score }
+        this.votes = new Map(); // playerId -> { targetCharacter, isCorrect, timeElapsed }
 		this.leftPlayers = new Set();
 		this.assignCaracters();
 		this.assignTurnOrder();
@@ -142,7 +142,6 @@ export class Round {
         const player = this.playerById.get(playerId);
         if (!player || player.agentName) return;
 
-        // 2. Retrouver l'ID de la cible désignée
         let targetId = null;
         for (const [id, char] of this.assignments.entries()) {
             if (char === targetCharacter) {
@@ -150,18 +149,15 @@ export class Round {
                 break;
             }
         }
-        if (!targetId) return;
-
+        if (!targetId)
+			return ;
 
         const targetPlayer = this.playerById.get(targetId);
-        const isCorrect = !!targetPlayer.agentName; // True si c'est l'IA
+        const isCorrect = !!targetPlayer.agentName;
 
-        // 4. Calcul du score
         const timeElapsed = Date.now() - this.roundStartTime;
-        const score = isCorrect ? timeElapsed : 9999999;
 
-        // 5. Sauvegarde du vote
-        this.votes.set(playerId, { targetCharacter, isCorrect, timeElapsed, score });
+        this.votes.set(playerId, { targetCharacter, isCorrect, timeElapsed });
 
         player.send({ type: 'voteRegistered', target: targetCharacter });
     }
@@ -181,7 +177,6 @@ export class Round {
 		let aiRoundScore = 0;
 		const maxTimeMs = this.turnPerRound * this.players.length * this.turnDuration * 1000;
 
-        // Génération des scores pour chaque humain
         for (const human of this.humanPlayers) {
             const vote = this.votes.get(human.id);
             const characterName = this.caracterOf(human.id);
@@ -195,7 +190,7 @@ export class Round {
 			else
 			{
 				humanScore = 0;
-                aiRoundScore += 2500;
+                aiRoundScore += 1500;
             }
 			results.push({
                 playerId: human.id,
