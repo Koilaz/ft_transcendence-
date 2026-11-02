@@ -137,7 +137,7 @@ export function VoteArea({
                 disabled={!isVotable}
               >
                 {/* Image du personnage - affiche toute l'image (tête + pieds) */}
-                <div className="w-full h-full flex items-center justify-center">
+                <div className="relative z-10 w-full h-full flex items-center justify-center">
                   <img
                     src={getBodyImagePath(character)}
                     alt={character}
@@ -145,41 +145,16 @@ export function VoteArea({
                   />
                 </div>
                 
-                {/* Texte indicateur de tour - effet manga sur le personnage actuel.
-                    aria-hidden sur chaque « bla » : sans lui, un lecteur
-                    d'ecran lirait six fois le mot a voix haute — le decor
-                    ne parle pas, le badge et le nom portent l'information. */}
+                {/* Décor du personnage actif : image statique entre le fond
+                    et le personnage. aria-hidden : purement décoratif, le
+                    badge et le nom portent l'information. */}
                 {isCurrent && (
-                  <>
-                    {Array.from({ length: 6 }).map((_, i) => {
-                      const angle = (i / 6) * Math.PI * 2;
-                      const startRadius = 0;
-                      const endRadius = 180;
-                      const startX = Math.cos(angle) * startRadius;
-                      const startY = Math.sin(angle) * startRadius;
-                      const endX = Math.cos(angle) * endRadius;
-                      const endY = Math.sin(angle) * endRadius;
-                      return (
-                        <motion.div
-                          key={i}
-                          aria-hidden="true"
-                          className="absolute text-danger-400 text-[clamp(0.75rem,1.2vw,1rem)] font-bold pointer-events-none font-bangers"
-                          style={{ left: '50%', top: '50%', transform: 'translate(-50%, -50%)', WebkitTextStroke: '1px rgba(0,0,0,0.5)' }}
-                          initial={{ x: startX, y: startY, opacity: 0, scale: 1.2 }}
-                          animate={{ x: endX, y: endY, opacity: [0, 1, 1, 0], scale: [1.2, 3.8, 3.8, 1.2] }}
-                          transition={{
-                            duration: 1.8, 
-                            repeat: Infinity, 
-                            delay: i * 0.2,
-                            ease: "easeOut",
-                            times: [0, 0.1, 0.7, 1]
-                          }}
-                        >
-                          bla
-                        </motion.div>
-                      );
-                    })}
-                  </>
+                  <img
+                    src="/bla.webp"
+                    alt=""
+                    aria-hidden="true"
+                    className="absolute inset-0 z-0 w-full h-full object-cover pointer-events-none"
+                  />
                 )}
                 
                 {/* Badge de vote, toujours visible dès qu'on peut voter */}
