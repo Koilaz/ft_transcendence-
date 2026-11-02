@@ -3,22 +3,15 @@ export class Player
 {
 	constructor(id, sendFn, { isAI = false, agentName = null, promptName = null, botRounds = null, displayName = null } = {}) {
 		this.id = id;
-		//Pseudo choisi par le joueur. Decoratif : il n'apparait qu'au classement
-		//final, jamais pendant la partie ou il trahirait qui est qui.
-		this.displayName = displayName;
+		this.displayName = displayName;//Pseudo choisi par le joueur. il n'apparait qu'au classement
 		this.sendFn = sendFn;
-		//La place reste reservee pendant la manche, meme sans transport actif.
 		this.connected = true;
 		this.status = 'waiting';
 		this.currentCaractere;
-		this.isViewer = false;
-		this.isAI = false;
+		//this.isViewer = false;
+		//this.isAI = false;
 		this.agentName = agentName;
-		//Le prompt attribue a ce bot. Purement informatif : c'est agentName qui
-		//designe l'imposteur partout ailleurs.
 		this.promptName = promptName;
-		//Bots seulement : le { agent, prompt } de chaque manche, que la Room
-		//recopie dans agentName et promptName au debut de la manche.
 		this.botRounds = botRounds;
 		this.score = 0;
 	}

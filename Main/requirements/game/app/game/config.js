@@ -10,7 +10,7 @@ export const gameConfig = {
 	//	                                                      vaut pour les manches suivantes
 	bots: [{
 		rounds: [
-			{ agent: 'local_agent', prompt: 'prompt_test' },
+			{ agent: 'local_agent', prompt: 'prompt_easy' },
 			{ agent: 'mistral_medium', prompt: 'prompt_test_advanced' }, // manche 1
 			{ agent: 'mistral_medium', prompt: 'prompt_test_advanced' }, // manche 2
 			{ agent: 'mistral_medium', prompt: 'prompt_test_advanced' }, // manche 3
@@ -18,14 +18,14 @@ export const gameConfig = {
 		]
 	}],
 	turnPerRound: 5,   // nombre de tours par manche
-	turnDuration: 15,   // secondes par tour
+	turnDuration: 17,   // secondes par tour
 	maxMessageLength: 150, // caracteres par message de chat, au-dela le serveur tronque ; envoye au front dans les messages state (cf. room.js publicState et queue.js)
 	maxPlayers: 6,
 	minPlayers: 3,          // seuil pour DEMARRER une partie
 	minPlayersToContinue: 3, // seuil pour CONTINUER une partie deja lancee
 	startingTimer: 7,       // secondes apres que tous les joueurs sont prets
 	maxRounds: 5, // nombre de manche
-	roundTransitionDelay: 8,
+	roundTransitionDelay: 10,
 	debriefMaxWaits: 5,//Prolongations du tableau des scores accordees a l'analyse d'apres-manche
 	agentRecheckDelay: 15, // secondes entre deux verifications d'un agent hors service, tant que des joueurs attendent
 };
@@ -43,10 +43,7 @@ available prompts (cles du registre dans agents/prompt/index_prompt.js) :
 	prompt_basic     prompt d'origine, un seul bloc sans sections ni exemples
 	prompt_advanced  prompt_default + debrief
 	prompt_test      prompt de travail
-	prompt_test_advanced
-					prompt_test en immersion totale : le bot ne se sait jamais
-					 IA, il se croit un joueur qui la cherche. Meme note
-					 d'apres-manche, correctifs reformules.
+	prompt_test_advanced prompt de travail
 */
 
 function botEntry(bot) {
