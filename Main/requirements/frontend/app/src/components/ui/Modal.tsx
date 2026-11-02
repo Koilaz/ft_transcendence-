@@ -13,15 +13,13 @@ export function Modal({ isOpen, onClose, children, className = '' }: ModalProps)
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           className="fixed inset-0 bg-abyss-950/80 flex items-center justify-center z-50 p-4"
           onClick={onClose}
         >
           <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
+            initial={{ scale: 0.9, y: 20 }}
+            animate={{ scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
             className={`relative bg-abyss-900 border border-abyss-700 rounded-xl p-8 shadow-2xl shadow-abyss-900/50 ${className}`}
