@@ -24,8 +24,8 @@ const empty = { currentPassword: '', newPassword: '', confirmPassword: '' };
 
 const valid = {
   currentPassword: 'ancien-motdepasse',
-  newPassword: 'nouveau-motdepasse',
-  confirmPassword: 'nouveau-motdepasse',
+  newPassword: 'nouveau-motdepasse1',
+  confirmPassword: 'nouveau-motdepasse1',
 };
 
 test("l'etape 1 ne valide que le mot de passe actuel", () => {
@@ -65,13 +65,16 @@ test('le nouveau mot de passe suit ChangePasswordDto : 8 a 72 caracteres', () =>
     validateField('newPassword', { ...valid, newPassword: 'x'.repeat(73) }),
     'Password must be at most 72 characters',
   );
-  assert.equal(validateField('newPassword', { ...valid, newPassword: 'x'.repeat(72) }), '');
+  // 72 caracteres avec lettre et chiffre (le backend exige les deux) : accepte.
+  assert.equal(validateField('newPassword', { ...valid, newPassword: 'x'.repeat(71) + '1' }), '');
 });
 
 test('le nouveau mot de passe est limite a 72 octets (bcrypt tronque au-dela)', () => {
   // 72 caracteres ASCII = 72 octets : accepte. 36 accents = 72 caracteres
-  // mais 72 octets aussi (un accent = 2 octets en UTF-8) : accepte.
-  assert.equal(validateField('newPassword', { ...valid, newPassword: 'é'.repeat(36) }), '');
+  // mais 72 octets aussi (un accent = 2 octets en UTF-8) : accepte. La lettre
+  // et le chiffre exiges par le backend viennent en ASCII : un accent n'est
+  // pas [a-zA-Z], le couple compte donc pour 2 caracteres et 2 octets.
+  assert.equal(validateField('newPassword', { ...valid, newPassword: 'a' + 'é'.repeat(34) + '1' }), '');
   // 40 accents = 80 octets : le backend refuse (IsByteLength), le front aussi.
   assert.equal(
     validateField('newPassword', { ...valid, newPassword: 'é'.repeat(40) }),
@@ -89,7 +92,7 @@ test('la confirmation doit recopier le nouveau mot de passe', () => {
     validateField('confirmPassword', { ...valid, confirmPassword: 'autrechose' }),
     'Passwords do not match',
   );
-  assert.equal(validateField('confirmPassword', { ...valid, confirmPassword: 'nouveau-motdepasse' }), '');
+  assert.equal(validateField('confirmPassword', { ...valid, confirmPassword: 'nouveau-motdepasse1' }), '');
 });
 
 test('un formulaire complet valide ne produit aucune erreur', () => {

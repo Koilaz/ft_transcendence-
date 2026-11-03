@@ -21,8 +21,8 @@ const empty = { username: '', email: '', password: '', confirmPassword: '' };
 const valid = {
   username: 'Raph_99',
   email: 'raph@example.com',
-  password: 'motdepasse',
-  confirmPassword: 'motdepasse',
+  password: 'motdepasse1',
+  confirmPassword: 'motdepasse1',
 };
 
 test('un formulaire vide bloque les quatre champs', () => {
@@ -100,9 +100,9 @@ test('le mot de passe fait au moins 8 caracteres', () => {
     validateField('password', { ...valid, password: '1234567' }),
     'Password must be at least 8 characters',
   );
-  assert.equal(validateField('password', { ...valid, password: '12345678' }), '');
+  assert.equal(validateField('password', { ...valid, password: 'abc12345' }), '');
   // Pas de trim sur le mot de passe : les espaces comptent, comme au backend.
-  assert.equal(validateField('password', { ...valid, password: ' 1234567 ' }), '');
+  assert.equal(validateField('password', { ...valid, password: ' abc1234 ' }), '');
 });
 
 test('la confirmation doit recopier le mot de passe', () => {
@@ -110,7 +110,7 @@ test('la confirmation doit recopier le mot de passe', () => {
     validateField('confirmPassword', { ...valid, confirmPassword: 'autrechose' }),
     'Passwords do not match',
   );
-  assert.equal(validateField('confirmPassword', { ...valid, confirmPassword: 'motdepasse' }), '');
+  assert.equal(validateField('confirmPassword', { ...valid, confirmPassword: 'motdepasse1' }), '');
 });
 
 test('un formulaire valide ne produit aucune erreur', () => {
