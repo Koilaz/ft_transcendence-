@@ -1,0 +1,256 @@
+{
+  "description": "",
+  "options": {
+    "auto_apply_filters": true,
+    "hide_panel_borders": false,
+    "hide_panel_titles": false,
+    "sync_colors": false,
+    "sync_cursor": true,
+    "sync_tooltips": false,
+    "use_margins": true
+  },
+  "tags": [],
+  "title": "Tableau de bord [2026-11-02T00:47:45.977+01:00]",
+  "filters": [
+    {
+      "disabled": false,
+      "data_view_id": "d8cda271-2b9f-46dd-9b95-d8bb11711bab",
+      "type": "condition",
+      "condition": {
+        "field": "status",
+        "operator": "range",
+        "value": {
+          "gte": 200,
+          "lt": 201
+        }
+      }
+    }
+  ],
+  "esql_approximation": false,
+  "query": {
+    "expression": "message : \"HTTP request\"",
+    "language": "kql"
+  },
+  "panels": [
+    {
+      "grid": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 15
+      },
+      "config": {
+        "data_source": {
+          "type": "data_view_reference",
+          "ref_id": "d8cda271-2b9f-46dd-9b95-d8bb11711bab"
+        },
+        "type": "metric",
+        "sampling": 1,
+        "ignore_global_filters": false,
+        "metrics": [
+          {
+            "type": "primary",
+            "operation": "count",
+            "field": "service.keyword",
+            "empty_as_null": true,
+            "color": {
+              "type": "auto"
+            }
+          }
+        ],
+        "styling": {
+          "density": "default",
+          "primary": {
+            "position": "bottom",
+            "labels": {
+              "alignment": "left"
+            },
+            "value": {
+              "sizing": "auto",
+              "alignment": "right"
+            }
+          }
+        },
+        "query": {
+          "expression": "message : \"HTTP request\"",
+          "language": "kql"
+        }
+      },
+      "id": "ecedcfe9-0b2b-42aa-88c7-1330ff264c4d",
+      "type": "vis"
+    },
+    {
+      "grid": {
+        "x": 24,
+        "y": 0,
+        "w": 24,
+        "h": 15
+      },
+      "config": {
+        "title": "Répartition des statuts HTTP",
+        "type": "pie",
+        "sampling": 1,
+        "ignore_global_filters": false,
+        "metrics": [
+          {
+            "operation": "count",
+            "field": "service.keyword",
+            "empty_as_null": true
+          }
+        ],
+        "group_by": [
+          {
+            "operation": "histogram",
+            "include_empty_rows": false,
+            "granularity": "auto",
+            "field": "status",
+            "color": {
+              "mode": "categorical",
+              "palette": "default",
+              "mapping": []
+            }
+          }
+        ],
+        "data_source": {
+          "type": "data_view_reference",
+          "ref_id": "d8cda271-2b9f-46dd-9b95-d8bb11711bab"
+        },
+        "legend": {
+          "visibility": "auto",
+          "nested": false
+        },
+        "styling": {
+          "labels": {
+            "visible": true,
+            "position": "outside"
+          },
+          "values": {
+            "visible": true,
+            "mode": "percentage"
+          }
+        },
+        "query": {
+          "expression": "message : \"HTTP request\"",
+          "language": "kql"
+        }
+      },
+      "id": "f034455f-1bf5-4d10-99c3-b9e6d9f9353d",
+      "type": "vis"
+    },
+    {
+      "grid": {
+        "x": 0,
+        "y": 15,
+        "w": 24,
+        "h": 15
+      },
+      "config": {
+        "title": "Routes les plus appelées",
+        "type": "xy",
+        "layers": [
+          {
+            "type": "bar_stacked",
+            "data_source": {
+              "type": "data_view_reference",
+              "ref_id": "d8cda271-2b9f-46dd-9b95-d8bb11711bab"
+            },
+            "sampling": 1,
+            "ignore_global_filters": false,
+            "x": {
+              "operation": "terms",
+              "fields": [
+                "route.keyword"
+              ],
+              "limit": 10,
+              "rank_by": {
+                "type": "metric",
+                "metric_index": 0,
+                "direction": "desc"
+              }
+            },
+            "y": [
+              {
+                "operation": "count",
+                "field": "service.keyword",
+                "empty_as_null": true,
+                "color": {
+                  "type": "auto"
+                }
+              }
+            ]
+          }
+        ],
+        "axis": {
+          "x": {
+            "title": {
+              "visible": true
+            },
+            "ticks": {
+              "visible": true
+            },
+            "grid": {
+              "visible": true
+            },
+            "domain": {
+              "type": "fit",
+              "rounding": false
+            },
+            "labels": {
+              "orientation": "horizontal"
+            }
+          },
+          "y": {
+            "title": {
+              "visible": true
+            },
+            "scale": "linear",
+            "ticks": {
+              "visible": true
+            },
+            "grid": {
+              "visible": true
+            },
+            "domain": {
+              "type": "full",
+              "rounding": true
+            },
+            "labels": {
+              "orientation": "horizontal"
+            }
+          }
+        },
+        "styling": {
+          "overlays": {
+            "partial_buckets": {
+              "visible": false
+            },
+            "current_time_marker": {
+              "visible": false
+            }
+          },
+          "bars": {
+            "minimum_height": 1,
+            "data_labels": {
+              "visible": false
+            }
+          }
+        },
+        "legend": {
+          "placement": "outside",
+          "position": "bottom",
+          "layout": {
+            "type": "list"
+          },
+          "visibility": "visible"
+        },
+        "query": {
+          "expression": "message : \"HTTP request\"",
+          "language": "kql"
+        }
+      },
+      "id": "30b985cb-f9a7-4e8b-8320-9d654a124769",
+      "type": "vis"
+    }
+  ],
+  "pinned_panels": []
+}

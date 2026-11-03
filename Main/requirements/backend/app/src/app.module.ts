@@ -6,6 +6,9 @@ import { FriendsModule } from './friends/friends.module';
 import { PresenceModule } from './presence/presence.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { UsersModule } from './users/users.module';
+import { MetricsController } from './metrics/metrics.controller';
+import { NavigationController } from './metrics/navigation.controller';
+import { LogstashLogger } from './logger/logstash.logger';
 
 @Module({
   imports: [
@@ -15,7 +18,7 @@ import { UsersModule } from './users/users.module';
     FriendsModule,
     PresenceModule,
   ],
-  controllers: [AppController],
-  providers: [],
+  controllers: [AppController, MetricsController, NavigationController],
+  providers: [LogstashLogger],
 })
 export class AppModule {}

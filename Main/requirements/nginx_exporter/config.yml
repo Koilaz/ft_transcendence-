@@ -1,0 +1,12 @@
+listen:
+  port: 4040
+  address: "0.0.0.0"
+namespaces:
+  - name: nginx
+    parser: json
+    source:
+      files:
+        - /var/log/nginx/traffic.json
+    relabel_configs:
+      - target_label: route
+        from: route

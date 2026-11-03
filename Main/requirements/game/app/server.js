@@ -7,8 +7,13 @@ import { checkAllAgents, recheckDownAgents, unavailableBots } from './agents/ind
 import { warmupOllama } from './agents/ollama_local.js';
 import { verifyToken } from './auth.js';
 import { attachGameConnections } from './gameConnections.js';
+import { createTelemetry } from './telemetry.js';
+import { botEntries } from './game/config.js';
 
 const app = express();
+const telemetry = createTelemetry();
+app.use(telemetry.http);
+app.get('/metrics', telemetry.metrics);
 
 // Health check du frontend (gameSocket.ts : waitForGameServer) : repondre
 // 204 en HTTP simple evite « Failed to load resource: 404 » dans la console
@@ -16,6 +21,7 @@ const app = express();
 app.get('/ws/game', (req, res) => res.status(204).end());
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server, path: '/ws/game', maxPayload: 16 * 1024 });
+telemetry.websocket(wss);
 attachGameConnections(wss, { enqueue, dequeue, ready, verifyToken, unavailableBots });
 
 //etat des agents avant d'accepter des connexions
@@ -24,7 +30,8 @@ await checkAllAgents();
 server.listen(3000, () => console.log('serveur sur :3000'));
 
 //prechargement du modele local : lent, on ne bloque pas le demarrage
-warmupOllama().catch((err) => console.error('[ollama] prechargement echoue :', err.message));
+if (botEntries().flat().some((entry) => entry.agent === 'local_agent'))
+  warmupOllama().catch((err) => console.error('[ollama] prechargement echoue :', err.message));
 
 //Filet apres le boot : le check initial peut echouer parce que le reseau de
 //l'hote n'etait pas encore pret (machine tout juste demarree), et le recheck

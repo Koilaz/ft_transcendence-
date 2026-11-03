@@ -1,6 +1,11 @@
 #!/bin/bash
 set -e
 
+# A shared, query-free access log for Prometheus and Logstash readers.
+mkdir -p /var/log/nginx
+touch /var/log/nginx/traffic.json
+chmod 644 /var/log/nginx/traffic.json
+
 # Créer le dossier qui contiendra les certificats TLS.
 # Si le dossier existe déjà, mkdir ne renverra pas d'erreur grâce au -p.
 mkdir -p /etc/nginx/ssl

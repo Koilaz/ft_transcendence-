@@ -106,7 +106,8 @@ async function checkUntilReachable(agent)
 
 export async function checkAllAgents()
 {
-	const checkable = Object.values(agents).filter((a) => a.healthCheck);
+	const configured = new Set(botEntries().flat().map((entry) => entry.agent));
+	const checkable = Object.values(agents).filter((a) => configured.has(a.name) && a.healthCheck);
 
 	//Le titre avant l'attente : les agents logguent les modeles qu'ils voient
 	//pendant leur healthCheck, autant que ces lignes tombent dans le bloc.
