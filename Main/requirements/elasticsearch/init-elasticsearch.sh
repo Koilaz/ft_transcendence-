@@ -3,9 +3,9 @@
 set -eu
 
 ELASTIC_USERNAME=${ELASTIC_USERNAME:-elastic}
-: "${ELASTIC_PASSWORD:?ELASTIC_PASSWORD is required}"
-: "${KIBANA_PASSWORD:?KIBANA_PASSWORD is required}"
-: "${LOGSTASH_PASSWORD:?LOGSTASH_PASSWORD is required}"
+ELASTIC_PASSWORD=$(tr -d '\n' < /run/secrets/elastic_password.txt)
+KIBANA_PASSWORD=$(tr -d '\n' < /run/secrets/kibana_password.txt)
+LOGSTASH_PASSWORD=$(tr -d '\n' < /run/secrets/logstash_password.txt)
 ELASTICSEARCH_URL=${ELASTICSEARCH_URL:-http://elasticsearch:9200}
 INIT_MAX_ATTEMPTS=${INIT_MAX_ATTEMPTS:-60}
 INIT_RETRY_SECONDS=${INIT_RETRY_SECONDS:-5}
@@ -37,7 +37,7 @@ until curl -fsS \
   -u "${ELASTIC_USERNAME}:${ELASTIC_PASSWORD}" \
   "${ELASTICSEARCH_URL}" > /dev/null 2>&1; do
   if [ "$attempt" -ge "$INIT_MAX_ATTEMPTS" ]; then
-    echo "Elasticsearch did not become ready. Check its logs and ELASTIC_PASSWORD (existing volumes retain the stored password)." >&2
+    echo "Elasticsearch did not become ready. Check its logs and secrets/elastic_password.txt (existing volumes retain the stored password)." >&2
     exit 1
   fi
   attempt=$((attempt + 1))

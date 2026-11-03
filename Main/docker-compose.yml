@@ -101,15 +101,16 @@ services:
     entrypoint: ["/bin/sh", "/grafana-entrypoint.sh"]
     environment:
       GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
-      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?Set GRAFANA_ADMIN_PASSWORD in Main/.env}
+      # /run.sh de l'image lit les variables GF_*__FILE dans le fichier pointe.
+      GF_SECURITY_ADMIN_PASSWORD__FILE: /run/secrets/grafana_admin_password.txt
       GF_USERS_ALLOW_SIGN_UP: "false"
-      GRAFANA_DISCORD_WEBHOOK: ${GRAFANA_DISCORD_WEBHOOK:-}
 
       GF_SERVER_ROOT_URL: "https://${DOMAIN_NAME}:${NGINX_PORT}/grafana/"
       GF_SERVER_SERVE_FROM_SUB_PATH: "true"
       GF_AUTH_ANONYMOUS_ENABLED: "false"
       GF_SECURITY_COOKIE_SECURE: "true"
     volumes:
+      - ./secrets:/run/secrets:ro
       - grafana_data:/var/lib/grafana
       - ./requirements/grafana/entrypoint.sh:/grafana-entrypoint.sh:ro
       - ./requirements/grafana/provisioning:/etc/grafana/provisioning:ro
@@ -123,13 +124,23 @@ services:
   elasticsearch:
     container_name: elasticsearch
     image: docker.elastic.co/elasticsearch/elasticsearch:9.5.5
+    # L'image connait ELASTIC_PASSWORD_FILE mais refuse un fichier lisible par
+    # "others", or l'uid 1000 du container n'est pas le proprietaire du secret
+    # sur l'hote. On lit donc le secret ici, puis on relance l'entrypoint
+    # d'origine de l'image.
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        export ELASTIC_PASSWORD="$$(tr -d '\n' < /run/secrets/elastic_password.txt)"
+        exec /bin/tini -- /usr/local/bin/docker-entrypoint.sh eswrapper
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=true
-      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD:?Set ELASTIC_PASSWORD in Main/.env}
       - ES_JAVA_OPTS=-Xms512m -Xmx512m
       - path.repo=/usr/share/elasticsearch/backups
     volumes:
+      - ./secrets:/run/secrets:ro
       - elasticsearch_data:/usr/share/elasticsearch/data
       - elasticsearch_backups:/usr/share/elasticsearch/backups
     networks:
@@ -144,10 +155,8 @@ services:
     image: curlimages/curl:latest
     environment:
       ELASTIC_USERNAME: "elastic"
-      ELASTIC_PASSWORD: ${ELASTIC_PASSWORD:?Set ELASTIC_PASSWORD in Main/.env}
-      LOGSTASH_PASSWORD: ${LOGSTASH_PASSWORD:?Set LOGSTASH_PASSWORD in Main/.env}
-      KIBANA_PASSWORD: ${KIBANA_PASSWORD:?Set KIBANA_PASSWORD in Main/.env}
     volumes:
+      - ./secrets:/run/secrets:ro
       - ./requirements/elasticsearch:/elasticsearch:ro
     networks:
       - transcendence
@@ -172,10 +181,18 @@ services:
   logstash:
     container_name: logstash
     image: docker.elastic.co/logstash/logstash:9.5.5
+    # logstash.conf lit ${LOGSTASH_PASSWORD} dans l'environnement : on le
+    # remplit depuis le secret avant l'entrypoint d'origine de l'image.
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        export LOGSTASH_PASSWORD="$$(tr -d '\n' < /run/secrets/logstash_password.txt)"
+        exec /usr/local/bin/docker-entrypoint
     environment:
       LOGSTASH_USER: "logstash_internal"
-      LOGSTASH_PASSWORD: ${LOGSTASH_PASSWORD:?Set LOGSTASH_PASSWORD in Main/.env}
     volumes:
+      - ./secrets:/run/secrets:ro
       - ./requirements/logstash/pipeline:/usr/share/logstash/pipeline:ro
       - nginx_logs:/nginxlogs:ro
       - logstash_data:/usr/share/logstash/data
@@ -195,17 +212,27 @@ services:
   kibana:
     container_name: kibana
     image: docker.elastic.co/kibana/kibana:9.5.5
+    # kibana-docker traduit ces variables en reglages kibana.yml mais ne sait
+    # pas lire de fichier : on les remplit depuis les secrets, puis on relance
+    # l'entrypoint d'origine de l'image. Les cles font au moins 32 caracteres.
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        export ELASTICSEARCH_PASSWORD="$$(tr -d '\n' < /run/secrets/kibana_password.txt)"
+        export XPACK_SECURITY_ENCRYPTIONKEY="$$(tr -d '\n' < /run/secrets/kibana_security_encryption_key.txt)"
+        export XPACK_ENCRYPTEDSAVEDOBJECTS_ENCRYPTIONKEY="$$(tr -d '\n' < /run/secrets/kibana_saved_objects_encryption_key.txt)"
+        export XPACK_REPORTING_ENCRYPTIONKEY="$$(tr -d '\n' < /run/secrets/kibana_reporting_encryption_key.txt)"
+        exec /bin/tini -- /usr/local/bin/kibana-docker
     environment:
       ELASTICSEARCH_HOSTS: "http://elasticsearch:9200"
       ELASTICSEARCH_USERNAME: "kibana_system"
-      ELASTICSEARCH_PASSWORD: ${KIBANA_PASSWORD:?Set KIBANA_PASSWORD in Main/.env}
       SERVER_BASEPATH: "/kibana"
       SERVER_REWRITEBASEPATH: "true"
       SERVER_PUBLICBASEURL: "https://${DOMAIN_NAME}:${NGINX_PORT}/kibana"
-      XPACK_SECURITY_ENCRYPTIONKEY: ${KIBANA_SECURITY_ENCRYPTION_KEY:?Set KIBANA_SECURITY_ENCRYPTION_KEY to at least 32 characters in Main/.env}
-      XPACK_ENCRYPTEDSAVEDOBJECTS_ENCRYPTIONKEY: ${KIBANA_SAVED_OBJECTS_ENCRYPTION_KEY:?Set KIBANA_SAVED_OBJECTS_ENCRYPTION_KEY to at least 32 characters in Main/.env}
-      XPACK_REPORTING_ENCRYPTIONKEY: ${KIBANA_REPORTING_ENCRYPTION_KEY:?Set KIBANA_REPORTING_ENCRYPTION_KEY to at least 32 characters in Main/.env}
       XPACK_SECURITY_SECURECOOKIES: "true"
+    volumes:
+      - ./secrets:/run/secrets:ro
     networks:
       - transcendence
     depends_on:
@@ -218,8 +245,8 @@ services:
     image: curlimages/curl:latest
     environment:
       ELASTIC_USERNAME: "elastic"
-      ELASTIC_PASSWORD: ${ELASTIC_PASSWORD:?Set ELASTIC_PASSWORD in Main/.env}
     volumes:
+      - ./secrets:/run/secrets:ro
       - ./requirements/kibana:/kibana:ro
     networks:
       - transcendence

@@ -3,7 +3,7 @@
 set -eu
 
 ELASTIC_USERNAME=${ELASTIC_USERNAME:-elastic}
-: "${ELASTIC_PASSWORD:?ELASTIC_PASSWORD is required}"
+ELASTIC_PASSWORD=$(tr -d '\n' < /run/secrets/elastic_password.txt)
 KIBANA_URL=${KIBANA_URL:-http://kibana:5601/kibana}
 KIBANA_CONFIG_DIR=${KIBANA_CONFIG_DIR:-/kibana}
 INIT_MAX_ATTEMPTS=${INIT_MAX_ATTEMPTS:-60}

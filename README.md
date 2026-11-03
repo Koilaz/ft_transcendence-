@@ -119,6 +119,12 @@ cp -r secrets_example secrets
 openssl rand -hex 24 > secrets/postgres_password.txt
 openssl rand -hex 32 > secrets/jwt_secret.txt
 printf '%s' 'YOUR_MISTRAL_API_KEY' > secrets/mistral_api_key.txt
+for f in grafana_admin_password elastic_password logstash_password kibana_password; do
+  openssl rand -hex 24 > secrets/$f.txt
+done
+for f in kibana_security_encryption_key kibana_saved_objects_encryption_key kibana_reporting_encryption_key; do
+  openssl rand -hex 32 > secrets/$f.txt
+done
 ```
 
 | File | Content |
@@ -126,8 +132,14 @@ printf '%s' 'YOUR_MISTRAL_API_KEY' > secrets/mistral_api_key.txt
 | `secrets/postgres_password.txt` | password of `POSTGRES_USER` |
 | `secrets/jwt_secret.txt` | key used to sign the JWTs, shared by the `backend` and `game` services |
 | `secrets/mistral_api_key.txt` | Mistral API key |
+| `secrets/grafana_admin_password.txt` | password of the Grafana admin (`GRAFANA_ADMIN_USER`, `admin` by default) |
+| `secrets/elastic_password.txt` | password of the Elasticsearch superuser `elastic`, also used to log in to Kibana |
+| `secrets/logstash_password.txt` | password of `logstash_internal`, the account Logstash writes logs with |
+| `secrets/kibana_password.txt` | password of `kibana_system`, the account Kibana connects to Elasticsearch with |
+| `secrets/kibana_*_encryption_key.txt` | the three Kibana encryption keys, at least 32 characters each |
+| `secrets/grafana_discord_webhook.txt` | Discord webhook URL for Grafana alerts; leave the file empty to disable Discord notifications |
 
-One raw value per file: no `KEY=`, no quotes. A hexadecimal database password is recommended, because the password is inserted as-is into the PostgreSQL connection URL and characters such as `/` would break it. `secrets/` and `.env` are git-ignored; only the templates `secrets_example/` and `.env.example` are versioned.
+One raw value per file: no `KEY=`, no quotes. A hexadecimal database password is recommended, because the password is inserted as-is into the PostgreSQL connection URL and characters such as `/` would break it. Grafana and Elasticsearch keep the admin password set on their first start in their volume: changing `grafana_admin_password.txt` or `elastic_password.txt` afterwards requires removing the `grafana_data` or `elasticsearch_data` volume. `secrets/` and `.env` are git-ignored; only the templates `secrets_example/` and `.env.example` are versioned.
 
 ### 3. Download the local model (once)
 

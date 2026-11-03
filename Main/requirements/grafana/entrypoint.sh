@@ -9,11 +9,15 @@ mkdir -p "$provisioning_dir/plugins" "$provisioning_dir/alerting" \
 find "$provisioning_dir" -name .DS_Store -delete
 export GF_PATHS_PROVISIONING="$provisioning_dir"
 
-# Discord notifications are optional.
-if [ -z "${GRAFANA_DISCORD_WEBHOOK:-}" ]; then
+# contact-points.yml reads the webhook from the environment.
+GRAFANA_DISCORD_WEBHOOK=$(tr -d '\n' < /run/secrets/grafana_discord_webhook.txt)
+export GRAFANA_DISCORD_WEBHOOK
+
+# Discord notifications are optional: leave the secret file empty to disable them.
+if [ -z "$GRAFANA_DISCORD_WEBHOOK" ]; then
   rm -rf "$provisioning_dir/alerting"
   mkdir -p "$provisioning_dir/alerting"
-  echo "GRAFANA_DISCORD_WEBHOOK is unset; skipping Discord alert provisioning."
+  echo "grafana_discord_webhook.txt is empty; skipping Discord alert provisioning."
 fi
 
 exec /run.sh "$@"
