@@ -10,6 +10,7 @@ import TermsOfService from '../pages/TermsOfService';
 import Friends from '../pages/Friends';
 import Game from '../pages/Game';
 import NotFound from '../pages/NotFound';
+import NavigationTelemetry from '../components/NavigationTelemetry';
 import { hasGameIdentity } from '../services/gameIdentity';
 
 // Garde d'identite de /game : un invite sans jeton et sans pseudo est renvoye
@@ -24,6 +25,7 @@ function GameGuard() {
 export default function AppRouter() {
   return (
     <BrowserRouter>
+      <NavigationTelemetry />
       <Routes>
         <Route path="/" element={<Layout />}>
 

@@ -19,8 +19,10 @@ COMPOSE = $(COMPOSE_BIN) -p $(COMPOSE_PROJECT_NAME)
 all: up
 
 # Construire les images puis lancer les containers.
+# Garder les logs Grafana et Elasticsearch accessibles via docker compose logs,
+# sans les afficher dans le terminal de make.
 up:
-	$(COMPOSE) up --build
+	$(COMPOSE) up --build --no-attach grafana --no-attach elasticsearch --no-attach kibana --no-attach kibana-init --no-attach backend --no-attach postgres_exporter --no-attach prometheus
 
 # Reconstruire et relancer un seul service, en arriere-plan.
 game backend frontend nginx:

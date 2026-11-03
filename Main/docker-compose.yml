@@ -21,6 +21,11 @@ services:
     container_name: postgres
     image: postgres:local
     build: ./requirements/postgres
+    healthcheck:
+      test: ["CMD-SHELL", 'pg_isready -h 127.0.0.1 -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"']
+      interval: 5s
+      timeout: 3s
+      retries: 20
     env_file:
       - .env
     volumes:
@@ -37,7 +42,10 @@ services:
     env_file:
       - .env
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
+      logstash:
+        condition: service_healthy
     volumes:
       - ./secrets:/run/secrets:ro
       - uploads_data:/app/uploads
@@ -45,10 +53,188 @@ services:
       - transcendence
     restart: unless-stopped
 
+  postgres_exporter:
+    container_name: postgres_exporter
+    image: quay.io/prometheuscommunity/postgres-exporter:v0.19.1
+    # Dashboard metrics do not need WAL files; the application DB user cannot
+    # execute pg_ls_waldir(). Keep this flag when recreating the exporter.
+    command: ["--no-collector.wal", "--config.file=/etc/postgres_exporter.yml"]
+    environment:
+      DATA_SOURCE_URI: "postgres:5432/${POSTGRES_DB}?sslmode=disable"
+      DATA_SOURCE_USER: ${POSTGRES_USER}
+      DATA_SOURCE_PASS_FILE: /run/secrets/postgres_password.txt
+    volumes:
+      - ./secrets:/run/secrets:ro
+      - ./requirements/postgres_exporter/postgres_exporter.yml:/etc/postgres_exporter.yml:ro
+    networks:
+      - transcendence
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  nginx_exporter:
+    container_name: nginx_exporter
+    image: quay.io/martinhelmich/prometheus-nginxlog-exporter:v1.11.0
+    command: ["-config-file", "/etc/nginx-exporter.yml"]
+    volumes:
+      - nginx_logs:/var/log/nginx:ro
+      - ./requirements/nginx_exporter/config.yml:/etc/nginx-exporter.yml:ro
+    networks:
+      - transcendence
+    restart: unless-stopped
+
+  prometheus:
+    container_name: prometheus
+    image: prom/prometheus:latest
+    volumes:
+      - ./requirements/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    networks:
+      - transcendence
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  grafana:
+    container_name: grafana
+    image: grafana/grafana:latest
+    entrypoint: ["/bin/sh", "/grafana-entrypoint.sh"]
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?Set GRAFANA_ADMIN_PASSWORD in Main/.env}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GRAFANA_DISCORD_WEBHOOK: ${GRAFANA_DISCORD_WEBHOOK:-}
+
+      GF_SERVER_ROOT_URL: "https://${DOMAIN_NAME}:${NGINX_PORT}/grafana/"
+      GF_SERVER_SERVE_FROM_SUB_PATH: "true"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_SECURITY_COOKIE_SECURE: "true"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./requirements/grafana/entrypoint.sh:/grafana-entrypoint.sh:ro
+      - ./requirements/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./requirements/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    networks:
+      - transcendence
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+  elasticsearch:
+    container_name: elasticsearch
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.5.5
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=true
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD:?Set ELASTIC_PASSWORD in Main/.env}
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+      - path.repo=/usr/share/elasticsearch/backups
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+      - elasticsearch_backups:/usr/share/elasticsearch/backups
+    networks:
+      - transcendence
+    depends_on:
+      elasticsearch-backup-init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  elasticsearch-init:
+    container_name: elasticsearch-init
+    image: curlimages/curl:latest
+    environment:
+      ELASTIC_USERNAME: "elastic"
+      ELASTIC_PASSWORD: ${ELASTIC_PASSWORD:?Set ELASTIC_PASSWORD in Main/.env}
+      LOGSTASH_PASSWORD: ${LOGSTASH_PASSWORD:?Set LOGSTASH_PASSWORD in Main/.env}
+      KIBANA_PASSWORD: ${KIBANA_PASSWORD:?Set KIBANA_PASSWORD in Main/.env}
+    volumes:
+      - ./requirements/elasticsearch:/elasticsearch:ro
+    networks:
+      - transcendence
+    depends_on:
+      - elasticsearch
+    entrypoint: ["/bin/sh", "/elasticsearch/init-elasticsearch.sh"]
+    restart: "no"
+
+  elasticsearch-backup-init:
+    container_name: elasticsearch-backup-init
+    image: busybox:latest
+    user: "0"
+    volumes:
+      - elasticsearch_backups:/usr/share/elasticsearch/backups
+    command: >
+      sh -c "
+      chown -R 1000:0 /usr/share/elasticsearch/backups &&
+      chmod -R 775 /usr/share/elasticsearch/backups
+      "
+    restart: "no"
+
+  logstash:
+    container_name: logstash
+    image: docker.elastic.co/logstash/logstash:9.5.5
+    environment:
+      LOGSTASH_USER: "logstash_internal"
+      LOGSTASH_PASSWORD: ${LOGSTASH_PASSWORD:?Set LOGSTASH_PASSWORD in Main/.env}
+    volumes:
+      - ./requirements/logstash/pipeline:/usr/share/logstash/pipeline:ro
+      - nginx_logs:/nginxlogs:ro
+      - logstash_data:/usr/share/logstash/data
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/5000"]
+      interval: 5s
+      timeout: 3s
+      retries: 40
+      start_period: 20s
+    networks:
+      - transcendence
+    depends_on:
+      elasticsearch-init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  kibana:
+    container_name: kibana
+    image: docker.elastic.co/kibana/kibana:9.5.5
+    environment:
+      ELASTICSEARCH_HOSTS: "http://elasticsearch:9200"
+      ELASTICSEARCH_USERNAME: "kibana_system"
+      ELASTICSEARCH_PASSWORD: ${KIBANA_PASSWORD:?Set KIBANA_PASSWORD in Main/.env}
+      SERVER_BASEPATH: "/kibana"
+      SERVER_REWRITEBASEPATH: "true"
+      SERVER_PUBLICBASEURL: "https://${DOMAIN_NAME}:${NGINX_PORT}/kibana"
+      XPACK_SECURITY_ENCRYPTIONKEY: ${KIBANA_SECURITY_ENCRYPTION_KEY:?Set KIBANA_SECURITY_ENCRYPTION_KEY to at least 32 characters in Main/.env}
+      XPACK_ENCRYPTEDSAVEDOBJECTS_ENCRYPTIONKEY: ${KIBANA_SAVED_OBJECTS_ENCRYPTION_KEY:?Set KIBANA_SAVED_OBJECTS_ENCRYPTION_KEY to at least 32 characters in Main/.env}
+      XPACK_REPORTING_ENCRYPTIONKEY: ${KIBANA_REPORTING_ENCRYPTION_KEY:?Set KIBANA_REPORTING_ENCRYPTION_KEY to at least 32 characters in Main/.env}
+      XPACK_SECURITY_SECURECOOKIES: "true"
+    networks:
+      - transcendence
+    depends_on:
+      elasticsearch-init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  kibana-init:
+    container_name: kibana-init
+    image: curlimages/curl:latest
+    environment:
+      ELASTIC_USERNAME: "elastic"
+      ELASTIC_PASSWORD: ${ELASTIC_PASSWORD:?Set ELASTIC_PASSWORD in Main/.env}
+    volumes:
+      - ./requirements/kibana:/kibana:ro
+    networks:
+      - transcendence
+    depends_on:
+      - kibana
+    entrypoint: ["/bin/sh", "/kibana/init-kibana.sh"]
+    restart: "no"
+
   game:
     container_name: game
     image: game:local
     build: ./requirements/game
+    depends_on:
+      logstash:
+        condition: service_healthy
     env_file:
       - .env
     volumes:
@@ -109,6 +295,7 @@ services:
     volumes:
       - ./secrets:/run/secrets:ro
       - uploads_data:/app/uploads:ro
+      - nginx_logs:/var/log/nginx
 
     networks:
       - transcendence
@@ -125,4 +312,19 @@ volumes:
     driver: local
 
   uploads_data:
+    driver: local
+
+  grafana_data:
+    driver: local
+
+  elasticsearch_data:
+    driver: local
+
+  elasticsearch_backups:
+    driver: local
+
+  nginx_logs:
+    driver: local
+
+  logstash_data:
     driver: local

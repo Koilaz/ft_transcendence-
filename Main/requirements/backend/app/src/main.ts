@@ -4,11 +4,18 @@ import helmet from 'helmet';
 
 import { AppModule } from './app.module';
 import { PresenceGateway } from './presence/presence.gateway';
+import { LogstashLogger } from './logger/logstash.logger';
+import { httpTelemetry } from './metrics/metrics.middleware';
 
 async function bootstrap(): Promise<void> {
-  const app = await NestFactory.create(AppModule);
+  const logger = new LogstashLogger();
+
+  const app = await NestFactory.create(AppModule, {
+    logger,
+  });
 
   app.enableShutdownHooks();
+  app.use(httpTelemetry(logger));
 
   // Headers de securite sur toutes les reponses du backend (CSP par
   // defaut, nosniff, X-Frame-Options, etc.). Le HTML du frontend est
@@ -41,7 +48,7 @@ async function bootstrap(): Promise<void> {
 
   await app.listen(3000, '0.0.0.0');
 
-  console.log('Backend running on port 3000');
+  logger.log('Backend running on port 3000', 'Bootstrap');
 }
 
 bootstrap();
