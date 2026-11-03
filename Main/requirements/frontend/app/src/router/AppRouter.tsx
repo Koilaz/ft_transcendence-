@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 
 import Layout from '../components/Layout';
 import Home from '../pages/Home';
@@ -10,6 +10,16 @@ import TermsOfService from '../pages/TermsOfService';
 import Friends from '../pages/Friends';
 import Game from '../pages/Game';
 import NotFound from '../pages/NotFound';
+import { hasGameIdentity } from '../services/gameIdentity';
+
+// Garde d'identite de /game : un invite sans jeton et sans pseudo est renvoye
+// a l'accueil, qui lui demande son pseudo. Tout le reste passe — le deep-link
+// est un acces normal (compte connecte, invite nomme), et surtout un refresh
+// en pleine partie doit rester repris par le resumeToken : on ne force donc
+// JAMAIS le passage par l'accueil, on n'exige qu'une identite.
+function GameGuard() {
+  return hasGameIdentity(localStorage) ? <Game /> : <Navigate to="/" replace />;
+}
 
 export default function AppRouter() {
   return (
@@ -27,7 +37,7 @@ export default function AppRouter() {
 
           <Route path="/friends" element={<Friends />} />
 
-          <Route path="/game" element={<Game />} />
+          <Route path="/game" element={<GameGuard />} />
 
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
 
