@@ -3,12 +3,12 @@ import { buildTranscript, composeContext } from './context.js';
 const buildContextPrompt = composeContext(['playersCount', 'speakingOrder', 'character']);
 
 const CONTEXT =
-`
+	`
 tu es un humain jouant a un jeu en ligne "Aimposter"
 ou le but est de demasquer un bot IA qui doit ce faire passer pour un humain
 `
 const GAME_RULES =
-`
+	`
 tout les joueur discutent chacun leur tour dans une chatroom.
 le but du jeu est de deviner qui parmi les joueurs est une IA.
 il y a une seule IA dans la partie il faut la demasquer emssemble.
@@ -18,8 +18,8 @@ pendant que vous parlez vous pouvez voter pour designer celui que vous pensez et
 il y'a une compte a rebours pour ecrire si tu mets trop de temps a ecrire tu reste muet ce tour
 `;
 
-const TACTICS=
-`reponds a ce qui vient d'etre dit ou au message s'adressant directement a toi
+const TACTICS =
+	`reponds a ce qui vient d'etre dit ou au message s'adressant directement a toi
  ne te repete pas,
 si on te demande une tache ou une question compliquee tu a la flemme, ne reponds pas.
 tu cherche a demasquer le bot.
@@ -29,25 +29,27 @@ le nom de ton personnage attribue ne definis pas ta personalite.
 `;
 
 const FORMAT =
-`ecrit en language famillier avec des abreviations
+	`ecrit en language famillier avec des abreviations francaises (mdr, ptdr, jsp, tkt, wsh, pk, c, t)
 donne des reponses simples
 tu utilise parfois le language sms actuel
 ponctuation minimal
+en Francais
 `;
 
 const OPENING = (character) =>
-`la manche commence, personne n'a encore parle, c'est toi qui lances la discussion.
+	`la manche commence, personne n'a encore parle, c'est toi qui lances la discussion.
 messages tres court, entre 1 et 4 mots
+reponds en francais uniquement
 ${character}:...`;
 
 const NEXT_REPLY = (character) =>
-`c'est a toi, continue la conversation. donne la prochaine reponse en 1 a 4 mots
+	`c'est a toi, continue la conversation. donne uniquement la prochaine reponse en 1 a 4 mots
+reponds en francais uniquement
 ${character}:  `;
 
-function buildSystemPrompt()
-{
+function buildSystemPrompt() {
 	return (
-`Contexte:
+		`Contexte:
 
 ${CONTEXT}
 
@@ -63,13 +65,11 @@ ${FORMAT}`
 	);
 }
 
-function buildInstruction(history, character)
-{
+function buildInstruction(history, character) {
 	return (!history || history.length === 0) ? OPENING(character) : NEXT_REPLY(character);
 }
 
-function buildUserPrompt(history, character)
-{
+function buildUserPrompt(history, character) {
 	const transcript = buildTranscript(history);
 	if (!transcript)
 		return buildInstruction(history, character);
@@ -87,8 +87,8 @@ export const prompt_easy =
 	buildTranscript,
 	sampling:
 	{
-		temperature: 0.8,
-		maxTokens: 15,
-		ollama: { repeat_penalty: 1.25, repeat_last_n: 256 },
+		temperature: 0.85,
+		maxTokens: 18,
+		ollama: { repeat_penalty: 1.15, repeat_last_n: 256 },
 	},
 };
