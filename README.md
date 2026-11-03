@@ -6,7 +6,6 @@
 
 **AImpostor** is a real-time multiplayer social deduction game played in the browser, built around a Turing test: a large language model sits at the table among the human players and does everything it can to pass as one of them.
 
-<!-- TODO: ajouter une capture d'ecran du jeu -->
 
 ## Table of Contents
 
@@ -624,7 +623,7 @@ Modules candidats NON revendiques ci-dessus (a ajouter seulement s'ils sont defe
   - friends: send, accept, cancel and remove requests, lists of friends and of pending requests;
   - online status of friends, updated live through the presence WebSocket;
   - profile page displaying the user's information.
-- **Who:** mwallis (backend), cnamoune (password confirmation and change), radubos (profile and friends pages, presence shared between tabs). 
+- **Who:** mwallis (backend), cnamoune (password confirmation and change), radubos (profile and friends pages, presence shared between tabs).
 
 ### 5. Artificial Intelligence, Major: AI Opponent (2 pts)
 
@@ -660,7 +659,7 @@ Modules candidats NON revendiques ci-dessus (a ajouter seulement s'ils sont defe
   - **Latency:** timers only run on the server and are broadcast every second; the client renders what it receives and never moves a turn forward by itself. A message is only accepted from the player whose turn it is.
   - **Disconnections:** a disconnected player keeps their seat until the end of the round: their turns keep their normal duration, and their vote and score stay attached to the same player. Players who have not come back are removed when the round ends; the game is cancelled when the number of participants drops below `minPlayersToContinue`, and a room is destroyed as soon as no human is left.
   - **Reconnection:** each session owns a resume token. On reconnection the server sends a single snapshot of the game state (chat history, current turn, round phase, whether the player has already voted, who is away) that never reveals the AI, and tells the other players that the character is back. A page refresh resumes the game. A player who drops while in the lobby leaves the queue, but their session can still be resumed for 60 seconds. On the client side, the reconnection loop handles terminal states, several open tabs and hidden pages.
-- **Who:** radubos (reconnection), lmarck (disconnection handling and room lifecycle). <!-- TODO: a confirmer -->
+- **Who:** radubos (reconnection), lmarck (disconnection handling and room lifecycle).
 
 ### 8. Gaming, Major: multiplayer game with more than two players (2 pts)
 
