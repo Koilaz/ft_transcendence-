@@ -269,6 +269,14 @@ make game     # or backend, frontend, nginx
 - nginx, WebSocket proxying: https://nginx.org/en/docs/http/websocket.html
 - nginx, configuring HTTPS servers: https://nginx.org/en/docs/http/configuring_https_servers.html
 
+**DevOps**
+
+- Elasticsearch: https://www.elastic.co/docs/reference/elasticsearch
+- Logstash: https://www.elastic.co/docs/products/logstash
+- Kibana: https://www.elastic.co/docs/products/kibana
+- Prometheus: https://prometheus.io/docs/introduction/overview/
+- Grafana: https://grafana.com/docs/grafana/latest/
+
 ### Use of AI
 
 AI plays two distinct roles in this project:
@@ -285,7 +293,7 @@ ihas been completly removed from the current version
 | cnamoune | Codex | Code generation, Git, technical explanations | Ranking systeme integration to game backend, Reconnection logic, merging |
 | radubos | Mistral (Le Chat, Mistral Studio), Nano Banana 2 (Google Gemini image generation) | Code generation, Debugging, Brainstorming, Testing, Image generation | Frontend (React application, UI components, animations, reconnection), illustrations of the characters and the timer bunny |
 | mwallis | ChatGPT | Code review, debugging assistance, technical explanations, documentation drafting and verification of Docker/NestJS/Prisma concepts | Backend architecture, Docker infrastructure, NestJS, Prisma, PostgreSQL, nginx, JWT authentication, documentation |
-| mlavry | <!-- TODO --> | <!-- TODO --> | <!-- TODO --> |
+| mlavry | ChatGPT | Code review and explanation, debugging, documentation and verification of Docker/ELK/Prometheus/Grafana concepts | DevOps infrastructure, ELK log management, Prometheus monitoring, Grafana dashboards and alerting, Docker Compose integration |
 
 The character portraits and the timer bunny illustrations were generated with Nano Banana 2 (Google Gemini), then retouched by hand with GIMP.
 
@@ -301,7 +309,7 @@ The character portraits and the timer bunny illustrations were generated with Na
 | `cnamoune` | Scrum master, developers | Voting and scoring system, round transitions and endgame screen, lobby Ready flow, |
 | `radubos` | developers | Frontend (UI components, game screen, animations, responsive design, legal pages), reconnection, multi-tab presence, integration of the team branches |
 | `mwallis` | Technical Lead / Architect, Developer | Initial `core/` architecture and infrastructure: Docker Compose setup and containerization of nginx, PostgreSQL, NestJS backend and React/Vite frontend; nginx reverse proxy and HTTPS configuration; PostgreSQL initialization, configuration and persistent storage; NestJS backend (authentication, users, friends), Prisma schema and migrations; frontend development environment with Node.js, Vite and ESLint |
-| `mlavry` | <!-- TODO --> | <!-- TODO --> |
+| `mlavry` | Project Manager (PM) / Scrum Master, DevOps developer | Project coordination and task follow-up; ELK log-management infrastructure; Prometheus/Grafana monitoring, backend instrumentation, PostgreSQL exporter, dashboards, alerting, log retention and archiving, and secure integration of the observability services |
 
 <!-- TODO: le sujet impose les roles Product Owner, Project Manager / Scrum Master, Tech Lead / Architect et Developers (cumul possible). Product Owner : lmarck. Chacun remplit lui-meme son role et ses responsabilites. -->
 
@@ -374,11 +382,17 @@ In practice the work was split into four areas: infrastructure and accounts back
 | `game` | Node.js 22, Express 5, ws 8, plain JavaScript (ES modules) | matchmaking queue, rooms, rounds, votes, scores, reconnection, LLM agents |
 | `postgres` | PostgreSQL 15 | persistent data (users and friendships), stored in the `postgres_data` volume |
 | `ollama` | Ollama (`ollama/ollama` image) | local LLM inference, default model `llama3.2:3b`; the weights are stored on the host in `OLLAMA_DATA_DIR` |
+| `elasticsearch` | Elasticsearch 9.5.5 | stores and indexes application logs, applies retention policies and schedules snapshot archives |
+| `logstash` | Logstash 9.5.5 | collects backend and game JSON logs over HTTP and nginx traffic logs from files, transforms them and forwards them to Elasticsearch |
+| `kibana` | Kibana 9.5.5 | authenticated log search and visualization dashboards, accessible through nginx at `/kibana/` |
+| `prometheus` | Prometheus | scrapes backend, game, PostgreSQL and nginx metrics every 15 seconds and stores time series for Grafana |
+| `grafana` | Grafana | authenticated application, game and database dashboards at `/grafana/`, with alert rules and optional Discord notifications |
 
-- **Images:** the five custom images are built from `debian:bookworm`; `ollama` uses the official image.
+- **Images:** the five custom application images are built from `debian:bookworm`; Ollama and the DevOps services use upstream images.
 - **Network:** the services talk to each other on a private Docker bridge network (`transcendence`); only nginx publishes a port on the host.
 - **`backend` and `game` never call each other:** the game service checks the JWTs itself, with the same secret as the backend (`secrets/jwt_secret.txt`).
 - **Storage:** `postgres_data` (database) and `uploads_data` (avatars, written by `backend`, served read-only by nginx under `/uploads/`) are Docker volumes.
+- **DevOps storage:** `elasticsearch_data` (indexed logs), `elasticsearch_backups` (snapshots), `grafana_data` (Grafana state), `nginx_logs` (shared traffic logs) and `logstash_data` (file-read offsets) are Docker volumes.
 - **Outgoing traffic:** the `game` service calls the Mistral API over HTTPS (`mistral-small-latest`, `mistral-medium-3.5`, `mistral-large-latest`, `ministral-14b-latest`); the browser loads the fonts from Google Fonts.
 
 ### Frontend
@@ -542,6 +556,9 @@ The whole frontend was built by **radubos**. On the other rows, the names listed
 | Game interface | animated character portraits, dialogue bubbles, manga-style vote area, timer bunny, Matrix rain background, one font per character, responsive layout | radubos |
 | Legal pages | Privacy Policy and Terms of Service, linked from the footer | radubos |
 | HTTPS and infrastructure | nginx with TLS, Docker Compose stack, secrets as mounted files, JWT masking in logs | lmarck, mwallis |
+| DevOps log management | ELK stack for centralized application and nginx logs, Kibana dashboards, automatic log retention and snapshot archiving, authenticated access over HTTPS | mlavry |
+| DevOps monitoring and alerting | Prometheus metrics collection, custom Grafana dashboards for the application, game and PostgreSQL, WebSocket and page-view tracking, backend availability and HTTP error alerts with optional Discord notifications | mlavry |
+| DevOps exporters | PostgreSQL exporter for database metrics and nginx log exporter for HTTP response metrics, collected by Prometheus | mlavry |
 | Local LLM container | Ollama service running the local model on CPU, weights kept in a host directory (`OLLAMA_DATA_DIR`), downloaded once with `make ollama-pull`, preloaded at startup | lmarck |
 
 ---
@@ -561,12 +578,14 @@ The whole frontend was built by **radubos**. On the other rows, the names listed
 | 7 | Remote players | Gaming and user experience | Major | 2 |
 | 8 | Multiplayer game (more than two players) | Gaming and user experience | Major | 2 |
 | 9 | Allow users to interact with other users | Web | Major | 2 |
-| 10 | Backend as microservices | Devops | Major | 2 |
-| 11 | Support for additional browsers | Accessibility and Internationalization | Minor | 1 |
-| 12 | Custom-made design system | Web | Minor | 1 |
-| | **Total** (9 Major × 2 + 3 Minor × 1) | | | **21** |
+| 10 | Infrastructure for log management using ELK (Elasticsearch, Logstash, Kibana) | Devops | Major | 2 |
+| 11 | Monitoring system with Prometheus and Grafana | Devops | Major | 2 |
+| 12 | Backend as microservices | Devops | Major | 2 |
+| 13 | Support for additional browsers | Accessibility and Internationalization | Minor | 1 |
+| 14 | Custom-made design system | Web | Minor | 1 |
+| | **Total** (11 Major × 2 + 3 Minor × 1) | | | **25** |
 
-<!-- TODO: valider cette liste en equipe. Bareme : 14 points valides = 100/100, 19 points = 125/125 (plafond du bonus), au-dela l'excedent ne sert qu'en assurance contre un module refuse. 21 points sont revendiques : la note maximale tient meme si un Major ne passe pas.
+<!-- TODO: valider cette liste en equipe. Bareme : 14 points valides = 100/100, 19 points = 125/125 (plafond du bonus), au-dela l'excedent ne sert qu'en assurance contre un module refuse. 25 points sont revendiques : la note maximale tient meme si un Major ne passe pas.
 Modules candidats NON revendiques ci-dessus (a ajouter seulement s'ils sont defendables) :
 - AI, Major « LLM system interface » (2 pts) : manquent le streaming des reponses et un rate limiting.
 - Accessibility, Minor « multiple languages » / Minor « RTL » : plan dans Main/doc/PLAN_I18N.md (fr/en/ar), non implemente.
@@ -662,7 +681,29 @@ Modules candidats NON revendiques ci-dessus (a ajouter seulement s'ils sont defe
   - **Friends system (add and remove friends, see the friends list):** friend requests can be sent, accepted, cancelled or removed (`/api/friends/*`), the friends and pending requests are listed, and the online status of friends is updated live through `/ws/presence`.
 - **Who:** lmarck (game chat, server side), mwallis (profile and friends backend), mwallis, cnamoune and radubos (online status), radubos (whole frontend: chat, profile and friends pages).
 
-### 10. Devops, Major: backend as microservices (2 pts)
+### 10. Devops, Major: infrastructure for log management using ELK (2 pts)
+
+- **Why:** centralize logs from the application and reverse proxy to investigate errors and traffic, with controlled retention and archived snapshots.
+- **How:**
+  - **Elasticsearch:** stores and indexes structured logs in daily `transcendence-logs-*` indices on a persistent volume.
+  - **Logstash:** collects backend and game logs over HTTP and nginx JSON logs from a shared volume, parses and enriches events, and forwards them to Elasticsearch using a dedicated writer account.
+  - **Kibana:** provides a provisioned data view and dashboard for log search and visualization.
+  - **Retention and archiving:** ILM deletes indices after 30 days; SLM creates daily compressed snapshots in a separate persistent repository, with 90-day expiry and minimum/maximum snapshot counts of 7/100.
+  - **Access security:** Elasticsearch authentication and service accounts, Kibana encryption keys and secure cookies, authenticated Kibana access through nginx over HTTPS at `/kibana/`; Elasticsearch and Logstash have no published host ports.
+- **Who:** mlavry.
+
+### 11. Devops, Major: monitoring system with Prometheus and Grafana (2 pts)
+
+- **Why:** observe application performance, database activity and game traffic, and detect backend outages and HTTP errors.
+- **How:**
+  - **Prometheus:** collects metrics every 15 seconds from the backend, game service, PostgreSQL exporter and nginx log exporter over the Docker network.
+  - **Exporters and integrations:** `prom-client` exposes Node.js and HTTP metrics, game WebSocket connections and message counters; PostgreSQL and nginx exporters expose database and browser-facing traffic metrics; React navigation reports page views to the backend.
+  - **Grafana dashboards:** automatically provisioned Prometheus datasource and custom application/game and PostgreSQL dashboards covering request rates, status codes, average and p95 latency, WebSocket activity, page views, database connections, size and cache efficiency.
+  - **Alerting:** provisioned rules detect HTTP 5xx responses, a 5xx error rate above 5% for one minute and backend unavailability for one minute. Discord notifications use an optional webhook; alert provisioning is skipped when it is unset.
+  - **Access security:** Grafana requires authentication, disables anonymous access and sign-up, and uses secure cookies behind nginx HTTPS at `/grafana/`. Prometheus and exporters have no published host ports, and nginx blocks public access to the backend metrics endpoint.
+- **Who:** mlavry.
+
+### 12. Devops, Major: backend as microservices (2 pts)
 
 - **Why:** the application has parts with incompatible needs: persistent, relational account data; an in-memory, real-time game loop driven by per-second timers; and LLM inference, which is heavy on CPU and RAM. Running them as separate services isolates their failures and their resource usage, and lets each one be rebuilt and restarted on its own.
 - **How:** every service has a single responsibility and a clear interface:
@@ -670,22 +711,29 @@ Modules candidats NON revendiques ci-dessus (a ajouter seulement s'ils sont defe
 | Service | Responsibility | Interface |
 |---|---|---|
 | `nginx` | gateway: TLS termination and routing | HTTPS / WSS on port 443, the only port published on the host |
-| `backend` | accounts and social features (authentication, profiles, avatars, friends, presence); the only client of the database | REST `/api/*`, WebSocket `/ws/presence` |
+| `backend` | accounts and social features (authentication, profiles, avatars, friends, presence), application metrics and structured logs | REST `/api/*`, WebSocket `/ws/presence`; metrics collected internally |
 | `game` | game engine: queue, rooms, rounds, votes, scores, AI agents | WebSocket `/ws/game` |
 | `ollama` | local LLM inference | REST `/api/chat` and `/api/tags`, internal network only |
 | `postgres` | persistent storage | SQL, internal network only |
 | `frontend` | serves the single-page application | HTTP, behind nginx |
+| `elasticsearch` | log storage, indexing, retention and snapshot archiving | authenticated HTTP API, internal network only |
+| `logstash` | log collection, transformation and forwarding to Elasticsearch | HTTP JSON input on port 5000 and shared nginx log files, internal network only |
+| `kibana` | log search and visualization | authenticated HTTPS through nginx at `/kibana/` |
+| `prometheus` | metrics collection and time-series queries | internal HTTP scrape endpoints and query API |
+| `grafana` | monitoring dashboards and alerting | authenticated HTTPS through nginx at `/grafana/`, optional Discord webhook |
+| `postgres_exporter` | PostgreSQL metrics collection | Prometheus metrics on port 9187, internal network only |
+| `nginx_exporter` | metrics derived from nginx traffic logs | Prometheus metrics on port 4040, internal network only |
 | Mistral API (external) | hosted LLM inference | REST over HTTPS |
 
   - **Loose coupling:** the backend (TypeScript / NestJS) and the game service (plain JavaScript) are two separate code bases that share no code and no database. The game service never calls the backend: it verifies JWTs locally with the shared signing key (`Main/requirements/game/app/auth.js`), so running games are not affected when the backend restarts.
   - **Clear interfaces:** REST routes listed in the [API overview](#api-overview), a typed WebSocket protocol (`Main/requirements/frontend/app/src/types/game.ts`), and a single contract for every LLM provider (`{ name, healthCheck, generate }`, registered in `Main/requirements/game/app/agents/index_agent.js`), which makes the local Ollama service and the hosted Mistral API interchangeable.
-  - **Communication:** REST between services (game → Ollama, game → Mistral, browser → backend through nginx) and WebSockets for the real-time channels.
-  - **Independent lifecycle:** each service runs in its own container with its own image (built from `Main/requirements/<service>/Dockerfile`, or the official `ollama/ollama` image), entrypoint and restart policy; a single service can be rebuilt with `docker compose -p ft_transcendence up -d --build game`; the backend, the game service and the frontend each have their own test suite.
-- **Who:** lmarck (architecture of the game and Ollama services), mwallis (initial Docker Compose architecture, nginx, PostgreSQL, backend and frontend containerization, and accounts backend foundation).
+  - **Communication:** REST between services (game → Ollama, game → Mistral, browser → backend through nginx), WebSockets for the real-time channels, HTTP JSON logs from backend/game → Logstash → Elasticsearch, shared nginx log files for Logstash and the nginx exporter, and Prometheus scrapes queried by Grafana.
+  - **Independent lifecycle:** each service runs in its own container with its own image (custom Dockerfile or upstream image), entrypoint and restart policy; health checks and one-shot initialization containers coordinate startup and provisioning. A single application service can be rebuilt with `docker compose -p ft_transcendence up -d --build game`; the backend, the game service and the frontend each have their own test suite.
+- **Who:** lmarck (architecture of the game and Ollama services), mwallis (initial Docker Compose architecture, nginx, PostgreSQL, backend and frontend containerization, and accounts backend foundation), mlavry (DevOps services, logging and monitoring integration).
 
 <!-- TODO: point faible attendu en evaluation : game et backend ne s'appellent pas (aucun appel REST entre eux). Reponse : c'est voulu, leur couplage se limite a la cle de signature des JWT. Si les stats de partie sont ajoutees, les envoyer au backend par une route interne renforcerait l'argument. -->
 
-### 11. Accessibility and Internationalization, Minor: support for additional browsers (1 pt)
+### 13. Accessibility and Internationalization, Minor: support for additional browsers (1 pt)
 
 - **Why:** every player joins from their own machine and browser; a timer, an animation or a vote button that misbehaves in one browser would put that player at a disadvantage.
 - **How:**
@@ -714,7 +762,7 @@ Modules candidats NON revendiques ci-dessus (a ajouter seulement s'ils sont defe
   - Chromium-based browsers (Chrome, Brave) replace the background and text colour of an autofilled field (suggested email or password) with their own internal style, which breaks the dark theme of the login and sign-up forms. `index.css` freezes that internal background with a long transition and forces the text colour via `-webkit-text-fill-color`; Firefox does not style autofill, so the rule has no effect there. They can also underline an autofilled email as misspelled, so the email fields disable spell-check (`spellCheck={false}` in `Login.tsx` and `Register.tsx`).
 - **Who:** radubos (frontend; full pass on Chrome, Firefox and Brave, desktop and mobile widths, no new limitation found).
 
-### 12. Web, Minor: custom-made design system (1 pt)
+### 14. Web, Minor: custom-made design system (1 pt)
 
 - **Why:** five developers writing pages in parallel would otherwise drift towards a dozen close-but-different greys and ad-hoc buttons; the tokens and the component library make every page speak the same visual language, and give the game's characters a stable identity.
 - **How:**
@@ -809,8 +857,16 @@ Modules candidats NON revendiques ci-dessus (a ajouter seulement s'ils sont defe
 
 ### mlavry
 
-- <!-- TODO -->
-- **Challenges:** <!-- TODO -->
+- **Role:** Project Manager (PM) / Scrum Master.
+- **Project management:** coordination between team members, task follow-up, tracking blockers and organising DevOps integration.
+- **Log management:** ELK stack (Elasticsearch, Logstash, Kibana), structured backend and game logs, nginx traffic collection, log search and dashboards, retention policies and automatic snapshot archiving.
+- **Monitoring:** Prometheus metrics collection, PostgreSQL and nginx exporters, backend and game instrumentation, WebSocket activity and React page-view tracking.
+- **Dashboards and alerting:** custom Grafana dashboards for the application, game and database; alerts for backend availability and HTTP errors, with optional Discord notifications.
+- **Infrastructure and security:** Docker Compose integration, health checks, automatic provisioning, persistent storage, authenticated dashboards behind nginx over HTTPS, service credentials and internal-only metrics endpoints.
+- **Challenges:**
+  - integrating logging and monitoring across services while keeping collected data useful and avoiding sensitive information;
+  - making service startup and dashboard provisioning reliable on fresh volumes;
+  - balancing log retention, backups and resource usage, and choosing useful alert thresholds.
 
 ---
 
