@@ -93,11 +93,37 @@ const BOOT_ATTEMPTS = 30;   // un essai par seconde
 //Les conteneurs demarrent ensemble : ollama n'ecoute souvent pas encore quand
 //game fait son premier essai. Seule l'absence de reponse merite d'insister,
 //un refus (cle, quota, modele absent) ne changera pas en quelques secondes.
+
+//Un healthCheck doit toujours rendre la main. Les agents bornent leurs
+//appels, mais un fetch arrete peut ne jamais rejeter, ni une lecture de corps
+//se terminer : la promesse zombie qui en sort figeait boot, filet et file
+//d'attente jusqu'au redemarrage du conteneur (constate en production, avec
+//un reseau pourtant sain et un fetch qui repond dans le meme processus). Ce
+//filet ne remplace pas les bornes internes des agents : il empeche une
+//promesse morte d'emporter toute la mecanique de re-check.
+const HEALTHCHECK_WATCHDOG_MS = Number(process.env.HEALTHCHECK_WATCHDOG_MS) || 10000;
+
+//Exporte pour le test : le contrat a prouver, c'est qu'un healthCheck muet
+//rend quand meme un verdict.
+export function boundedHealthCheck(agent)
+{
+	let timer;
+	const montre = new Promise((resolve) =>
+	{
+		timer = setTimeout(() =>
+			resolve({ ok: false, reason: 'timeout', detail: `healthCheck de ${agent.name} muet apres ${HEALTHCHECK_WATCHDOG_MS} ms` }),
+			HEALTHCHECK_WATCHDOG_MS);
+	});
+	//Sans unref : le verdict doit etre rendu meme si le reste du processus n'a
+	//plus rien a faire ; des que la course est jugee, la montre s'eteint.
+	return Promise.race([agent.healthCheck(), montre]).finally(() => clearTimeout(timer));
+}
+
 async function checkUntilReachable(agent)
 {
 	for (let attempt = 1; ; attempt++)
 	{
-		const result = await agent.healthCheck();
+		const result = await boundedHealthCheck(agent);
 		if (result.reason !== 'unreachable' || attempt === BOOT_ATTEMPTS)
 			return result;
 		await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -134,7 +160,7 @@ export async function recheckDownAgents()
 {
 	const names = new Set(unavailableBots().map((b) => b.agent));
 	const down = [...names].filter((name) => healthReport.get(name)?.ok === false).map((name) => agents[name]);
-	const results = await Promise.all(down.map(async (a) => ({ name: a.name, ...(await a.healthCheck()) })));
+	const results = await Promise.all(down.map(async (a) => ({ name: a.name, ...(await boundedHealthCheck(a)) })));
 	healthReport = new Map([...healthReport, ...results.map((r) => [r.name, r])]);
 
 	const recovered = results.filter((r) => r.ok);

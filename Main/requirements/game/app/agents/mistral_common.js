@@ -142,7 +142,11 @@ async function guardedFetch(url, options = {})
 	{
 		if (err.name === 'AbortError')
 			return { failure: { ok: false, reason: 'timeout', detail: `timeout apres ${HEALTHCHECK_TIMEOUT_MS} ms` } };
-		return { failure: { ok: false, reason: 'unreachable', detail: `API injoignable : ${err.message}` } };
+		//fetch enrobe la vraie panne dans err.cause : sans elle, « fetch failed »
+		//dit aussi bien un DNS muet (ENOTFOUND, EAI_AGAIN) qu'un reseau bloque
+		//(ETIMEDOUT, ECONNREFUSED), et le diagnostic se joue a pile ou face.
+		const cause = err.cause ? ` — ${err.cause.code ?? err.cause.message}` : '';
+		return { failure: { ok: false, reason: 'unreachable', detail: `API injoignable : ${err.message}${cause}` } };
 	}
 	finally
 	{
@@ -158,18 +162,49 @@ async function guardedFetch(url, options = {})
 //il condamnait tous les re-checks (boot, filet, file, cancelRound) a le rejouer.
 let modelsPromise = null;
 
+//Toute la sonde est bornee, pas seulement la connexion : le garde de
+//guardedFetch arrete le fetch a 5 s, mais il arrive qu'un fetch arrete ne
+//rejette jamais (constate en production : la promesse restee en attente a
+//fige tous les healthChecks jusqu'au redemarrage du conteneur, reseau
+//pourtant revenu). La montre tranche, et l'echec est oublie comme les
+//autres. Overridable pour les tests, qui la veulent courte.
+const PROBE_TIMEOUT_MS = Number(process.env.MISTRAL_PROBE_TIMEOUT_MS) || 10000;
+
 function listModels()
 {
 	if (modelsPromise === null)
-		modelsPromise = fetchModelsOrForget();
+		modelsPromise = forgetOnFailure(bounded(fetchModels()));
 	return modelsPromise;
 }
 
-//La requete, plus l'oubli de son echec : modelsPromise repasse a null et le
-//prochain listModels() relancera /v1/models.
-async function fetchModelsOrForget()
+//La premiere a parler gagne : la sonde, ou la montre. Sans unref : le verdict
+//doit etre rendu meme si le reste du processus n'a plus rien a faire ; des que
+//la course est jugee, la montre s'eteint.
+function bounded(promise)
 {
-	const result = await fetchModels();
+	let timer;
+	const montre = new Promise((resolve) =>
+	{
+		timer = setTimeout(() =>
+			resolve({ ok: false, reason: 'timeout', detail: `timeout apres ${PROBE_TIMEOUT_MS} ms sur /v1/models` }),
+			PROBE_TIMEOUT_MS);
+	});
+	return Promise.race([promise, montre]).finally(() => clearTimeout(timer));
+}
+
+//L'oubli d'un echec, y compris le timeout de la montre et une sonde qui
+//leverait : modelsPromise repasse a null, le prochain listModels() relance.
+async function forgetOnFailure(promise)
+{
+	let result;
+	try
+	{
+		result = await promise;
+	}
+	catch (err)
+	{
+		result = { ok: false, reason: 'http_error', detail: `sonde /v1/models : ${err.message}` };
+	}
 	if (!result.ok)
 		modelsPromise = null;
 	return result;

@@ -127,18 +127,39 @@ function launch()
 	return room;
 }
 
-//Healthcheck apres un agent down
+//Une sonde peut etre lancee a la volee quand un joueur entre en file : sans
+//garde, elle doublerait celle du timer periodique. Le marqueur vit le temps
+//de la sonde.
+let recheckBusy = false;
+
+//Sonde les agents down, annonce les revenus, puis rearme le timer periodique.
+async function probeDownAgents()
+{
+	if (recheckBusy)
+		return;
+	recheckBusy = true;
+	try
+	{
+		const recovered = await recheckDownAgents();
+		if (recovered.length)
+			onAgentsRecovered();
+	}
+	finally
+	{
+		recheckBusy = false;
+	}
+	scheduleRecheck();
+}
+
+//Healthcheck periodique apres un agent down
 function scheduleRecheck()
 {
 	if (recheckTimer || !waiting.size || !unavailableBots().length)
 		return;
-	recheckTimer = setTimeout(async () =>
+	recheckTimer = setTimeout(() =>
 	{
-		const recovered = await recheckDownAgents();
 		recheckTimer = null;
-		if (recovered.length)
-			onAgentsRecovered();
-		scheduleRecheck();
+		probeDownAgents();
 	}, gameConfig.agentRecheckDelay * 1000);
 	recheckTimer.unref();// une verification en attente ne doit pas retenir le processus
 }
@@ -168,6 +189,12 @@ export function enqueue(playerId, sendFn, onRoomJoined, displayName = null)
 	// Atteindre le seuil rend le bouton « Prêt » disponible ; un clic explicite
 	// est nécessaire pour lancer la partie, même si la room est pleine.
 	broadcastQueue();
+	//Le joueur qui entre en file ne doit pas attendre agentRecheckDelay pour
+	//apprendre que les bots sont revenus : les bots affiches down sont
+	//re-sondes tout de suite. La sonde coute quelques secondes au pire, moins
+	//que le temps de voir arriver un deuxieme joueur.
+	if (unavailableBots().length)
+		probeDownAgents();
 	scheduleRecheck();
 }
 
