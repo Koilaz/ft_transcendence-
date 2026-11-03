@@ -73,7 +73,7 @@ The six members of the Council are **Colonel Moutarde**, **Major Wasabi**, **Cap
 
 | Requirement | Notes |
 |---|---|
-| Linux host | developed on Linux and on the 42 school computers <!-- TODO: macOS teste ? --> |
+| Linux host | developed on Linux and on the 42 school computers |
 | Docker Engine + Docker Compose | Compose v2 plugin (`docker compose`) or standalone v1 (`docker-compose`): the Makefile detects which one is installed |
 | GNU Make | single entry point of the project |
 | OpenSSL | to generate the secrets |
@@ -296,8 +296,6 @@ ihas been completly removed from the current version
 
 The character portraits and the timer bunny illustrations were generated with Nano Banana 2 (Google Gemini), then retouched by hand with GIMP.
 
-<!-- TODO: expliquer comment les productions de l'IA ont ete verifiees (relecture en PR, tests, explication entre pairs) ; le sujet insiste sur « only use AI-generated content that you fully understand ». -->
-
 ---
 
 ## Team Information
@@ -310,15 +308,11 @@ The character portraits and the timer bunny illustrations were generated with Na
 | `mwallis` | Technical Lead / Architect, Developer | Initial `core/` architecture and infrastructure: Docker Compose setup and containerization of nginx, PostgreSQL, NestJS backend and React/Vite frontend; nginx reverse proxy and HTTPS configuration; PostgreSQL initialization, configuration and persistent storage; NestJS backend (authentication, users, friends), Prisma schema and migrations; frontend development environment with Node.js, Vite and ESLint |
 | `mlavry` | Project Manager (PM) / Scrum Master, DevOps developer | Project coordination and task follow-up; ELK log-management infrastructure; Prometheus/Grafana monitoring, backend instrumentation, PostgreSQL exporter, dashboards, alerting, log retention and archiving, and secure integration of the observability services |
 
-<!-- TODO: le sujet impose les roles Product Owner, Project Manager / Scrum Master, Tech Lead / Architect et Developers (cumul possible). Product Owner : lmarck. Chacun remplit lui-meme son role et ses responsabilites. -->
-
 ---
 
 ## Project Management
 
 ### Work organisation
-
-<!-- TODO: decrire la repartition des taches (par service ? par feature ?), le rythme et le format des reunions. -->
 
 In practice the work was split into four areas: infrastructure and accounts backend, game server and AI, game rules (voting, scoring, rounds), and frontend.
 
@@ -531,8 +525,6 @@ A friendship is stored as a single row, not two: queries look for the user in bo
 
 ## Features List
 
-<!-- TODO: attributions deduites de l'historique git de ce depot. Une partie du travail y est arrivee par des commits de synchronisation (« sync », « import ») ou des merges : chaque membre doit relire la colonne de droite. -->
-
 The whole frontend was built by **radubos**. On the other rows, the names listed next to radubos are the members who built the server side of the feature.
 
 | Feature | Description | Member(s) |
@@ -583,14 +575,6 @@ The whole frontend was built by **radubos**. On the other rows, the names listed
 | 13 | Support for additional browsers | Accessibility and Internationalization | Minor | 1 |
 | 14 | Custom-made design system | Web | Minor | 1 |
 | | **Total** (11 Major × 2 + 3 Minor × 1) | | | **25** |
-
-<!-- TODO: valider cette liste en equipe. Bareme : 14 points valides = 100/100, 19 points = 125/125 (plafond du bonus), au-dela l'excedent ne sert qu'en assurance contre un module refuse. 25 points sont revendiques : la note maximale tient meme si un Major ne passe pas.
-Modules candidats NON revendiques ci-dessus (a ajouter seulement s'ils sont defendables) :
-- AI, Major « LLM system interface » (2 pts) : manquent le streaming des reponses et un rate limiting.
-- Accessibility, Minor « multiple languages » / Minor « RTL » : plan dans Main/doc/PLAN_I18N.md (fr/en/ar), non implemente.
-- User Management, Minor « Game statistics and match history » : necessite de persister les resultats de partie (nouvelle table).
-- Modules of choice (Major ou Minor) : par ex. inference LLM auto-hebergee + debrief adaptatif ; justification detaillee obligatoire dans ce README.
--->
 
 ### 1. Web, Major: frameworks for the frontend and the backend (2 pts)
 
@@ -730,8 +714,6 @@ Modules candidats NON revendiques ci-dessus (a ajouter seulement s'ils sont defe
   - **Independent lifecycle:** each service runs in its own container with its own image (custom Dockerfile or upstream image), entrypoint and restart policy; health checks and one-shot initialization containers coordinate startup and provisioning. A single application service can be rebuilt with `docker compose -p ft_transcendence up -d --build game`; the backend, the game service and the frontend each have their own test suite.
 - **Who:** lmarck (architecture of the game and Ollama services), mwallis (initial Docker Compose architecture, nginx, PostgreSQL, backend and frontend containerization, and accounts backend foundation), mlavry (DevOps services, logging and monitoring integration).
 
-<!-- TODO: point faible attendu en evaluation : game et backend ne s'appellent pas (aucun appel REST entre eux). Reponse : c'est voulu, leur couplage se limite a la cle de signature des JWT. Si les stats de partie sont ajoutees, les envoyer au backend par une route interne renforcerait l'argument. -->
-
 ### 13. Accessibility and Internationalization, Minor: support for additional browsers (1 pt)
 
 - **Why:** every player joins from their own machine and browser; a timer, an animation or a vote button that misbehaves in one browser would put that player at a disadvantage.
@@ -773,13 +755,11 @@ Modules candidats NON revendiques ci-dessus (a ajouter seulement s'ils sont defe
   - 13 reusable UI components in `src/components/ui/` — `Alert`, `Avatar`, `Badge`, `Button`, `ButtonLink`, `Card`, `Icon`, `Input`, `Link`, `Modal`, `Spinner`, `StatBox`, `Title`;
   - icons: `lucide-react` behind an `Icon` wrapper that sizes icons to the type scale and hides them from screen readers (decorative — the label carries the meaning); `Button` and `ButtonLink` accept an `icon` prop, and the footer links, the home navigation and the chat submit button use them;
   - every token value is a verbatim copy of the Tailwind shade it replaced (extracted from the installed `tailwindcss/theme.css`, never hand-typed), and `tests/palette.test.mjs` keeps it that way: it fails if a token drifts from its source shade or if the `cocktail` alias stops matching `azur`.
-- **Who:** <!-- TODO: a confirmer : qui a participe a la migration palette + icones -->
+- **Who:** radubos.
 
 ---
 
 ## Individual Contributions
-
-<!-- TODO: brouillon deduit des commits et des docs du depot. Une partie du travail a transite par des synchronisations depuis le depot collectif, donc l'auteur d'un commit n'est pas toujours l'auteur du code. Chaque personne doit relire et corriger sa section, et decrire ses difficultes avec ses propres mots. -->
 
 ### lmarck
 
@@ -790,7 +770,7 @@ Modules candidats NON revendiques ci-dessus (a ajouter seulement s'ils sont defe
 - **Game service:** server architecture, matchmaking queue, room lifecycle (removal of players during a round, quorum, destruction of empty rooms), identification of logged-in players by JWT, cancellation of the round when the bot stops answering.
 - **AI:** agent layer (local Ollama agent with warm-up and KV-cache-friendly prompts, Mistral agents, health checks), prompt registry and prompt writing, human-like post-processing (typos, typing rhythm, canned replies), one bot per round for a progressive difficulty, post-round debrief.
 - **Quality and documentation:** test suite of the game service, technical hand-over documents, Git workflow.
-- **Challenges** <!-- TODO: a reformuler -->:
+- **Challenges**:
   - making a 3B model running on CPU answer within the turn time: identical model options for the warm-up and the game calls (otherwise Ollama reloads the model), prompts ordered from the fixed parts to the variable ones to reuse the KV cache, preparation of the bots as soon as the characters are drawn;
   - keeping the AI undetectable: no player identifier ever leaves the server, and every message goes through the same normalisation, since an uppercase "AAAAH" or an accent would otherwise be enough to recognise a human;
   - agents failing in the middle of a game (quota, timeouts): circuit breaker, cancellation of the round, new health check.
@@ -870,8 +850,6 @@ Modules candidats NON revendiques ci-dessus (a ajouter seulement s'ils sont defe
 ---
 
 ## Known Limitations
-
-<!-- TODO: mettre a jour avant l'evaluation (retirer ce qui aura ete corrige). -->
 
 - Game results are not stored in the database: there is no match history or statistics yet, and the state of the running games is lost when the `game` container restarts.
 - The `frontend` container runs the Vite development server, not a production build.

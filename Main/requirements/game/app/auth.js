@@ -1,7 +1,7 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 
 /*
-#TODO cours JWT : a relire puis a supprimer une fois compris
+Verification des JWT emis par le backend
 
 1. Ce qu'est un JWT
    Une chaine en trois morceaux separes par des points :
